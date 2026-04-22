@@ -1,0 +1,5 @@
+project_id    = "YOUR_PROJECT_ID"
+region        = "us-central1"
+prefix        = "cdndoddi"
+create_bucket = true
+bucket_name   = "YOUR_BUCKET_NAME"
