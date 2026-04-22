@@ -1,7 +1,5 @@
 # Workaround for Cloud CDN Private Bucket Access (Verified Working)
 
-[<- Back to Ticket](file:///usr/local/google/home/priyambodo/Coding/cust-aeon360-privatebucketcloudcdn/TICKET.md)
-
 ## 1. Overview and Context
 This document outlines the verified working configuration for a workaround that allows Cloud CDN to serve content from a private Cloud Storage (GCS) bucket without using Signed URLs or making the bucket public.
 
@@ -28,7 +26,7 @@ Before configuring the Load Balancer, you must prepare the credentials and the e
 1. Go to **Cloud Storage** > **Settings** > **Interoperability**.
 2. Create a key for the service account created above.
 3. **Save the Access Key (Key ID) and Secret Key (Key)**. 
-   *   *Your Access ID*: `GOOG1EWVKCDBOMSYBCGH4YD72TDLWGK7ZKAVZCVJSKS7YT6YIJ3FANFNELHS2`
+   *   *Your Access ID*: `YOUR_ACCESS_KEY_ID`
    *   *Your Secret Key*: please store this (you can only see this once!)
 
 ### Step 2.3: Create an Internet Network Endpoint Group (NEG)
@@ -64,7 +62,7 @@ Create the Load Balancer manually to ensure the correct type is used.
 5. Enable **Cloud CDN** with **Cache static content**.
 6. **Host Header Override**: Add a custom request header: **`Host: cloudcdn_privatebucket_bydoddi.storage.googleapis.com`**. *(This is critical for GCS to recognize the bucket, look at the naming of the subdomain!)*.
 7. **Private origin authentication**: Check the box for **Authenticate requests to this origin with AWS Signature Version 4** and fill in:
-   *   **Key ID**: `GOOG1EWVKCDBOMSYBCGH4YD72TDLWGK7ZKAVZCVJSKS7YT6YIJ3FANFNELHS2`
+   *   **Key ID**: `YOUR_ACCESS_KEY_ID`
    *   **Key**: (Your Secret Key)
    *   **Key version**: `v1`
    *   **Region**: `us-central1`

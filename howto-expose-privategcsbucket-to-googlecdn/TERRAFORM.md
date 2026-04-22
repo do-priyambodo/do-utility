@@ -198,9 +198,4 @@ After Terraform completes, you must verify the setup.
     *   Look for `HTTP 200 OK` and `X-Cache` headers.
 4.  **Verify in Console**: Go to **Network Services** > **Load Balancing** to see the new Load Balancer and verify its backend service has Cloud CDN enabled with AWS Signature v4.
 
----
 
-## Reference and Fallbacks
-The Terraform configuration above is the complete solution. However, if you need to reference the manual steps:
-*   **Gcloud**: See [GCLOUD.md](file:///usr/local/google/home/priyambodo/Coding/cust-aeon360-privatebucketcloudcdn/GCLOUD.md).
-*   **Console**: See [CONSOLE.md](file:///usr/local/google/home/priyambodo/Coding/cust-aeon360-privatebucketcloudcdn/CONSOLE.md).
