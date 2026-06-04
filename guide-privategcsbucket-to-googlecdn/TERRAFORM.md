@@ -59,7 +59,7 @@ variable "bucket_name" {
 Provide the values for the variables.
 
 ```terraform
-project_id    = "work-mylab-machinelearning"
+project_id    = "your-gcp-project-id"
 region        = "us-central1"
 prefix        = "cdndoddi"
 create_bucket = true
