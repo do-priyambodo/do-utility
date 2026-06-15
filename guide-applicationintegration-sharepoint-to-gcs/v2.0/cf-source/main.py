@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import urllib.parse
 import functions_framework
 from msal import ConfidentialClientApplication
 from google.cloud import secretmanager
@@ -28,7 +29,7 @@ def get_graph_token(tenant_id, client_id, client_secret):
         raise Exception(f"Failed to get access token: {error_desc}")
 
 # Recursively list files in a SharePoint folder (drive item)
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", results=None):
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", results=None, base_file_url=""):
     if results is None:
         results = []
     
@@ -51,22 +52,23 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
     for item in items:
         item_name = item.get("name")
         item_id = item.get("id")
-        web_url = item.get("webUrl")
         
         # SharePoint connector download needs the actual relative URL or absolute web URL.
         # Let's provide Name, Url, and RelativePath
         if "folder" in item:
             # It is a folder, recurse into it
             new_parent_path = f"{parent_path}{item_name}/"
-            list_drive_items_recursive(token, drive_id, item_id, new_parent_path, results)
+            list_drive_items_recursive(token, drive_id, item_id, new_parent_path, results, base_file_url)
         else:
             # It is a file
             relative_path = f"{parent_path}{item_name}"
-            # Download URL is item.get("@microsoft.graph.downloadUrl") or web_url.
-            # In Application Integration we pass the webUrl or the direct URL to SharePoint connector task.
+            # Construct direct SharePoint URL to avoid preview page URL mismatch issues in SharePoint connector
+            relative_path_encoded = "/".join([urllib.parse.quote(part) for part in relative_path.split("/")]) if "/" in relative_path else urllib.parse.quote(relative_path)
+            direct_url = f"{base_file_url}{relative_path_encoded}"
+            
             results.append({
                 "Name": item_name,
-                "Url": web_url,
+                "Url": direct_url,
                 "RelativePath": relative_path,
                 "IsPage": False
             })
@@ -213,20 +215,30 @@ def main(request):
     req_data = request.get_json(silent=True) or {}
     
     # Default configuration fallback
-    site_name = req_data.get("site_name", "your-sharepoint-subsite-name")
+    site_name = req_data.get("site_name", "yourorg-sharepoint-to-gcs")
     library_name = req_data.get("library_name", "Shared Documents")
     
     # Optional integration automatic trigger parameters
     trigger_integration = req_data.get("trigger_integration", False)
-    integration_name = req_data.get("integration_name", "v4-your-cloudfunction-sharepoint-gcs-v4-parent")
+    integration_name = req_data.get("integration_name", "yourorg-sharepoint-gcs-parent")
     location = req_data.get("location", "asia-southeast1")
     project_id_override = req_data.get("project_id")
     
+    # Load parameters.json if it exists in local context
+    params = {}
+    if os.path.exists("parameters.json"):
+        try:
+            with open("parameters.json", "r") as f:
+                params = json.load(f)
+        except Exception as e:
+            print(f"Warning: Failed to load parameters.json: {e}")
+
     # M365 Tenant Details
-    tenant_id = "YOUR_MICROSOFT_TENANT_ID"
-    client_id = "YOUR_MICROSOFT_CLIENT_ID"
-    secret_name = "projects/YOUR_GCP_PROJECT_NUMBER/secrets/your-secret-sharepoint-clientsecret/versions/1"
-    site_hostname = "your-tenant.sharepoint.com"
+    tenant_id = params.get("CONFIG_M365_Tenant_Id", "36764916-28f8-4114-9116-60602e790f00")
+    client_id = params.get("CONFIG_M365_Client_Id", "ab6207c5-b4c7-44f5-bd39-3ece91b5e3d0")
+    secret_name = params.get("CONFIG_M365_Secret_Name", "projects/388889235558/secrets/yourorg-secret-sharepoint-clientsecret/versions/1")
+    site_hostname = params.get("CONFIG_SharePoint_Hostname", "priyambodo.sharepoint.com")
+
     
     try:
         # 2. Fetch Azure AD Client Secret dynamically via GCP Secret Manager
@@ -271,7 +283,9 @@ def main(request):
         
         # 6. Recursively list all files inside the target Document Library
         if target_drive_id:
-            list_drive_items_recursive(token, target_drive_id, "root", "", sync_list)
+            library_encoded = library_name.replace(" ", "%20")
+            base_file_url = f"https://{site_hostname}/{site_url_path}/{library_encoded}/"
+            list_drive_items_recursive(token, target_drive_id, "root", "", sync_list, base_file_url)
             
         # 7. Query modern site pages under Option B
         pages_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/pages"
@@ -307,7 +321,7 @@ def main(request):
             
             print(f"🤖 Auto-triggering Application Integration: {integration_name} in {location}...")
             credentials, credentials_project_id = google.auth.default()
-            project_id = project_id_override or credentials_project_id or "your-gcp-project-id"
+            project_id = project_id_override or credentials_project_id or "work-mylab-machinelearning"
             
             credentials.refresh(Request())
             access_token = credentials.token
@@ -322,7 +336,7 @@ def main(request):
             payload_int = {
                 "triggerId": f"api_trigger/{integration_name}-trigger",
                 "inputParameters": {
-                    "`Parent_Files_List`": {
+                    "Parent_Files_List": {
                         "jsonValue": json.dumps(sync_list)
                     }
                 }

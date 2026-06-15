@@ -1,0 +1,18 @@
+{
+  "CONFIG_ProjectId": "work-mylab-machinelearning",
+  "CONFIG_Location": "asia-southeast1",
+  "CONFIG_Service_Account": "yourorg-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com",
+  "CONFIG_Child_Integration_Name": "yourorg-sharepoint-gcs-child",
+  "CONFIG_Parent_Integration_Name": "yourorg-sharepoint-gcs-parent",
+  "CONFIG_SharePoint_Connection": "projects/$CONFIG_ProjectId/locations/$CONFIG_Location/connections/yourorg-connection-sharepoint-sync",
+  "CONFIG_Sharepoint_Sites": "sites/yourorg-sharepoint-to-gcs",
+  "CONFIG_GCS_Connection": "projects/$CONFIG_ProjectId/locations/$CONFIG_Location/connections/yourorg-connection-gcs-sync",
+  "CONFIG_GCS_Bucket": "yourorg-bucket-sharepoint-sync",
+  "CONFIG_CloudFunction_Name": "yourorg-sharepoint-list-files",
+  "CONFIG_M365_Tenant_Id": "36764916-28f8-4114-9116-60602e790f00",
+  "CONFIG_M365_Client_Id": "ab6207c5-b4c7-44f5-bd39-3ece91b5e3d0",
+  "CONFIG_M365_Secret_Name": "projects/388889235558/secrets/yourorg-secret-sharepoint-clientsecret/versions/1",
+  "CONFIG_SharePoint_Hostname": "priyambodo.sharepoint.com",
+  "CONFIG_Developer_Group_Or_User": "admin@yourorg.com",
+  "CONFIG_Scheduler_Job_Name": "yourorg-sharepoint-sync-hourly"
+}

@@ -1,0 +1,16 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🚀 STARTING E2E SHAREPOINT TO GCS SYNC PIPELINE (V4-HYBRID)
+================================================================
+🔒 Step 1: Invoking SharePoint traversal Cloud Function (Option B pages resolved)...
+🟢 Found 10 total items (documents & pre-rendered pages) to synchronize.
+
+🚀 Step 2: Triggering Application Integration: doddi-sharepoint-gcs-parent...
+================================================================
+🎉 SYNC JOB SUBMITTED SUCCESSFULLY TO APPLICATION INTEGRATION!
+================================================================
+👉 Execution ID: 088f5ed7-e3d8-4793-b893-868719537364
+📝 View execution logs in GCP Console here:
+   https://console.cloud.google.com/integrations/logs;integration_name=doddi-sharepoint-gcs-parent;execution_id=088f5ed7-e3d8-4793-b893-868719537364;region=asia-southeast1?project=work-mylab-machinelearning
+================================================================

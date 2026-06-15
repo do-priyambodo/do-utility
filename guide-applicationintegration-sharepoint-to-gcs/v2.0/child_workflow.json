@@ -6,7 +6,7 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/v4-your-cloudfunction-sharepoint-gcs-v4-child-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-trigger",
       "startTaskId": "6"
     }
   ],
@@ -37,7 +37,7 @@
       "label": "Download file request mapping",
       "parameters": {
         "mapConfig": {
-          "stringValue": "local inputs = {\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal rawUrl = fileObject[\"Url\"];\nlocal urlWithPort = std.strReplace(rawUrl, \"https://your-tenant.sharepoint.com/\", \"https://your-tenant.sharepoint.com:443/\");\n{\n  \"`Task_2_connectorInputPayload`\": {\n    \"Library\": \"Shared Documents\",\n    \"RemoteFile\": urlWithPort,\n    \"HasBytes\": true\n  }\n}"
+          "stringValue": "local inputs = {\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal rawUrl = fileObject[\"Url\"];\nlocal urlWithPort = std.strReplace(rawUrl, \"https://priyambodo.sharepoint.com/\", \"https://priyambodo.sharepoint.com:443/\");\n{\n  \"`Task_2_connectorInputPayload`\": {\n    \"Library\": \"Shared Documents\",\n    \"RemoteFile\": urlWithPort,\n    \"HasBytes\": true\n  }\n}"
         }
       },
       "nextTasks": [
@@ -53,10 +53,10 @@
       "label": "Download file sharepoint",
       "parameters": {
         "connectionName": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-sharepoint-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
         },
         "connectorVersion": {
-          "stringValue": "projects/your-gcp-project-id/locations/global/providers/microsoft/connectors/sharepoint/versions/2"
+          "stringValue": "projects/work-mylab-machinelearning/locations/global/providers/microsoft/connectors/sharepoint/versions/2"
         },
         "actionName": {
           "stringValue": "DownloadDocument"
@@ -107,10 +107,10 @@
       "label": "Upload file gcs",
       "parameters": {
         "connectionName": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
         },
         "connectorVersion": {
-          "stringValue": "projects/your-gcp-project-id/locations/global/providers/gcp/connectors/gcs/versions/1"
+          "stringValue": "projects/work-mylab-machinelearning/locations/global/providers/gcp/connectors/gcs/versions/1"
         },
         "actionName": {
           "stringValue": "UploadObject"
@@ -123,10 +123,10 @@
       "label": "Upload page gcs",
       "parameters": {
         "connectionName": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
         },
         "connectorVersion": {
-          "stringValue": "projects/your-gcp-project-id/locations/global/providers/gcp/connectors/gcs/versions/1"
+          "stringValue": "projects/work-mylab-machinelearning/locations/global/providers/gcp/connectors/gcs/versions/1"
         },
         "actionName": {
           "stringValue": "UploadObject"
@@ -141,7 +141,7 @@
       "displayName": "`CONFIG_GCS_Bucket`",
       "inputOutputType": "IN",
       "defaultValue": {
-        "stringValue": "your-gcs-sync-bucket-name"
+        "stringValue": "doddi-bucket-sharepoint-sync"
       }
     },
     {
@@ -208,22 +208,22 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "your-gcs-sync-bucket-name"
+          "stringValue": "doddi-bucket-sharepoint-sync"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       },
       "value": {
-        "stringValue": "your-gcs-sync-bucket-name"
+        "stringValue": "doddi-bucket-sharepoint-sync"
       }
     },
     {
       "parameter": {
-        "key": "`CONFIG_Library`",
+        "key": "`CONFIG_Sharepoint_Library`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
           "stringValue": "Shared Documents"
         },
-        "displayName": "`CONFIG_Library`"
+        "displayName": "`CONFIG_Sharepoint_Library`"
       },
       "value": {
         "stringValue": "Shared Documents"
@@ -234,12 +234,12 @@
         "key": "`CONFIG_GCS_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
         },
         "displayName": "`CONFIG_GCS_Connection`"
       },
       "value": {
-        "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
       }
     },
     {
@@ -247,15 +247,15 @@
         "key": "`CONFIG_SharePoint_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-sharepoint-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
         },
         "displayName": "`CONFIG_SharePoint_Connection`"
       },
       "value": {
-        "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-sharepoint-connection"
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
       }
     }
   ],
   "description": "V4 child integration leveraging recursive Cloud Function and modern site page pre-renderer sync",
-  "runAsServiceAccount": "your-custom-service-account@your-gcp-project-id.iam.gserviceaccount.com"
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
 }

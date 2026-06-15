@@ -6,7 +6,7 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/v4-your-cloudfunction-sharepoint-gcs-v4-parent-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-parent-trigger",
       "startTaskId": "1"
     }
   ],
@@ -17,10 +17,10 @@
       "label": "ForEach Loop",
       "parameters": {
         "subIntegrationName": {
-          "stringValue": "v4-your-cloudfunction-sharepoint-gcs-v4-child"
+          "stringValue": "doddi-sharepoint-gcs-child"
         },
         "subIntegrationTriggerId": {
-          "stringValue": "api_trigger/v4-your-cloudfunction-sharepoint-gcs-v4-child-trigger"
+          "stringValue": "api_trigger/doddi-sharepoint-gcs-child-trigger"
         },
         "subIntegrationMapCurrentElementTo": {
           "stringValue": "INPUT_Loop_Item"
@@ -48,22 +48,22 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "your-gcs-sync-bucket-name"
+          "stringValue": "doddi-bucket-sharepoint-sync"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       },
       "value": {
-        "stringValue": "your-gcs-sync-bucket-name"
+        "stringValue": "doddi-bucket-sharepoint-sync"
       }
     },
     {
       "parameter": {
-        "key": "`CONFIG_Library`",
+        "key": "`CONFIG_Sharepoint_Library`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
           "stringValue": "Shared Documents"
         },
-        "displayName": "`CONFIG_Library`"
+        "displayName": "`CONFIG_Sharepoint_Library`"
       },
       "value": {
         "stringValue": "Shared Documents"
@@ -74,12 +74,12 @@
         "key": "`CONFIG_GCS_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
         },
         "displayName": "`CONFIG_GCS_Connection`"
       },
       "value": {
-        "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-gcs-connection"
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
       }
     },
     {
@@ -87,15 +87,15 @@
         "key": "`CONFIG_SharePoint_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-sharepoint-connection"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
         },
         "displayName": "`CONFIG_SharePoint_Connection`"
       },
       "value": {
-        "stringValue": "projects/your-gcp-project-id/locations/asia-southeast1/connections/your-sharepoint-connection"
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
       }
     }
   ],
   "description": "V4 parent orchestrator loop integration",
-  "runAsServiceAccount": "your-custom-service-account@your-gcp-project-id.iam.gserviceaccount.com"
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
 }

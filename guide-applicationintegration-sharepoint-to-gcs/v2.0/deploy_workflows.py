@@ -5,6 +5,10 @@ import urllib.request
 import urllib.error
 import sys
 from apply_parameters import apply_params
+try:
+    import log_helper
+except ImportError:
+    log_helper = None
 
 def get_auth_token():
     try:
@@ -348,6 +352,8 @@ def upload_and_publish(project_id, location, integration_id, file_path, token, s
         return None
 
 def main():
+    if log_helper:
+        log_helper.init_logging("setup")
     if not os.path.exists('parameters.json'):
         print("❌ Error: parameters.json not found!")
         sys.exit(1)
@@ -368,7 +374,7 @@ def main():
         project_id=PROJECT_ID,
         location=LOCATION,
         integration_id=CHILD_INTEGRATION_NAME,
-        file_path="v4_child_workflow.json",
+        file_path="child_workflow.json",
         token=token,
         service_account=SERVICE_ACCOUNT,
         params=params
@@ -383,14 +389,14 @@ def main():
         project_id=PROJECT_ID,
         location=LOCATION,
         integration_id=PARENT_INTEGRATION_NAME,
-        file_path="v4_parent_workflow.json",
+        file_path="parent_workflow.json",
         token=token,
         service_account=SERVICE_ACCOUNT,
         params=params
     )
     
     if parent_version:
-        print("\n🌟 ALL V4 SYNC INTEGRATIONS DEPLOYED AND ACTIVE SUCCESSFULLY!")
+        print("\n🌟 ALL SYNC INTEGRATIONS DEPLOYED AND ACTIVE SUCCESSFULLY!")
 
 if __name__ == "__main__":
     main()
