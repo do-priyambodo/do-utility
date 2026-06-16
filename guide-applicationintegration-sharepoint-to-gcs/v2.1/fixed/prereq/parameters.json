@@ -1,0 +1,9 @@
+{
+  "PROJECT_ID": "work-mylab-machinelearning",
+  "LOCATION": "asia-southeast1",
+  "CUSTOM_SA": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com",
+  "BUCKET_NAME": "doddi-bucket-sharepoint-sync",
+  "SECRET_NAME": "doddi-sharepoint-to-gcs-credentials",
+  "DEVELOPER_GROUP": "admin@priyambodo.altostrat.com",
+  "CLOUD_RUN_SERVICES": "doddi-sharepoint-list-files"
+}

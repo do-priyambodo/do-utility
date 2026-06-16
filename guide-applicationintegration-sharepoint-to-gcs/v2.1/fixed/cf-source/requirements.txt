@@ -1,0 +1,6 @@
+functions-framework==3.4.0
+requests==2.31.0
+msal==1.22.0
+google-cloud-secret-manager==2.16.2
+google-auth==2.22.0
+
