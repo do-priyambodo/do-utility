@@ -17,9 +17,12 @@ def get_auth_token():
         print(f"❌ Failed to get gcloud access token: {e}")
         sys.exit(1)
 
-def get_identity_token():
+def get_identity_token(audience=None):
     try:
-        return subprocess.check_output(["gcloud", "auth", "print-identity-token"]).decode("utf-8").strip()
+        cmd = ["gcloud", "auth", "print-identity-token"]
+        if audience:
+            cmd.extend(["--audiences", audience])
+        return subprocess.check_output(cmd).decode("utf-8").strip()
     except Exception as e:
         print(f"❌ Failed to get gcloud identity token: {e}")
         sys.exit(1)
@@ -71,7 +74,7 @@ def run_sync():
     print("================================================================")
     
     # Step 1: Retrieve OIDC identity token and call Cloud Function to traverse SharePoint
-    identity_token = get_identity_token()
+    identity_token = get_identity_token(audience=cf_endpoint)
     headers_cf = {
         "Authorization": f"Bearer {identity_token}",
         "Content-Type": "application/json"
