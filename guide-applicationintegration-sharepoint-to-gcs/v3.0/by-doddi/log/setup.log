@@ -1,0 +1,22 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🧪 STARTING RANDOMIZED SAMPLE SYNC TEST (DOCS: 2, PAGES: 2)
+================================================================
+🔒 Step 1: Invoking SharePoint traversal Cloud Function...
+🟢 Found 10 total items in SharePoint library.
+🎲 Randomized selection: Sampled 2 documents (out of 3) and 2 pages (out of 7).
+📦 Files selected for test synchronization:
+   - [Document] doddi-is-speaking-optimized.webp (Path: Files by Doddi/doddi-is-speaking-optimized.webp)
+   - [Document] BidBot.png (Path: BidBot.png)
+   - [Page] Our-Leadership.html (Path: pages/Our-Leadership.html)
+   - [Page] DepartmentHome.html (Path: pages/DepartmentHome.html)
+
+🚀 Step 2: Triggering Application Integration (doddi-sharepoint-gcs-parent) with 4 items...
+================================================================
+🎉 LIMITED SAMPLE SYNC TEST SUBMITTED SUCCESSFULLY!
+================================================================
+👉 Execution ID: 54d47f94-0529-46e0-979f-3be80226d046
+📝 Monitor execution progress with:
+   python3 ../check_execution.py "work-mylab-machinelearning" "asia-southeast1" "doddi-sharepoint-gcs-parent" "54d47f94-0529-46e0-979f-3be80226d046"
+================================================================
