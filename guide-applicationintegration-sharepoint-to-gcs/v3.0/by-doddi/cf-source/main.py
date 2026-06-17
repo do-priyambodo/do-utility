@@ -411,7 +411,7 @@ def main(request):
             payload_int = {
                 "triggerId": f"api_trigger/{integration_name}-trigger",
                 "inputParameters": {
-                    "Parent_Files_List": {
+                    "`Parent_Files_List`": {
                         "jsonValue": json.dumps(sync_list)
                     }
                 }

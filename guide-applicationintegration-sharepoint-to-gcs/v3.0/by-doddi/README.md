@@ -229,7 +229,7 @@ export FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --regi
 
 # 2. Deploy Cloud Scheduler trigger job
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 * * * *" \
+  --schedule="0 */6 * * *" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \

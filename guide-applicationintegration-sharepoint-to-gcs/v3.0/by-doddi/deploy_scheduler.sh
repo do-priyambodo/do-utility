@@ -38,7 +38,7 @@ if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION
 fi
 
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 * * * *" \
+  --schedule="0 */6 * * *" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
