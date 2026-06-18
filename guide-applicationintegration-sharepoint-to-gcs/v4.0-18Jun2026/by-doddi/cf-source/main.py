@@ -376,6 +376,17 @@ def main(request):
         target_urls = req_data.get("target_urls", [])
         if target_urls:
             print(f"🎯 Bypassing Graph folder traversal: Scoping directly to {len(target_urls)} targeted URL(s)...")
+            
+            pages_dict = {}
+            try:
+                p_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages"
+                for p_item in graph_get_paginated(p_url, headers):
+                    p_name = p_item.get("name", "").lower()
+                    if p_name:
+                        pages_dict[p_name] = p_item.get("id")
+            except Exception as e:
+                print(f"Warning: Could not list site pages for targeted rendering: {e}")
+
             for raw_url in target_urls:
                 clean_url = raw_url.split("?")[0].strip()
                 parsed = urllib.parse.urlparse(clean_url)
@@ -400,6 +411,23 @@ def main(request):
                     "RelativePath": rel_path,
                     "IsPage": is_page
                 }
+                
+                if is_page:
+                    aspx_name = os.path.basename(url_path).lower()
+                    page_id = pages_dict.get(aspx_name)
+                    html_rendered = ""
+                    if page_id:
+                        try:
+                            d_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
+                            d_resp = http.get(d_url, headers=headers, timeout=60)
+                            if d_resp.status_code == 200:
+                                html_rendered = render_page_to_html(d_resp.json())
+                        except Exception as ex:
+                            print(f"Warning: Failed to render {aspx_name}: {ex}")
+                    if not html_rendered:
+                        html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
+                    item_obj["VirtualContent"] = html_rendered
+
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
                 
@@ -471,6 +499,8 @@ def main(request):
                             page_detail = detail_resp.json()
                             html_content = render_page_to_html(page_detail)
                             page_obj["VirtualContent"] = html_content
+                        if not page_obj.get("VirtualContent"):
+                            page_obj["VirtualContent"] = f"<!DOCTYPE html><html><head><title>{html_name}</title></head><body><h1>{html_name}</h1></body></html>"
                         
                         all_list.append(page_obj)
                         
