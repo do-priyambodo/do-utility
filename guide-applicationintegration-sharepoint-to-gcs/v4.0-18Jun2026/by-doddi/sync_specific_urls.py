@@ -121,7 +121,7 @@ def run_targeted_sync():
         return
         
     access_token = get_auth_token()
-    integration_url = f"https://{LOCATION}-integrations.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/integrations/{PARENT_INTEGRATION_NAME}:schedule"
+    integration_url = f"https://{LOCATION}-integrations.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/integrations/{PARENT_INTEGRATION_NAME}:execute"
     
     headers_int = {
         "Authorization": f"Bearer {access_token}",
@@ -130,7 +130,7 @@ def run_targeted_sync():
 
     batch_size = params.get("CONFIG_Batch_Size", 100)
     total_batches = (len(sync_list) + batch_size - 1) // batch_size
-    print(f"\n🚀 Step 2: Triggering Application Integration ({PARENT_INTEGRATION_NAME}) asynchronously across {total_batches} batch(es)...")
+    print(f"\n🚀 Step 2: Triggering Application Integration ({PARENT_INTEGRATION_NAME}) across {total_batches} batch(es)...")
 
     execution_ids = []
     for i in range(0, len(sync_list), batch_size):
@@ -155,9 +155,9 @@ def run_targeted_sync():
                 if log_helper:
                     log_helper.log_cloud(f"=== Targeted Batch {batch_num} Response ===")
                     log_helper.log_cloud(json.dumps(resp_data, indent=2))
-                execution_id = resp_data.get("executionId")
+                execution_id = resp_data.get("executionId") or resp_data.get("scheduleId") or (resp_data.get("executionIds", ["Check Console"])[0])
                 execution_ids.append(execution_id)
-                print(f" 🟢 Batch {batch_num}/{total_batches} ({len(batch)} items) scheduled -> Execution ID: {execution_id}")
+                print(f" 🟢 Batch {batch_num}/{total_batches} ({len(batch)} items) triggered -> Execution ID: {execution_id}")
         except urllib.error.HTTPError as e:
             print(f"❌ Integration batch {batch_num} trigger failed (Code {e.code}): {e.reason}")
             print(e.read().decode("utf-8"))
