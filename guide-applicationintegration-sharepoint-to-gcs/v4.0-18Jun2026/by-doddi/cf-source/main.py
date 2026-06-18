@@ -373,7 +373,38 @@ def main(request):
         all_list = []
         sync_list = []
         
-        for site_info in target_sites:
+        target_urls = req_data.get("target_urls", [])
+        if target_urls:
+            print(f"🎯 Bypassing Graph folder traversal: Scoping directly to {len(target_urls)} targeted URL(s)...")
+            for raw_url in target_urls:
+                clean_url = raw_url.split("?")[0].strip()
+                parsed = urllib.parse.urlparse(clean_url)
+                url_path = urllib.parse.unquote(parsed.path)
+                filename = os.path.basename(url_path)
+                is_page = False
+                if filename.lower().endswith(".aspx"):
+                    is_page = True
+                    filename = filename[:-5] + ".html"
+                
+                rel_path = f"pages/{filename}" if is_page else f"files/{filename}"
+                if "/sites/" in url_path:
+                    parts = [p for p in url_path.split("/") if p and p.lower() not in ["sites", "sitepages", "shared documents", "documents"]]
+                    if len(parts) > 1:
+                        sub_folder = "/".join(parts[1:-1])
+                        if sub_folder:
+                            rel_path = f"pages/{sub_folder}/{filename}" if is_page else f"files/{sub_folder}/{filename}"
+
+                item_obj = {
+                    "Name": filename,
+                    "Url": raw_url,
+                    "RelativePath": rel_path,
+                    "IsPage": is_page
+                }
+                all_list.append(item_obj)
+                sync_list.append(item_obj)
+                
+        target_sites_to_scan = target_sites if not target_urls else []
+        for site_info in target_sites_to_scan:
             curr_site_id = site_info["id"]
             site_prefix = site_info["prefix"] # e.g. "Consumer/" or "Business/"
             
