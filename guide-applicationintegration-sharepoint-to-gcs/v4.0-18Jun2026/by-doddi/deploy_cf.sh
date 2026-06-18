@@ -53,7 +53,8 @@ gcloud functions deploy "${FUNCTION_NAME}" \
   --service-account="${SERVICE_ACCOUNT}" \
   --no-allow-unauthenticated \
   --timeout=3600 \
-  --memory=2GB \
+  --memory=8GB \
+  --cpu=4 \
   --source=./cf-source
 
 echo "🧹 Cleaning up deployment context copy..."
