@@ -229,33 +229,6 @@ Simply run the included deployment script (configured with 30-minute deadlines a
 ./deploy_scheduler.sh
 ```
 
-#### Option B: Manual CLI Deployment
-If you prefer running manual `gcloud` commands in your terminal, export the variables from `parameters.json` first:
-```bash
-export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
-export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
-export SITE_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''))")
-export PARENT_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Parent_Integration_Name', 'yourorg-sharepoint-gcs-parent'))")
-
-# 1. Resolve deployed Cloud Function URL dynamically
-export FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)")
-
-# 2. Deploy Cloud Scheduler trigger job
-gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 */6 * * *" \
-  --uri="${FUNCTION_URL}" \
-  --http-method=POST \
-  --headers="Content-Type=application/json" \
-  --message-body="{\"site_name\": \"${SITE_NAME}\", \"trigger_integration\": true, \"integration_name\": \"${PARENT_INTEGRATION_NAME}\", \"location\": \"${LOCATION}\"}" \
-  --oidc-service-account-email="${SERVICE_ACCOUNT}" \
-  --oidc-token-audience="${FUNCTION_URL}" \
-  --location="${LOCATION}" \
-  --project="${PROJECT_ID}"
-```
-
 ---
 
 ## IV. Troubleshooting & Observability
