@@ -6,7 +6,23 @@ import datetime
 import functions_framework
 from msal import ConfidentialClientApplication
 from google.cloud import secretmanager
-from google.cloud import storage
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# Global resilient HTTP session with automatic retry backoff for M365 throttling (429) & Gateway timeouts (504)
+def get_resilient_session():
+    session = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=2,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+http = get_resilient_session()
 
 # Helper to retrieve secret from Secret Manager
 def get_secret(secret_name):
@@ -34,7 +50,7 @@ def get_graph_token(tenant_id, client_id, client_secret):
 def graph_get_paginated(url, headers):
     results = []
     while url:
-        response = requests.get(url, headers=headers)
+        response = http.get(url, headers=headers, timeout=60)
         if response.status_code != 200:
             raise Exception(f"Graph API returned status {response.status_code} for url {url}: {response.text}")
         data = response.json()
@@ -338,7 +354,7 @@ def main(request):
             "Content-Type": "application/json"
         }
         
-        site_resp = requests.get(resolve_site_url, headers=headers)
+        site_resp = http.get(resolve_site_url, headers=headers, timeout=60)
         if site_resp.status_code != 200:
             return (f"Failed to resolve SharePoint Site: {site_resp.text}", 500)
             
@@ -410,7 +426,7 @@ def main(request):
                     }
                     
                     detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
-                    detail_resp = requests.get(detail_url, headers=headers)
+                    detail_resp = http.get(detail_url, headers=headers, timeout=60)
                     if detail_resp.status_code == 200:
                         page_detail = detail_resp.json()
                         html_content = render_page_to_html(page_detail)
@@ -479,7 +495,7 @@ def main(request):
                     }
                 }
                 
-                int_resp = requests.post(integration_url, json=payload_int, headers=headers_int)
+                int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
                 if int_resp.status_code == 200:
                     exec_data = int_resp.json()
                     eid = exec_data.get("executionId")
