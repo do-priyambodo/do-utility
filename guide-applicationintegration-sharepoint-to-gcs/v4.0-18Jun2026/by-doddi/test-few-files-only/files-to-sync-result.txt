@@ -1,0 +1,8 @@
+================================================================
+SHAREPOINT TO GCS - FILES TO SYNCHRONIZE REPORT
+================================================================
+Total Resources Found in SharePoint : 14
+Total Items Requiring Sync          : 0
+================================================================
+
+No files or pages require synchronization at this time.
