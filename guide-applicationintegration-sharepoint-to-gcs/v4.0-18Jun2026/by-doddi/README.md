@@ -187,28 +187,44 @@ python3 deploy_workflows.py
 
 ## III. Execution & Scheduling
 
-### 1. Execute Limited Sync Verification (Few Files Only) [Recommended First Step]
-If your SharePoint document library contains thousands of files and you wish to verify the integration pipeline on a randomized sample (e.g. 2 documents and 2 pages) without modifying production code before running a full sync, use the test runner:
+You can choose between running a full site crawl or synchronizing a targeted selection of files based on your operational needs:
+
+| Goal | Command to Run | Scans SharePoint Folders? | Source List |
+| :--- | :--- | :---: | :--- |
+| **Lightning Fast Verification** | `python3 test-few-files-only/check_files_subset.py` | ⚡ No (Max 10 cutoff) | Live SharePoint Sample |
+| **Targeted On-Demand Sync** | `python3 sync_specific_urls.py` | 🎯 No (Bypasses crawl) | `target_files.json` |
+| **Full Traversal / Hourly Cron** | `python3 sync_sharepoint_to_gcs.py` | ✅ Yes (Crawls everything) | Entire SharePoint Site |
+
+---
+
+### 1. Execute Lightning-Fast Connectivity Verification (Max 10 Cutoff) [Recommended First Step]
+To verify Microsoft Entra ID authentication, SharePoint site resolution, and GCS cache connectivity in under 3 seconds without scanning thousands of files:
 ```bash
 cd test-few-files-only
-python3 test_few_files.py --docs=2 --pages=2
+python3 check_files_subset.py
 ```
-For architectural details and alternative strategies, see [test-few-files-only/README.md](test-few-files-only/README.md).
+This sends `"max_items": 10` to the Cloud Function, sampling 10 items and saving the report to `files-subset-result.txt`.
 
-### 2. Execute Full Sync Pipeline Manually (After Successful Verification)
-Once limited verification is confirmed successful, run the manual orchestrator runner to synchronize the entire target library:
+### 2. Execute Targeted On-Demand Sync (Selected High-Priority Pages)
+To synchronize *only* specific URLs (e.g. newly published marketing pages or priority `.aspx` layouts) without crawling the rest of SharePoint:
+1. Add your target URLs inside [target_files.json](target_files.json).
+2. Execute the targeted orchestrator:
+```bash
+python3 sync_specific_urls.py
+```
+This bypasses Graph folder crawling entirely and schedules Application Integration batches exclusively for your curated list.
+
+### 3. Execute Full Traversal Sync Pipeline Manually
+To scan and synchronize the entire target SharePoint site collection and document library:
 ```bash
 python3 sync_sharepoint_to_gcs.py
 ```
-This script will:
-*   Invoke the traversal Cloud Function to compile the complete file list.
-*   Directly submit the file list to the Parent Integration (`yourorg-sharepoint-gcs-parent`) and output the Execution ID.
 
-### 3. Automated Scheduling (Cloud Scheduler)
+### 4. Automated Scheduling (Cloud Scheduler)
 Configure a recurring Cloud Scheduler job to run the pipeline automatically.
 
 #### Option A: Automated Runner (Recommended)
-Simply run the included deployment script, which dynamically reads all configuration values from `parameters.json`:
+Simply run the included deployment script (configured with 30-minute deadlines and 0 retries to prevent duplicate storms):
 ```bash
 ./deploy_scheduler.sh
 ```
