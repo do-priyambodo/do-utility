@@ -193,41 +193,47 @@ You can choose between running a full site crawl or synchronizing a targeted sel
 | :--- | :--- | :---: | :--- |
 | **Lightning Fast Verification** | `python3 test-few-files-only/check_files_subset.py` | ⚡ No (Max 10 cutoff) | Live SharePoint Sample |
 | **Targeted On-Demand Sync** | `python3 sync_specific_urls.py` | 🎯 No (Bypasses crawl) | `target_files.json` |
+| **Dynamic GCS Whitelist Sync** | Automated Cron (`deploy_scheduler_gcs_dynamic.sh`) | 🌐 No (Web UI Controlled) | `gs://YOUR_BUCKET/config/target_urls.txt` |
 | **Full Traversal / Hourly Cron** | `python3 sync_sharepoint_to_gcs.py` | ✅ Yes (Crawls everything) | Entire SharePoint Site |
 
 ---
 
-### 1. Execute Lightning-Fast Connectivity Verification (Max 10 Cutoff) [Recommended First Step]
-To verify Microsoft Entra ID authentication, SharePoint site resolution, and GCS cache connectivity in under 3 seconds without scanning thousands of files:
+### 1. Execute Dynamic GCS Whitelist Sync (No-Git Web UI Controlled) [⭐ RECOMMENDED]
+Allow IT admins or business users to maintain a dynamic list of target URLs directly inside Google Cloud Storage without Git or terminal CLI access:
+1. Populate your target URLs inside [target_urls.txt](target_urls.txt) (one URL per line).
+2. Upload it to GCS:
+```bash
+./upload_gcs_targets.sh
+```
+3. Deploy the recurring dynamic cron schedule:
+```bash
+./deploy_scheduler_gcs_dynamic.sh
+```
+Whenever your customer edits `gs://YOUR_BUCKET/config/target_urls.txt` inside the GCP Web Console, the recurring hourly cron automatically picks up the new files live!
+
+### 2. Execute Lightning-Fast Connectivity Verification (Max 10 Cutoff)
+To verify Microsoft Entra ID authentication, SharePoint site resolution, and GCS cache connectivity in under 3 seconds:
 ```bash
 cd test-few-files-only
 python3 check_files_subset.py
 ```
-This sends `"max_items": 10` to the Cloud Function, sampling 10 items and saving the report to `files-subset-result.txt`.
 
-### 2. Execute Targeted On-Demand Sync (Selected High-Priority Pages)
-To synchronize *only* specific URLs (e.g. newly published marketing pages or priority `.aspx` layouts) without crawling the rest of SharePoint:
-1. Add your target URLs inside [target_files.json](target_files.json).
-2. Execute the targeted orchestrator:
-```bash
-python3 sync_specific_urls.py
-```
-This bypasses Graph folder crawling entirely and schedules Application Integration batches exclusively for your curated list.
+### 3. Execute Targeted On-Demand Local Sync (Selected High-Priority Pages)
+To synchronize specific URLs from your local Git terminal:
+1. Add target URLs inside [target_files.json](target_files.json).
+2. Execute: `python3 sync_specific_urls.py`
 
-### 3. Execute Full Traversal Sync Pipeline Manually
-To scan and synchronize the entire target SharePoint site collection and document library:
+### 4. Execute Full Traversal Sync Pipeline Manually
+To scan and synchronize the entire target SharePoint site collection:
 ```bash
 python3 sync_sharepoint_to_gcs.py
 ```
 
-### 4. Automated Scheduling (Cloud Scheduler)
-Configure a recurring Cloud Scheduler job to run the pipeline automatically.
-
-#### Option A: Automated Runner (Recommended)
-Simply run the included deployment script (configured with 30-minute deadlines and 0 retries to prevent duplicate storms):
-```bash
-./deploy_scheduler.sh
-```
+### 5. Automated Scheduling (Cloud Scheduler)
+Configure recurring automated cron triggers:
+* **Targeted GCS Whitelist Cron:** `./deploy_scheduler_gcs_dynamic.sh` (Syncs `gs://.../target_urls.txt` hourly)
+* **Targeted Local JSON Cron:** `./deploy_scheduler_targeted.sh` (Syncs `target_files.json` hourly)
+* **Full Site Traversal Cron:** `./deploy_scheduler.sh` (Crawls all folders hourly)
 
 ---
 

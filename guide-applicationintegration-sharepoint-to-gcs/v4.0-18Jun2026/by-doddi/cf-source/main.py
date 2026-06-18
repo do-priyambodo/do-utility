@@ -374,6 +374,20 @@ def main(request):
         sync_list = []
         
         target_urls = req_data.get("target_urls", [])
+        
+        # Option A: Dynamic GCS Config Read
+        check_gcs_config = req_data.get("check_gcs_config", False) or req_data.get("use_gcs_config", False)
+        if not target_urls and bucket_obj and check_gcs_config:
+            try:
+                cfg_blob = bucket_obj.get_blob("config/target_urls.txt")
+                if cfg_blob:
+                    raw_cfg = cfg_blob.download_as_text()
+                    target_urls = [l.strip() for l in raw_cfg.splitlines() if l.strip() and not l.strip().startswith("#")]
+                    if target_urls:
+                        print(f"📂 Loaded {len(target_urls)} dynamic target URL(s) live from GCS gs://{bucket_name}/config/target_urls.txt")
+            except Exception as e:
+                print(f"Warning: Could not read dynamic GCS config gs://{bucket_name}/config/target_urls.txt: {e}")
+
         if target_urls:
             print(f"🎯 Bypassing Graph folder traversal: Scoping directly to {len(target_urls)} targeted URL(s)...")
             
