@@ -91,25 +91,55 @@ def main():
         print(f"❌ Failed to invoke Cloud Function: {e}")
         sys.exit(1)
 
-    all_count = cf_resp.get("all_resources_count", len(cf_resp.get("all_resources", [])))
+    all_resources = cf_resp.get("all_resources", [])
+    all_resources = [item for item in all_resources if not (not item.get("IsPage") and item.get("Name", "").lower().endswith(".aspx"))]
+    all_count = len(all_resources)
+
     sync_list = cf_resp.get("items", [])
     sync_list = [item for item in sync_list if not (not item.get("IsPage") and item.get("Name", "").lower().endswith(".aspx"))]
+
+    all_docs = [x for x in all_resources if not x.get("IsPage")]
+    all_pages = [x for x in all_resources if x.get("IsPage")]
+    sync_docs = [x for x in sync_list if not x.get("IsPage")]
+    sync_pages = [x for x in sync_list if x.get("IsPage")]
 
     output_file = "files-to-sync-result.txt"
     output_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), output_file)
 
     with open(output_path, "w", encoding="utf-8") as out:
         out.write("================================================================\n")
-        out.write("SHAREPOINT TO GCS - FILES TO SYNCHRONIZE REPORT\n")
+        out.write("SHAREPOINT TO GCS - SYNCHRONIZATION INSPECTION REPORT\n")
         out.write("================================================================\n")
-        out.write(f"Total Resources Found in SharePoint : {all_count}\n")
-        out.write(f"Total Items Requiring Sync          : {len(sync_list)}\n")
+        out.write("📊 SUMMARY OF SHAREPOINT RESOURCES & SYNC STATUS:\n")
+        out.write("----------------------------------------------------------------\n")
+        out.write(f"Total Available Resources in SharePoint : {all_count}\n")
+        out.write(f"  - Total Documents (Files)             : {len(all_docs)}\n")
+        out.write(f"  - Total Site Pages                    : {len(all_pages)}\n\n")
+        out.write(f"Total Items Requiring Synchronization   : {len(sync_list)}\n")
+        out.write(f"  - Documents to Sync                   : {len(sync_docs)}\n")
+        out.write(f"  - Site Pages to Sync                  : {len(sync_pages)}\n")
         out.write("================================================================\n\n")
         
+        out.write(f"--- PART 1: ALL AVAILABLE RESOURCES IN SHAREPOINT ({all_count}) ---\n")
+        if not all_resources:
+            out.write("No resources found in SharePoint library.\n\n")
+        else:
+            for idx, item in enumerate(all_resources, 1):
+                res_type = "Page" if item.get("IsPage") else "Document"
+                name = item.get("Name", "")
+                rel_path = item.get("RelativePath", "")
+                url = item.get("Url", "")
+                out.write(f"{idx}. [{res_type}] {name}\n")
+                out.write(f"   Relative Path : {rel_path}\n")
+                if url:
+                    out.write(f"   Source URL    : {url}\n")
+                out.write("\n")
+
+        out.write("================================================================\n")
+        out.write(f"--- PART 2: FILES THAT WILL BE SYNCHRONIZED ({len(sync_list)}) ---\n")
         if not sync_list:
             out.write("No files or pages require synchronization at this time.\n")
         else:
-            out.write("--- Detailed List of Files to Sync ---\n")
             for idx, item in enumerate(sync_list, 1):
                 res_type = "Page" if item.get("IsPage") else "Document"
                 name = item.get("Name", "")
@@ -121,10 +151,17 @@ def main():
                     out.write(f"   Source URL    : {url}\n")
                 out.write("\n")
 
-    print(f"\n🟢 Traversal & Incremental Comparison Complete!")
-    print(f" 📊 Total Resources in SharePoint : {all_count}")
-    print(f" 📦 Total Items Requiring Sync   : {len(sync_list)}")
-    print(f"💾 Result successfully written to: {output_path}")
+    print("\n================================================================")
+    print("📊 SUMMARY OF SHAREPOINT RESOURCES & SYNC STATUS:")
+    print("================================================================")
+    print(f" 📂 Total Available Resources : {all_count}")
+    print(f"    - Documents (Files)       : {len(all_docs)}")
+    print(f"    - Site Pages              : {len(all_pages)}")
+    print(f" 🔄 Total Items to Sync       : {len(sync_list)}")
+    print(f"    - Documents to Sync       : {len(sync_docs)}")
+    print(f"    - Site Pages to Sync      : {len(sync_pages)}")
+    print("================================================================")
+    print(f"💾 Detailed report written to: {output_path}")
 
 if __name__ == "__main__":
     main()
