@@ -6,6 +6,7 @@ import datetime
 import functions_framework
 from msal import ConfidentialClientApplication
 from google.cloud import secretmanager
+from google.cloud import storage
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
