@@ -75,11 +75,13 @@ def get_all_subsites_recursive(root_site_id, headers, current_prefix=""):
     return subsites
 
 # Recursively list files in a SharePoint folder (drive item)
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None):
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None):
     if all_results is None:
         all_results = []
     if sync_results is None:
         sync_results = []
+    if max_items is not None and len(all_results) >= max_items:
+        return all_results, sync_results
     
     headers = {
         "Authorization": f"Bearer {token}",
@@ -93,6 +95,8 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
     items = graph_get_paginated(url, headers)
     
     for item in items:
+        if max_items is not None and len(all_results) >= max_items:
+            break
         item_name = item.get("name")
         item_id = item.get("id")
         
@@ -101,7 +105,7 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
         if "folder" in item:
             # It is a folder, recurse into it
             new_parent_path = f"{parent_path}{item_name}/"
-            list_drive_items_recursive(token, drive_id, item_id, new_parent_path, all_results, sync_results, base_file_url, bucket_obj, gcs_cache)
+            list_drive_items_recursive(token, drive_id, item_id, new_parent_path, all_results, sync_results, base_file_url, bucket_obj, gcs_cache, max_items)
         else:
             # It is a file
             # Skip non-downloadable system error pages or aspx forms in document libraries
@@ -400,6 +404,7 @@ def main(request):
                     target_drive_url = drives[0].get("webUrl")
                 
             # 6. Recursively list all files inside the target Document Library
+            max_items = req_data.get("max_items")
             if target_drive_id:
                 if target_drive_url:
                     base_file_url = f"{target_drive_url.rstrip('/')}/"
@@ -407,58 +412,61 @@ def main(request):
                     library_encoded = urllib.parse.quote(library_name)
                     sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
                     base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache)
+                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
                 
             # 7. Query modern site pages under Option B
-            pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
-            try:
-                pages = graph_get_paginated(pages_url, headers)
-                for p in pages:
-                    page_id = p.get("id")
-                    page_name = p.get("name", "Page.aspx")
-                    html_name = page_name.replace(".aspx", ".html")
-                    rel_page_path = f"pages/{site_prefix}{html_name}"
-                    
-                    page_obj = {
-                        "Name": html_name,
-                        "RelativePath": rel_page_path,
-                        "IsPage": True
-                    }
-                    
-                    detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
-                    detail_resp = http.get(detail_url, headers=headers, timeout=60)
-                    if detail_resp.status_code == 200:
-                        page_detail = detail_resp.json()
-                        html_content = render_page_to_html(page_detail)
-                        page_obj["VirtualContent"] = html_content
-                    
-                    all_list.append(page_obj)
-                    
-                    needs_sync = True
-                    if gcs_cache is not None and rel_page_path in gcs_cache:
-                        p_mod = p.get("lastModifiedDateTime")
-                        if p_mod:
+            if max_items is None or len(all_list) < max_items:
+                pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
+                try:
+                    pages = graph_get_paginated(pages_url, headers)
+                    for p in pages:
+                        if max_items is not None and len(all_list) >= max_items:
+                            break
+                        page_id = p.get("id")
+                        page_name = p.get("name", "Page.aspx")
+                        html_name = page_name.replace(".aspx", ".html")
+                        rel_page_path = f"pages/{site_prefix}{html_name}"
+                        
+                        page_obj = {
+                            "Name": html_name,
+                            "RelativePath": rel_page_path,
+                            "IsPage": True
+                        }
+                        
+                        detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
+                        detail_resp = http.get(detail_url, headers=headers, timeout=60)
+                        if detail_resp.status_code == 200:
+                            page_detail = detail_resp.json()
+                            html_content = render_page_to_html(page_detail)
+                            page_obj["VirtualContent"] = html_content
+                        
+                        all_list.append(page_obj)
+                        
+                        needs_sync = True
+                        if gcs_cache is not None and rel_page_path in gcs_cache:
+                            p_mod = p.get("lastModifiedDateTime")
+                            if p_mod:
+                                try:
+                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                    if gcs_cache[rel_page_path] >= sp_dt_p:
+                                        needs_sync = False
+                                except Exception:
+                                    pass
+                        elif bucket_obj and not gcs_cache:
                             try:
-                                sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                if gcs_cache[rel_page_path] >= sp_dt_p:
-                                    needs_sync = False
+                                blob_p = bucket_obj.get_blob(rel_page_path)
+                                p_mod = p.get("lastModifiedDateTime")
+                                if blob_p and blob_p.updated and p_mod:
+                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                    if blob_p.updated >= sp_dt_p:
+                                        needs_sync = False
                             except Exception:
                                 pass
-                    elif bucket_obj and not gcs_cache:
-                        try:
-                            blob_p = bucket_obj.get_blob(rel_page_path)
-                            p_mod = p.get("lastModifiedDateTime")
-                            if blob_p and blob_p.updated and p_mod:
-                                sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                if blob_p.updated >= sp_dt_p:
-                                    needs_sync = False
-                        except Exception:
-                            pass
-                    
-                    if needs_sync:
-                        sync_list.append(page_obj)
-            except Exception as e:
-                print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
+                        
+                        if needs_sync:
+                            sync_list.append(page_obj)
+                except Exception as e:
+                    print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
                 
         # 8. Optionally trigger Application Integration directly (Serverless Orchestration)
         integration_triggered = False
