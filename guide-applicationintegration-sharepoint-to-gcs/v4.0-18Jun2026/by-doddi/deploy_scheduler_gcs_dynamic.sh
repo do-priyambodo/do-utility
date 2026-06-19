@@ -66,7 +66,7 @@ if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION
 fi
 
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 * * * *" \
+  --schedule="0 */12 * * *" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
@@ -81,6 +81,6 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
 echo "================================================================"
 echo "🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!"
 echo "================================================================"
-echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Runs Hourly at minute 0)"
+echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Runs every 12 hours at minute 0)"
 echo "👉 Whenever your customer edits gs://${BUCKET_NAME}/config/target_urls.txt in GCP Web UI, this cron syncs them live!"
 echo "================================================================"

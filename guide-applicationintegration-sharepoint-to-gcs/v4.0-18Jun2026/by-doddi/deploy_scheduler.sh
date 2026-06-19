@@ -64,7 +64,7 @@ if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION
 fi
 
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 */6 * * *" \
+  --schedule="0 */12 * * *" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
@@ -76,4 +76,4 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 
-echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active!"
+echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active (Schedule: Every 12 hours at minute 0)!"
