@@ -26,16 +26,19 @@ if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ 
   exit 1
 fi
 
-# Generate JSON payload dynamically attaching target_urls from target_files.json
+# Generate JSON payload dynamically attaching target_urls from target_files.json along with environment config
 MESSAGE_BODY=$(python3 -c "
 import json
 params = json.load(open('parameters.json'))
 targets = json.load(open('target_files.json')).get('target_urls', [])
 payload = {
     'site_name': params.get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''),
+    'library_name': params.get('CONFIG_Sharepoint_Library', 'Documents'),
+    'bucket_name': params.get('CONFIG_GCS_Bucket', ''),
     'trigger_integration': True,
     'integration_name': params.get('CONFIG_Parent_Integration_Name', ''),
     'location': params.get('CONFIG_Location', ''),
+    'project_id': params.get('CONFIG_ProjectId', ''),
     'target_urls': targets
 }
 print(json.dumps(payload))

@@ -15,13 +15,27 @@ LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get
 SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
-SITE_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''))")
-PARENT_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Parent_Integration_Name', 'yourorg-sharepoint-gcs-parent'))")
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
   echo "❌ Error: Missing required scheduler configuration parameters in parameters.json!"
   exit 1
 fi
+
+# Generate JSON payload dynamically attaching environment config from parameters.json
+MESSAGE_BODY=$(python3 -c "
+import json
+params = json.load(open('parameters.json'))
+payload = {
+    'site_name': params.get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''),
+    'library_name': params.get('CONFIG_Sharepoint_Library', 'Documents'),
+    'bucket_name': params.get('CONFIG_GCS_Bucket', ''),
+    'trigger_integration': True,
+    'integration_name': params.get('CONFIG_Parent_Integration_Name', ''),
+    'location': params.get('CONFIG_Location', ''),
+    'project_id': params.get('CONFIG_ProjectId', '')
+}
+print(json.dumps(payload))
+")
 
 echo "🔍 Resolving Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
 FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)")
@@ -42,7 +56,7 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
-  --message-body="{\"site_name\": \"${SITE_NAME}\", \"trigger_integration\": true, \"integration_name\": \"${PARENT_INTEGRATION_NAME}\", \"location\": \"${LOCATION}\"}" \
+  --message-body="${MESSAGE_BODY}" \
   --oidc-service-account-email="${SERVICE_ACCOUNT}" \
   --oidc-token-audience="${FUNCTION_URL}" \
   --attempt-deadline=1800s \

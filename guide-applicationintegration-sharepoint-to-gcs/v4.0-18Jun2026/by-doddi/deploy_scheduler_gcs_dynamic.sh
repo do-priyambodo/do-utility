@@ -14,6 +14,7 @@ LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get
 SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 BASE_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 SCHEDULER_JOB_NAME="${BASE_JOB_NAME}-gcs-dynamic"
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
@@ -27,9 +28,12 @@ import json
 params = json.load(open('parameters.json'))
 payload = {
     'site_name': params.get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''),
+    'library_name': params.get('CONFIG_Sharepoint_Library', 'Documents'),
+    'bucket_name': params.get('CONFIG_GCS_Bucket', ''),
     'trigger_integration': True,
     'integration_name': params.get('CONFIG_Parent_Integration_Name', ''),
     'location': params.get('CONFIG_Location', ''),
+    'project_id': params.get('CONFIG_ProjectId', ''),
     'check_gcs_config': True
 }
 print(json.dumps(payload))
@@ -66,5 +70,5 @@ echo "================================================================"
 echo "🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!"
 echo "================================================================"
 echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Runs Hourly at minute 0)"
-echo "👉 Whenever your customer edits gs://YOUR_BUCKET/config/target_urls.txt in GCP Web UI, this cron syncs them live!"
+echo "👉 Whenever your customer edits gs://${BUCKET_NAME}/config/target_urls.txt in GCP Web UI, this cron syncs them live!"
 echo "================================================================"
