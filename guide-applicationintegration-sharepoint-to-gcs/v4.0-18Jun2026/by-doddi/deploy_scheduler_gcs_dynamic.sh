@@ -22,6 +22,12 @@ if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ 
   exit 1
 fi
 
+if [ "$PROJECT_ID" = "work-mylab-machinelearning" ] || [[ "$PROJECT_ID" == *"yourorg"* ]]; then
+  echo "❌ Error: 'parameters.json' still contains sample/placeholder Project ID ('$PROJECT_ID')."
+  echo "👉 Please edit 'parameters.json' and update CONFIG_ProjectId, CONFIG_Service_Account, and CONFIG_CloudFunction_Name with your actual GCP environment values before running this script."
+  exit 1
+fi
+
 # Generate JSON payload instructing Cloud Function to dynamically read gs://your-bucket/config/target_urls.txt
 MESSAGE_BODY=$(python3 -c "
 import json
