@@ -21,10 +21,10 @@ def check_logs(limit=15):
         
     print(f"================================================================")
     print(f"🔍 FETCHING CLOUD SCHEDULER LOGS FOR PROJECT: {project_id}")
-    print(f"👉 Matching Job ID Prefix: {base_job}")
+    print(f"👉 Matching Job ID Substring: {base_job}")
     print(f"================================================================")
     
-    query = f'resource.type="cloud_scheduler_job" AND resource.labels.job_id:*"{base_job}"'
+    query = f'resource.type="cloud_scheduler_job" AND resource.labels.job_id:"{base_job}"'
     cmd = [
         "gcloud", "logging", "read", query,
         f"--project={project_id}",
