@@ -18,5 +18,6 @@
   "CONFIG_Batch_Size": 10,
   "CONFIG_Max_Parallel_Workers": 10,
   "CONFIG_Sync_SharePoint_Files": true,
-  "CONFIG_Sync_SharePoint_Pages": true
+  "CONFIG_Sync_SharePoint_Pages": true,
+  "CONFIG_Scheduler_Cron_Schedule": "0 */12 * * *"
 }

@@ -15,6 +15,7 @@ SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 BASE_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
 BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
 SCHEDULER_JOB_NAME="${BASE_JOB_NAME}-gcs-dynamic"
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
@@ -66,7 +67,7 @@ if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION
 fi
 
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 */12 * * *" \
+  --schedule="${CRON_SCHEDULE}" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
@@ -81,6 +82,6 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
 echo "================================================================"
 echo "🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!"
 echo "================================================================"
-echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Runs every 12 hours at minute 0)"
+echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Schedule: ${CRON_SCHEDULE})"
 echo "👉 Whenever your customer edits gs://${BUCKET_NAME}/config/target_urls.txt in GCP Web UI, this cron syncs them live!"
 echo "================================================================"

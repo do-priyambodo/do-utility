@@ -15,6 +15,7 @@ LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get
 SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
   echo "❌ Error: Missing required scheduler configuration parameters in parameters.json!"
@@ -64,7 +65,7 @@ if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION
 fi
 
 gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
-  --schedule="0 */12 * * *" \
+  --schedule="${CRON_SCHEDULE}" \
   --uri="${FUNCTION_URL}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
@@ -76,4 +77,4 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 
-echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active (Schedule: Every 12 hours at minute 0)!"
+echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active (Schedule: ${CRON_SCHEDULE})!"
