@@ -75,11 +75,11 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 - [ ] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-source/main.py`)**
   - *How to execute*: Update `get_resilient_session()` to respect Graph's `Retry-After` header (`respect_retry_after_header=True`), expand retries to 5 across status codes `[429, 500, 502, 503, 504]`, and add micro-jitter between API calls.
 
-- [ ] **Task 5.2: Implement GCS Delta Cache Filter (Skip Unchanged Files)**
-  - *How to execute*: Compare each item's SharePoint `lastModifiedDateTime` against GCS cached timestamps. Skip downloading unchanged items to reduce daily transfer volume from 17.00 GB down to modified megabytes.
+- [x] **Task 5.2: Implement GCS Delta Cache Filter & Automated Deletion (Skip Unchanged Files / Clean Inactive Files)**
+  - *Completed*: Implemented O(1) in-memory GCS timestamp pre-fetching (`gcs_cache`) and applied delta comparison across **both sync mechanisms** (Full Folder Traversal and Targeted Sync via `target_urls.txt`). Additionally implemented automated detection and deletion of inactive/deleted `.aspx` pages and SharePoint files from GCS bucket with clear status logging (`🗑️ Status Log: Deleted inactive file from GCS`).
 
 - [ ] **Task 5.3: Chunked Batch Execution for Application Integration**
   - *How to execute*: Group items into controlled batches (e.g., 50 items per payload) before triggering Application Integration workflows to prevent flooding connectors.
 
 ---
-*Status: Task 2.1 marked as Deprecated / Solved via Task 2.3 Micro-Batching. Ready for Phase 3 (Automated Scheduling).*
+*Status: Implemented delta cache filter for both sync mechanisms and automated GCS deletion of inactive files (Task 5.2). Ready for automated scheduling / execution.*

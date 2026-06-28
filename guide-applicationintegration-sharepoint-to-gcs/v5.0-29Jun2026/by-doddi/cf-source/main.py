@@ -494,7 +494,10 @@ def main(request):
                 for p_item in graph_get_paginated(p_url, headers):
                     p_name = p_item.get("name", "").lower()
                     if p_name:
-                        pages_dict[p_name] = p_item.get("id")
+                        pages_dict[p_name] = {
+                            "id": p_item.get("id"),
+                            "lastModifiedDateTime": p_item.get("lastModifiedDateTime")
+                        }
             except Exception as e:
                 print(f"Warning: Could not list site pages for targeted rendering: {e}")
 
@@ -525,7 +528,46 @@ def main(request):
                 
                 if is_page:
                     aspx_name = os.path.basename(url_path).lower()
-                    page_id = pages_dict.get(aspx_name)
+                    page_info = pages_dict.get(aspx_name)
+                    
+                    # 1. Deletion check for inactive / deleted pages
+                    if not page_info and pages_dict:
+                        print(f"🗑️ Status Log: Inactive target page detected ({aspx_name}). Checking GCS bucket for deletion...")
+                        if bucket_obj:
+                            try:
+                                stale_blob = bucket_obj.get_blob(rel_path)
+                                if stale_blob:
+                                    stale_blob.delete()
+                                    print(f"✅ Successfully deleted inactive file from GCS: gs://{bucket_name}/{rel_path}")
+                                else:
+                                    print(f"ℹ️ File already absent in GCS: gs://{bucket_name}/{rel_path}")
+                            except Exception as ex_del:
+                                print(f"Warning: Failed to delete inactive GCS file {rel_path}: {ex_del}")
+                        continue
+                    
+                    # 2. Delta cache filter check
+                    needs_sync = True
+                    if page_info and not force_full_sync:
+                        sp_mod = page_info.get("lastModifiedDateTime")
+                        if sp_mod:
+                            try:
+                                sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                gcs_mod = gcs_cache.get(rel_path)
+                                if gcs_mod and gcs_mod >= sp_dt:
+                                    needs_sync = False
+                                elif bucket_obj and not gcs_mod:
+                                    blob = bucket_obj.get_blob(rel_path)
+                                    if blob and blob.updated and blob.updated >= sp_dt:
+                                        needs_sync = False
+                            except Exception:
+                                pass
+                    
+                    if not needs_sync:
+                        print(f"⏭️ Skipping unchanged target URL (Delta Cache hit): {raw_url}")
+                        all_list.append(item_obj)
+                        continue
+
+                    page_id = page_info["id"] if page_info else None
                     html_rendered = ""
                     if page_id:
                         try:
@@ -642,6 +684,26 @@ def main(request):
                 except Exception as e:
                     print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
                 
+        # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
+        if bucket_obj and gcs_cache and not target_urls:
+            print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
+            active_gcs_paths = set(item.get("RelativePath") for item in all_list if item.get("RelativePath"))
+            deleted_count = 0
+            for cached_path in list(gcs_cache.keys()):
+                if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
+                    try:
+                        stale_blob = bucket_obj.get_blob(cached_path)
+                        if stale_blob:
+                            stale_blob.delete()
+                            deleted_count += 1
+                            print(f"🗑️ Status Log: Deleted inactive file from GCS: gs://{bucket_name}/{cached_path}")
+                    except Exception as ex_del:
+                        print(f"Warning: Could not delete orphaned GCS file {cached_path}: {ex_del}")
+            if deleted_count > 0:
+                print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
+            else:
+                print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
+
         # 8. Optionally trigger Application Integration directly (Serverless Orchestration)
         integration_triggered = False
         execution_ids = []
