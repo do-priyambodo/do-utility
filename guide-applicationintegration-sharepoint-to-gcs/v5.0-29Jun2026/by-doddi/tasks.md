@@ -29,8 +29,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ### ⏰ Phase 3: Automated Scheduling
 *Goal*: Automate periodic execution of the targeted synchronization pipeline.
 
-- [ ] **Task 3: Create or Replace Cloud Scheduler Jobs**
-  - *How to execute*: Update scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to point to the new Cloud Run URI with automated CRON schedules (e.g., nightly `0 2 * * *`) and OIDC authentication.
+- [x] **Task 3: Create or Replace Cloud Scheduler Jobs**
+  - *Completed*: Updated scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to dynamically read `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` and point to the Cloud Function URI with OIDC authentication. Successfully executed `./deploy_scheduler_targeted_gcs_sync.sh` creating active Cloud Scheduler job `doddi-sharepoint-sync-hourly-gcs-dynamic`.
 
 ---
 
@@ -82,4 +82,4 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
   - *Completed*: Implemented thread-safe parallel micro-batch execution (`CONFIG_Max_Parallel_Workers: 10`) using Python `ThreadPoolExecutor` and buffered console logging. Sliced batches run concurrently for ~10x speedup while maintaining unbroken visual console logs and independent GCS audit records.
 
 ---
-*Status: All core synchronization phases (Phase 1, Phase 2, and Phase 5) are 100% completed, verified via live diagnostic check scripts with real-time ticking heartbeat UI (`check_sync_gcs_dynamic.py`, `check_sync_sharepoint_to_gcs.py`), and deployed. Next optional step: Phase 3 (Automated Cron Scheduling) or Phase 4 (Datastore Indexing).*
+*Status: All core synchronization and scheduling phases (Phase 1, Phase 2, Phase 3, and Phase 5) are 100% completed, verified via live diagnostic check scripts, and deployed as automated Cloud Scheduler cron jobs. Next optional step: Phase 4 (Datastore Indexing / Vertex AI Search integration).*
