@@ -48,8 +48,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling
 *Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
 
-- [ ] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py`)**
-  - *How to execute*: Write a standalone Python script that calls Google Cloud Discovery Engine API (`importDocuments`) passing the GCS URI of `gs://bucket/config/metadata.jsonl`.
+- [x] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py`)**
+  - *Completed*: Created standalone, zero-dependency Python trigger script `sync_datastore_from_gcs.py` that dynamically reads Datastore configuration from `parameters.json` and submits incremental import operations to Google Cloud Discovery Engine. Successfully submitted active import operation `import-documents-13894380609275420855`.
 
 - [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
   - *How to execute*: Create a deployer script that creates a Cloud Scheduler cron job (`yourorg-sharepoint-datastore-sync-hourly`) reading `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` to trigger datastore ingestion automatically every 12 hours.
