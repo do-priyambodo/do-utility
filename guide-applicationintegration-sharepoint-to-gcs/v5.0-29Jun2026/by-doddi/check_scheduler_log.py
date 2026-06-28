@@ -77,7 +77,7 @@ def check_logs(limit=15):
             print(f"   └─ Details: {status_msg}")
         print("-" * 64)
         
-    print(f"\n💡 Tip: Pass a number as an argument to view more log entries (e.g. ./check_scheduler_log.sh 50)")
+    print(f"\n💡 Tip: Pass a number as an argument to view more log entries (e.g. python3 check_scheduler_log.py 50)")
 
 if __name__ == "__main__":
     lim = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 15
