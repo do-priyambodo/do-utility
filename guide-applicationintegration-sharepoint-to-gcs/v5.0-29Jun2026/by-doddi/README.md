@@ -304,12 +304,59 @@ gcloud logging read 'resource.type="cloud_scheduler_job" AND resource.labels.job
   --format="table(timestamp, severity, jsonPayload.status, jsonPayload.targetType)"
 ```
 
-### 4. Check Sync Progress & Workflow Execution Detail
-To check the real-time progress, loop iterations, and task completion status of any sync run, pass its **Execution ID** (printed by `sync_sharepoint_to_gcs.py`) to the status diagnostic tool:
+### 4. Monitoring Real-Time Sync Progress & Audit Dashboards
 
+When executing the sync pipeline (either manually via terminal or automated via **Cloud Scheduler**), real-time progress and status reports are automatically ingested by Google Cloud and can be monitored across five dedicated views:
+
+#### A. Interactive Terminal Console (Manual Runs)
+When executing `python3 sync_gcs_dynamic.py`, the terminal displays live item-by-item progress, delta cache hits, and prepared upload paths:
+```text
+================================================================================
+⚡ Processing Micro-Batch 1/10 (10 URLs)...
+================================================================================
+   🔹 [1/10] Target: https://priyambodo.sharepoint.com/sites/doddi/SitePages/Executive-Briefing.aspx
+   ⏳ Invoking Cloud Function to render/resolve batch...
+   ✅ Cloud Function resolved Batch 1 successfully!
+      • Total items scanned in batch: 10
+      • Items needing upload (Delta hit/rendered): 8
+      • Skipped (Unchanged in GCS / Delta cache hit): 2
+      📄 Prepared item: Executive-Briefing.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Executive-Briefing.pdf
+   ⏳ Submitting Batch 1 to Application Integration...
+   🟢 Integration triggered successfully -> Execution ID: 9f8a7b6c-5d4e...
+   🎉 Micro-Batch 1/10 COMPLETED SUCCESSFULLY!
+```
+
+#### B. Cloud Logging (Logs Explorer) — *Real-Time Live Stream*
+Every print statement and status report automatically streams into **Google Cloud Logging**.
+* Navigate to **Logging > Logs Explorer** in the GCP Console.
+* Paste this filter query to watch automated background runs live:
+  ```text
+  resource.type="cloud_function"
+  resource.labels.function_name="doddi-sharepoint-list-files"
+  ```
+  *(If wrapped inside a Cloud Run job, filter by `resource.type="cloud_run_job"`).*
+
+#### C. Cloud Scheduler Dashboard — *Cron Trigger History*
+* Navigate to **Cloud Scheduler** in the GCP Console.
+* Locate your automated job (`doddi-sharepoint-sync-hourly`).
+* Check the **Result** column (`Success` or `Failed`) and timestamp of the last execution.
+* Click the **"View Logs"** button on the far right of the row to instantly open the filtered log stream for that specific cron run.
+
+#### D. Application Integration Console — *Visual Workflow Graph*
+* Navigate to **Application Integration > Executions**.
+* Click on any generated `Execution ID` (or paste the clickable URL outputted by the terminal).
+* Inspect the node-by-node visual graph showing exactly which micro-batch succeeded and how many documents transferred. You can also run the CLI helper:
+  ```bash
+  python3 check_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "<EXECUTION_ID>"
+  ```
+
+#### E. GCS Audit Manifests — *Permanent Historical File Log*
+At the conclusion of every 10-item micro-batch, the orchestrator deposits a structured completion audit manifest into your bucket:
+`gs://doddi-bucket-sharepoint-sync/config/status/`
+
+Inspect these audit records anytime via terminal or UI:
 ```bash
-# Replace 39017360-5f5c-4aa3-b0ba-2802ba2086cd with your actual execution UUID string
-python3 check_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "39017360-5f5c-4aa3-b0ba-2802ba2086cd"
+gcloud storage ls gs://doddi-bucket-sharepoint-sync/config/status/
 ```
 
 ### 5. Inspect Local Setup & Cloud Diagnostic Logs
