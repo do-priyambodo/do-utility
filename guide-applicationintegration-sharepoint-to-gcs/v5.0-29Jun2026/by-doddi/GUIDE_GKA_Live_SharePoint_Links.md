@@ -61,12 +61,18 @@ Add the `articleLinkConfig` property inside your Knowledge Assist module paramet
 
 ## 🧪 Verification & Testing Checklist
 
-Once the frontend team deploys the updated UI configuration, verify the routing using these steps:
+### Method A: Testing inside GCP Console (Agent Assist / Discovery Engine Simulator)
+When testing inside the built-in **Google Cloud Console Simulator**:
+1. Navigate to **Agent Assist > Simulator** (or **Discovery Engine > Preview**).
+2. Ask a test query (e.g., *"What are the latest judging criteria?"*).
+3. Inspect the returned citation metadata / JSON payload tab. You will confirm that the custom schema attribute `"sharepoint_url": "https://yourorg.sharepoint.com/..."` is cleanly attached to the citation record.
+*(Note: Because the raw GCP Console Simulator is a generic administration tool, it does not execute custom frontend web component JavaScript overrides like `linkMetadataKey`. To test actual hyperlink click routing, use Method B below).*
 
-1. **Open the Agent Portal**: Navigate to the agent desktop or CRM where the GKA widget is hosted.
-2. **Ask a Test Question**: Ask a query that triggers a citation from a synchronized SharePoint document (e.g., *"What are the latest judging criteria?"*).
-3. **Inspect the Citation Hyperlink**: Hover over the generated citation chip or footnote number at the bottom of the AI summary.
-4. **Confirm URL Routing**: Verify that the browser preview URL points to `https://yourorg.sharepoint.com/...` instead of `storage.googleapis.com` or `gs://`. Click the link to verify seamless single-sign-on (SSO) access to the intranet page.
+### Method B: Testing inside Live Contact Center UI Widget
+Once the frontend team embeds `<agent-assist-ui-modules>` with `articleLinkConfig`:
+1. **Open the Agent Portal**: Navigate to the web CRM or portal where the widget is hosted.
+2. **Ask a Test Question**: Ask a query triggering a SharePoint document citation.
+3. **Inspect & Click Citation Hyperlink**: Hover over the citation chip. Confirm the browser status bar points directly to `https://yourorg.sharepoint.com/...`. Click the link to verify instant redirection to the live SharePoint intranet page via Entra ID Single Sign-On (SSO).
 
 ---
 
