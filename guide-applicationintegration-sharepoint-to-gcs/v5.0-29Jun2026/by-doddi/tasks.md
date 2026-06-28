@@ -40,8 +40,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 - [ ] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-source/main.py`)**
   - *How to execute*: Update `cf-source/main.py` so during sync, a `config/metadata.jsonl` file is generated and uploaded to GCS mapping each object URI (`gs://bucket/pages/Page.pdf`) to structured custom metadata: `"id": item["Name"]`, `"structData": { "sharepoint_url": item["Url"], "title": item["Name"] }`.
 
-- [ ] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
-  - *How to execute*: Document and provide the snippet for the contact center UI configuration (`<agent-assist-ui-modules>` in `app.js`), setting `articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "blank" }`.
+- [x] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
+  - *Completed*: Created standalone integration guide (`GUIDE_GKA_Live_SharePoint_Links.md`) providing frontend web developers with step-by-step instructions and code snippets (`articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "_blank" }`) to route CCAI / GKA citations to live SharePoint pages.
 
 ---
 
