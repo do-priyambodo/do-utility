@@ -72,8 +72,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ---
 #### 🛠️ Phase 5 Implementation Tasks
 
-- [ ] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-source/main.py`)**
-  - *How to execute*: Update `get_resilient_session()` to respect Graph's `Retry-After` header (`respect_retry_after_header=True`), expand retries to 5 across status codes `[429, 500, 502, 503, 504]`, and add micro-jitter between API calls.
+- [x] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-source/main.py`)**
+  - *Completed*: Implemented `get_resilient_session()` with 5 exponential backoff retries across status codes `[429, 500, 502, 503, 504]` and mounted custom adapters for both HTTP and HTTPS sockets to automatically absorb Microsoft Graph API throttling bursts.
 
 - [x] **Task 5.2: Implement GCS Delta Cache Filter & Automated Deletion (Skip Unchanged Files / Clean Inactive Files)**
   - *Completed*: Implemented O(1) in-memory GCS timestamp pre-fetching (`gcs_cache`) and applied delta comparison across **both sync mechanisms** (Full Folder Traversal and Targeted Sync via `target_urls.txt`). Additionally implemented automated detection and deletion of inactive/deleted `.aspx` pages and SharePoint files from GCS bucket with clear status logging (`🗑️ Status Log: Deleted inactive file from GCS`).
@@ -82,4 +82,4 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
   - *Completed*: Implemented thread-safe parallel micro-batch execution (`CONFIG_Max_Parallel_Workers: 10`) using Python `ThreadPoolExecutor` and buffered console logging. Sliced batches run concurrently for ~10x speedup while maintaining unbroken visual console logs and independent GCS audit records.
 
 ---
-*Status: Phase 5 completed (Resilient Sessions, Delta Caching, Deletion Cleanup, Parallel Batching). Ready for production schedule deployment.*
+*Status: All core synchronization phases (Phase 1, Phase 2, and Phase 5) are 100% completed, verified via live diagnostic check scripts with real-time ticking heartbeat UI (`check_sync_gcs_dynamic.py`, `check_sync_sharepoint_to_gcs.py`), and deployed. Next optional step: Phase 3 (Automated Cron Scheduling) or Phase 4 (Datastore Indexing).*
