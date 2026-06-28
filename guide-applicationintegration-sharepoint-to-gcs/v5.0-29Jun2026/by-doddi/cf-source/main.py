@@ -470,6 +470,15 @@ def main(request):
         all_list = []
         sync_list = []
         
+        def parse_bool_flag(val, default=True):
+            if val is None: return default
+            if isinstance(val, bool): return val
+            return str(val).strip().lower() in ["true", "yes", "1", "y"]
+
+        sync_files_flag = parse_bool_flag(req_data.get("sync_files", params.get("CONFIG_Sync_SharePoint_Files", True)))
+        sync_pages_flag = parse_bool_flag(req_data.get("sync_pages", params.get("CONFIG_Sync_SharePoint_Pages", True)))
+        print(f"⚙️ Sync Scope Settings -> Files: {sync_files_flag} | Pages: {sync_pages_flag}")
+
         target_urls = req_data.get("target_urls", [])
         
         # Option A: Dynamic GCS Config Read
@@ -526,6 +535,13 @@ def main(request):
                     "IsPage": is_page
                 }
                 
+                if is_page and not sync_pages_flag:
+                    print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping targeted page: {raw_url}")
+                    continue
+                if not is_page and not sync_files_flag:
+                    print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping targeted file: {raw_url}")
+                    continue
+
                 if is_page:
                     aspx_name = os.path.basename(url_path).lower()
                     page_info = pages_dict.get(aspx_name)
@@ -618,7 +634,7 @@ def main(request):
                 
             # 6. Recursively list all files inside the target Document Library
             max_items = req_data.get("max_items")
-            if target_drive_id:
+            if target_drive_id and sync_files_flag:
                 if target_drive_url:
                     base_file_url = f"{target_drive_url.rstrip('/')}/"
                 else:
@@ -626,9 +642,11 @@ def main(request):
                     sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
                     base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
                 list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+            elif not sync_files_flag:
+                print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
                 
             # 7. Query modern site pages under Option B
-            if max_items is None or len(all_list) < max_items:
+            if sync_pages_flag and (max_items is None or len(all_list) < max_items):
                 pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
                 try:
                     pages = graph_get_paginated(pages_url, headers)
@@ -683,6 +701,8 @@ def main(request):
                             sync_list.append(page_obj)
                 except Exception as e:
                     print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
+            elif not sync_pages_flag:
+                print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
                 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
         if bucket_obj and gcs_cache and not target_urls:

@@ -16,5 +16,7 @@
   "CONFIG_SharePoint_Hostname": "priyambodo.sharepoint.com",
   "CONFIG_Scheduler_Job_Name": "doddi-sharepoint-sync-hourly",
   "CONFIG_Batch_Size": 10,
-  "CONFIG_Max_Parallel_Workers": 10
+  "CONFIG_Max_Parallel_Workers": 10,
+  "CONFIG_Sync_SharePoint_Files": true,
+  "CONFIG_Sync_SharePoint_Pages": true
 }

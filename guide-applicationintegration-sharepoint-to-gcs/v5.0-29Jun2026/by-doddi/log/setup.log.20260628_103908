@@ -1,0 +1,82 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🚀 STARTING DYNAMIC GCS CONFIG ON-DEMAND SYNC PIPELINE
+================================================================
+🔒 Step 1: Invoking Cloud Function instructing dynamic read of gs://.../config/target_urls.txt ...
+🟢 Resolved 4 item(s) from dynamic GCS configuration for synchronization.
+
+🚀 Step 2: Triggering Application Integration (doddi-sharepoint-gcs-parent) across 1 batch(es)...
+ 🟢 Batch 1/1 (4 items) triggered -> Execution ID: Check Console
+================================================================
+🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!
+================================================================
+ - Check Console
+   https://console.cloud.google.com/integrations/logs;integration_name=doddi-sharepoint-gcs-parent;execution_id=Check Console;region=asia-southeast1?project=work-mylab-machinelearning
+================================================================
+🔍 Resolving Cloud Function URL dynamically for 'doddi-sharepoint-list-files'...
+⏰ Creating or updating dynamic GCS Cloud Scheduler job 'doddi-sharepoint-sync-hourly-gcs-dynamic'...
+attemptDeadline: 1800s
+httpTarget:
+  body: eyJzaXRlX25hbWUiOiAiZG9kZGktc2hhcmVwb2ludC10by1nY3MiLCAidHJpZ2dlcl9pbnRlZ3JhdGlvbiI6IHRydWUsICJpbnRlZ3JhdGlvbl9uYW1lIjogImRvZGRpLXNoYXJlcG9pbnQtZ2NzLXBhcmVudCIsICJsb2NhdGlvbiI6ICJhc2lhLXNvdXRoZWFzdDEiLCAiY2hlY2tfZ2NzX2NvbmZpZyI6IHRydWV9
+  headers:
+    Content-Type: application/json
+    User-Agent: Google-Cloud-Scheduler
+  httpMethod: POST
+  oidcToken:
+    audience: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+    serviceAccountEmail: doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com
+  uri: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app/
+name: projects/work-mylab-machinelearning/locations/asia-southeast1/jobs/doddi-sharepoint-sync-hourly-gcs-dynamic
+retryConfig:
+  maxBackoffDuration: 3600s
+  maxDoublings: 5
+  maxRetryDuration: 0s
+  minBackoffDuration: 5s
+schedule: 0 * * * *
+scheduleTime: '2026-06-19T04:00:00Z'
+state: ENABLED
+status:
+  code: -1
+timeZone: Etc/UTC
+userUpdateTime: '2026-06-19T03:49:43.911602Z'
+================================================================
+🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!
+================================================================
+👉 Job Name: doddi-sharepoint-sync-hourly-gcs-dynamic (Runs Hourly at minute 0)
+👉 Whenever your customer edits gs://YOUR_BUCKET/config/target_urls.txt in GCP Web UI, this cron syncs them live!
+================================================================
+🔍 Resolving Cloud Function URL dynamically for 'doddi-sharepoint-list-files'...
+⏰ Creating or updating dynamic GCS Cloud Scheduler job 'doddi-sharepoint-sync-hourly-gcs-dynamic'...
+🗑️ Deleting existing dynamic scheduler job...
+Deleted job [doddi-sharepoint-sync-hourly-gcs-dynamic].
+attemptDeadline: 1800s
+httpTarget:
+  body: eyJzaXRlX25hbWUiOiAiZG9kZGktc2hhcmVwb2ludC10by1nY3MiLCAidHJpZ2dlcl9pbnRlZ3JhdGlvbiI6IHRydWUsICJpbnRlZ3JhdGlvbl9uYW1lIjogImRvZGRpLXNoYXJlcG9pbnQtZ2NzLXBhcmVudCIsICJsb2NhdGlvbiI6ICJhc2lhLXNvdXRoZWFzdDEiLCAiY2hlY2tfZ2NzX2NvbmZpZyI6IHRydWV9
+  headers:
+    Content-Type: application/json
+    User-Agent: Google-Cloud-Scheduler
+  httpMethod: POST
+  oidcToken:
+    audience: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+    serviceAccountEmail: doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com
+  uri: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app/
+name: projects/work-mylab-machinelearning/locations/asia-southeast1/jobs/doddi-sharepoint-sync-hourly-gcs-dynamic
+retryConfig:
+  maxBackoffDuration: 3600s
+  maxDoublings: 5
+  maxRetryDuration: 0s
+  minBackoffDuration: 5s
+schedule: 0 * * * *
+scheduleTime: '2026-06-19T04:00:00Z'
+state: ENABLED
+status:
+  code: -1
+timeZone: Etc/UTC
+userUpdateTime: '2026-06-19T03:52:00.030877Z'
+================================================================
+🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!
+================================================================
+👉 Job Name: doddi-sharepoint-sync-hourly-gcs-dynamic (Runs Hourly at minute 0)
+👉 Whenever your customer edits gs://YOUR_BUCKET/config/target_urls.txt in GCP Web UI, this cron syncs them live!
+================================================================

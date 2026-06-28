@@ -72,6 +72,8 @@ Verify credentials and names inside [parameters.json](parameters.json):
 *   `CONFIG_Scheduler_Job_Name`: Name of the recurring Cloud Scheduler trigger job.
 *   `CONFIG_Batch_Size`: Number of items sliced into each micro-batch (e.g. `10`).
 *   `CONFIG_Max_Parallel_Workers`: Maximum concurrency limit for parallel thread execution (e.g. `10`).
+*   `CONFIG_Sync_SharePoint_Files`: Boolean flag (`true` or `false`) to enable/disable syncing standard documents from Document Libraries.
+*   `CONFIG_Sync_SharePoint_Pages`: Boolean flag (`true` or `false`) to enable/disable querying and converting Modern Site Pages (`.aspx`) into executive PDFs.
 
 ### 2. Azure App Registration & Microsoft Graph API Scopes
 Your Azure app registration must be granted both **Delegated and Application** types for these scopes:

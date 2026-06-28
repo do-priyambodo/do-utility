@@ -86,7 +86,9 @@ def run_sync():
 
     payload_cf = {
         "site_name": site_name,
-        "library_name": params.get("CONFIG_Sharepoint_Library", "Documents")
+        "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
+        "sync_files": params.get("CONFIG_Sync_SharePoint_Files", True),
+        "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True)
     }
     
     cf_request_bytes = json.dumps(payload_cf).encode("utf-8")

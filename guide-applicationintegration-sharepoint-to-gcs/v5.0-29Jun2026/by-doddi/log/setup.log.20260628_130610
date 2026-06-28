@@ -1,0 +1,16 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🚀 STARTING DYNAMIC GCS CONFIG ON-DEMAND SYNC PIPELINE
+================================================================
+🔒 Step 1: Invoking Cloud Function instructing dynamic read of gs://.../config/target_urls.txt ...
+🟢 Resolved 4 item(s) from dynamic GCS configuration for synchronization.
+
+🚀 Step 2: Triggering Application Integration (doddi-sharepoint-gcs-parent) across 1 batch(es)...
+ 🟢 Batch 1/1 (4 items) triggered -> Execution ID: Check Console
+================================================================
+🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!
+================================================================
+ - Check Console
+   https://console.cloud.google.com/integrations/logs;integration_name=doddi-sharepoint-gcs-parent;execution_id=Check Console;region=asia-southeast1?project=work-mylab-machinelearning
+================================================================

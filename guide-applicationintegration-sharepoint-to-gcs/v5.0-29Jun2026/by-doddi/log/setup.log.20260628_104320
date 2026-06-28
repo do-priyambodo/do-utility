@@ -1,0 +1,2 @@
+❌ Error: CONFIG_ProjectId in 'parameters.json' is set to Doddi's test lab ('work-mylab-machinelearning'), but your active gcloud project is 'qwiklabs-gcp-01-e9077eb260db'.
+👉 Please edit 'parameters.json' and set CONFIG_ProjectId to your target project ('qwiklabs-gcp-01-e9077eb260db') before running this script.

@@ -28,8 +28,11 @@ def check_full_sync():
         sys.exit(1)
 
     print(f"📂 Step 1: Inspecting Target SharePoint Configuration...")
+    sync_files = params.get("CONFIG_Sync_SharePoint_Files", True)
+    sync_pages = params.get("CONFIG_Sync_SharePoint_Pages", True)
     print(f" • Target Subsite Path    : {site_path}")
     print(f" • Target Document Library: {library_name}")
+    print(f" • Sync Scope Toggles     : Files={sync_files} | Pages={sync_pages}")
     print(f" • Orchestration Batch Size: Sliced into chunks of {batch_size} items per trigger\n")
 
     print(f"📂 Step 2: Inspecting existing GCS bucket inventory (gs://{bucket_name}/)...")
