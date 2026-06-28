@@ -43,7 +43,10 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 - [ ] **Task 4.2: Create or Replace Datastore Sync Execution Function**
   - *How to execute*: Create or replace the Cloud Function/Run job responsible for triggering Vertex AI Datastore synchronization. Configure the `ImportDocumentsRequest` API payload to use **JSONL with metadata** pointing to `gs://bucket/metadata.jsonl`.
 
-- [ ] **Task 4.3: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
+- [ ] **Task 4.3: Deploy Automated Datastore Sync Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *How to execute*: Create a deployer script that creates a Cloud Scheduler job targeting the Datastore sync function running every 12 hours (following `CONFIG_Scheduler_Cron_Schedule` in `parameters.json`).
+
+- [ ] **Task 4.4: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
   - *How to execute*: In the contact center UI configuration (`<agent-assist-ui-modules>` in `app.js`), set `articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "blank" }`.
 
 ---
