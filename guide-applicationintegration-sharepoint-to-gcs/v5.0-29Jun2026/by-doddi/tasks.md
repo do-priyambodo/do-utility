@@ -51,8 +51,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 - [x] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py`)**
   - *Completed*: Created standalone, zero-dependency Python trigger script `sync_datastore_from_gcs.py` that dynamically reads Datastore configuration from `parameters.json` and submits incremental import operations to Google Cloud Discovery Engine. Successfully submitted active import operation `import-documents-13894380609275420855`.
 
-- [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
-  - *How to execute*: Create a deployer script that creates a Cloud Scheduler cron job (`yourorg-sharepoint-datastore-sync-hourly`) reading `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` to trigger datastore ingestion automatically every 12 hours.
+- [x] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *Completed*: Created deployer script implementing Option A (direct serverless OAuth HTTP POST trigger from Cloud Scheduler to Discovery Engine API). Successfully deployed live cron job `doddi-sharepoint-datastore-sync-hourly` running on schedule `0 */12 * * *`.
 
 ---
 ---
