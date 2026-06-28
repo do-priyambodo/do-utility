@@ -175,11 +175,12 @@ def render_html_to_pdf_base64(html_string):
     return base64.b64encode(pdf_bytes).decode("utf-8")
 
 # Parse canvas layout and render a high-fidelity Fluent UI SharePoint site page
-def render_page_to_html(page):
+def render_page_to_html(page, source_url=""):
     title = html.escape(page.get("title", "Untitled Page"))
     creator = html.escape(page.get("createdBy", {}).get("user", {}).get("displayName", "Unknown"))
     creator_email = html.escape(page.get("createdBy", {}).get("user", {}).get("email", "N/A"))
     modified_time = html.escape(str(page.get("lastModifiedDateTime", "N/A")))
+    page_url = source_url or page.get("webUrl", "")
     
     html_parts = []
     html_parts.append("<!DOCTYPE html>")
@@ -212,6 +213,9 @@ def render_page_to_html(page):
     html_parts.append(f"        <h1>{title}</h1>")
     html_parts.append(f"        <div class='meta-text'><b>Created By:</b> {creator} &lt;{creator_email}&gt;</div>")
     html_parts.append(f"        <div class='meta-text'><b>Last Modified:</b> {modified_time}</div>")
+    if page_url:
+        clean_page_url = html.escape(page_url)
+        html_parts.append(f"        <div class='meta-text'><b>SharePoint Source:</b> <a href='{clean_page_url}'>{clean_page_url}</a></div>")
     html_parts.append("    </div>")
     
     # Render Canvas Content
@@ -500,7 +504,7 @@ def main(request):
                             d_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
                             d_resp = http.get(d_url, headers=headers, timeout=60)
                             if d_resp.status_code == 200:
-                                html_rendered = render_page_to_html(d_resp.json())
+                                html_rendered = render_page_to_html(d_resp.json(), raw_url)
                         except Exception as ex:
                             print(f"Warning: Failed to render {aspx_name}: {ex}")
                     if not html_rendered:
@@ -568,6 +572,7 @@ def main(request):
                         
                         page_obj = {
                             "Name": pdf_name,
+                            "Url": p.get("webUrl", ""),
                             "RelativePath": rel_page_path,
                             "IsPage": True
                         }
@@ -576,7 +581,7 @@ def main(request):
                         detail_resp = http.get(detail_url, headers=headers, timeout=60)
                         if detail_resp.status_code == 200:
                             page_detail = detail_resp.json()
-                            html_content = render_page_to_html(page_detail)
+                            html_content = render_page_to_html(page_detail, p.get("webUrl", ""))
                             page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
                         if not page_obj.get("VirtualContent"):
                             page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
