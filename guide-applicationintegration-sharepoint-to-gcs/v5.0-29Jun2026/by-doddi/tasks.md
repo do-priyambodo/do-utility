@@ -38,7 +38,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 *Goal*: Ensure contact center agents using Generative Knowledge Assist (GKA) are directed to the live SharePoint web page when clicking citation links, rather than opening the raw GCS storage blob.
 
 - [ ] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-source/main.py`)**
-  - *How to execute*: Update `cf-source/main.py` so during sync, a `metadata.jsonl` file is generated and uploaded to GCS mapping each object URI (`gs://bucket/pages/Page.pdf`) to structured custom metadata: `"id": item["Name"]`, `"structData": { "sharepoint_url": item["Url"], "title": item["Name"] }`.
+  - *How to execute*: Update `cf-source/main.py` so during sync, a `config/metadata.jsonl` file is generated and uploaded to GCS mapping each object URI (`gs://bucket/pages/Page.pdf`) to structured custom metadata: `"id": item["Name"]`, `"structData": { "sharepoint_url": item["Url"], "title": item["Name"] }`.
 
 - [ ] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
   - *How to execute*: Document and provide the snippet for the contact center UI configuration (`<agent-assist-ui-modules>` in `app.js`), setting `articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "blank" }`.
@@ -49,7 +49,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 *Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
 
 - [ ] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py`)**
-  - *How to execute*: Write a standalone Python script that calls Google Cloud Discovery Engine API (`importDocuments`) passing the GCS URI of `metadata.jsonl`.
+  - *How to execute*: Write a standalone Python script that calls Google Cloud Discovery Engine API (`importDocuments`) passing the GCS URI of `gs://bucket/config/metadata.jsonl`.
 
 - [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
   - *How to execute*: Create a deployer script that creates a Cloud Scheduler cron job (`yourorg-sharepoint-datastore-sync-hourly`) reading `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` to trigger datastore ingestion automatically every 12 hours.
