@@ -15,8 +15,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ### 🎯 Phase 2: Targeted Sync & Cloud Run Migration
 *Goal*: Synchronize a curated list of specific SharePoint URLs/files defined in a GCS config file (`gs://bucket/config/target_urls.txt`). Migrate from Cloud Functions to **Cloud Run** for improved stability, larger memory allocation, and longer execution timeout limits.
 
-- [ ] **Task 2.1: Migrate Execution Engine to Cloud Run (Job/Service)**
-  - *How to execute*: Create deployment scripts (`deploy_cloud_run.sh`) and containerize or wrap `cf-source/main.py` so it runs stably on Cloud Run with increased timeouts (up to 24 hours) and memory limits, avoiding 2nd Gen Cloud Function HTTP dropouts.
+- [x] **Task 2.1: Migrate Execution Engine to Cloud Run (Deprecated / Solved via Task 2.3 Micro-Batching)**
+  - *Completed*: Solved via Task 2.3 Micro-Batching. Pre-slicing payloads upstream into controlled batches keeps executions well within Cloud Function timeouts, eliminating the immediate need for Cloud Run migration.
 
 - [x] **Task 2.2: Verify Targeted Sync via GCS Config List (`target_urls.txt`)**
   - *Completed*: Verified targeted sync workflow (`sync_gcs_dynamic.py`). Enhanced engine to dynamically read `gs://bucket/config/target_urls.txt`, convert targeted `.aspx` pages to high-fidelity executive `.pdf` reports (with embedded Rich Text, clickable SharePoint Source citations, and physical inline Base64 leadership photos), and upload them reliably to GCS (`1.38 MiB`).
@@ -82,4 +82,4 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
   - *How to execute*: Group items into controlled batches (e.g., 50 items per payload) before triggering Application Integration workflows to prevent flooding connectors.
 
 ---
-*Status: Roadmap updated with Executive Briefing justifying legacy sync failures. Ready for Task 2.1.*
+*Status: Task 2.1 marked as Deprecated / Solved via Task 2.3 Micro-Batching. Ready for Phase 3 (Automated Scheduling).*
