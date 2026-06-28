@@ -119,6 +119,7 @@ export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('paramete
 export DEVELOPER_PRINCIPAL=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
 export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 export PARENT_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Parent_Integration_Name', 'yourorg-sharepoint-gcs-parent'))")
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 
 # 2. Extract SharePoint subsite path dynamically
 export SITE_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Sharepoint_Sites', 'sites/yourorg-sharepoint-to-gcs'))")
@@ -368,7 +369,7 @@ At the conclusion of every 10-item micro-batch, the orchestrator deposits a stru
 
 Inspect these audit records anytime via terminal or UI:
 ```bash
-gcloud storage ls gs://yourorg-bucket-sharepoint-sync/config/status/
+gcloud storage ls gs://${GCS_BUCKET}/config/status/
 ```
 
 ### 5. Inspect Local Setup & Cloud Diagnostic Logs
