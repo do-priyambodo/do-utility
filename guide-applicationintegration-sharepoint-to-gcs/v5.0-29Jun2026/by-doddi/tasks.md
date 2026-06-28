@@ -18,8 +18,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 - [ ] **Task 2.1: Migrate Execution Engine to Cloud Run (Job/Service)**
   - *How to execute*: Create deployment scripts (`deploy_cloud_run.sh`) and containerize or wrap `cf-source/main.py` so it runs stably on Cloud Run with increased timeouts (up to 24 hours) and memory limits, avoiding 2nd Gen Cloud Function HTTP dropouts.
 
-- [ ] **Task 2.2: Verify Targeted Sync via GCS Config List (`target_urls.txt`)**
-  - *How to execute*: Test and verify the targeted sync workflow (`sync_gcs_dynamic.py` / `sync_specific_urls.py`). Ensure the engine dynamically reads `gs://bucket/config/target_urls.txt`, converts targeted `.aspx` pages to `.pdf`, downloads files, and uploads them reliably to GCS.
+- [x] **Task 2.2: Verify Targeted Sync via GCS Config List (`target_urls.txt`)**
+  - *Completed*: Verified targeted sync workflow (`sync_gcs_dynamic.py`). Enhanced engine to dynamically read `gs://bucket/config/target_urls.txt`, convert targeted `.aspx` pages to high-fidelity executive `.pdf` reports (with embedded Rich Text, clickable SharePoint Source citations, and physical inline Base64 leadership photos), and upload them reliably to GCS (`1.38 MiB`).
 
 ---
 
