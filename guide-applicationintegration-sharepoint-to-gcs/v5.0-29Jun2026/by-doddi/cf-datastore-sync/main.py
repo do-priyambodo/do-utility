@@ -58,7 +58,7 @@ def main(request):
             "inputUris": [manifest_uri],
             "dataSchema": "custom"
         },
-        "reconciliationMode": "INCREMENTAL"
+        "reconciliationMode": "FULL"
     }
 
     print("🚀 [LOG] Submitting POST request to Discovery Engine import API...")

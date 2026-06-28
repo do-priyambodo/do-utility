@@ -68,7 +68,7 @@ def main():
             "inputUris": [manifest_uri],
             "dataSchema": "custom"
         },
-        "reconciliationMode": "INCREMENTAL"
+        "reconciliationMode": "FULL"
     }
 
     print("🚀 Submitting import job to Google Cloud Discovery Engine API...")
