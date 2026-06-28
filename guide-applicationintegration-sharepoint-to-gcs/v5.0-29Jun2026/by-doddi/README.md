@@ -144,8 +144,8 @@ export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('param
    ```
 2. Deploy the Cloud Function by running:
 ```bash
-chmod +x deploy_cf.sh
-./deploy_cf.sh
+chmod +x deploy_cloud_function.sh
+./deploy_cloud_function.sh
 ```
 
 ### Step 3: Set up Cloud Run Invoker Bindings
@@ -194,8 +194,8 @@ You can execute this synchronization app using two operational models depending 
 
 | Option | Operational Model | Whitelist Source | Python On-Demand Runner | Cloud Scheduler Cron Deployer |
 | :---: | :--- | :--- | :--- | :--- |
-| **Option 1** | **Dynamic Remote Whitelist** *(Recommended)* | `gs://YOUR_BUCKET/config/target_urls.txt` | `python3 sync_gcs_dynamic.py` | `./deploy_scheduler_gcs_dynamic.sh` |
-| **Option 2** | **Full Traversal Sync** | Entire SharePoint Site | `python3 sync_sharepoint_to_gcs.py` | `./deploy_scheduler.sh` |
+| **Option 1** | **Dynamic Remote Whitelist** *(Recommended)* | `gs://YOUR_BUCKET/config/target_urls.txt` | `python3 sync_gcs_dynamic.py` | `./deploy_scheduler_targeted_gcs_sync.sh` |
+| **Option 2** | **Full Traversal Sync** | Entire SharePoint Site | `python3 sync_sharepoint_to_gcs.py` | `./deploy_scheduler_full_sharepoint_sync.sh` |
 
 ---
 
@@ -215,7 +215,7 @@ Allow business users or administrators to maintain a dynamic list of synchronize
 #### B. Automated Recurring Cron (Cloud Scheduler)
 To deploy an automated hourly background trigger that reads `target_urls.txt` from GCS on every run:
 ```bash
-./deploy_scheduler_gcs_dynamic.sh
+./deploy_scheduler_targeted_gcs_sync.sh
 ```
 *(Whenever users update `target_urls.txt` inside the GCP Storage Console, the recurring cron automatically picks up the new files live!)*
 
@@ -232,7 +232,7 @@ python3 sync_sharepoint_to_gcs.py
 #### B. Automated Recurring Cron (Cloud Scheduler)
 To deploy an automated periodic full-crawl schedule:
 ```bash
-./deploy_scheduler.sh
+./deploy_scheduler_full_sharepoint_sync.sh
 ```
 
 ---

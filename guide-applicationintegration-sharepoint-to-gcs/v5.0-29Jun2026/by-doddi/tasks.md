@@ -30,7 +30,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 *Goal*: Automate periodic execution of the targeted synchronization pipeline.
 
 - [ ] **Task 3: Create or Replace Cloud Scheduler Jobs**
-  - *How to execute*: Update scheduler deployment scripts (`deploy_scheduler_gcs_dynamic.sh`, `deploy_scheduler.sh`) to point to the new Cloud Run URI with automated CRON schedules (e.g., nightly `0 2 * * *`) and OIDC authentication.
+  - *How to execute*: Update scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to point to the new Cloud Run URI with automated CRON schedules (e.g., nightly `0 2 * * *`) and OIDC authentication.
 
 ---
 
