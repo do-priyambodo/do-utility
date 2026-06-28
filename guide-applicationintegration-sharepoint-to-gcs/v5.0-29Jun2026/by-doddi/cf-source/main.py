@@ -585,7 +585,8 @@ def main(request):
 
                     page_id = page_info["id"] if page_info else None
                     html_rendered = ""
-                    if page_id:
+                    trigger_integ = req_data.get("trigger_integration", True)
+                    if page_id and trigger_integ:
                         try:
                             d_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
                             d_resp = http.get(d_url, headers=headers, timeout=60)
@@ -593,9 +594,11 @@ def main(request):
                                 html_rendered = render_page_to_html(d_resp.json(), raw_url, headers)
                         except Exception as ex:
                             print(f"Warning: Failed to render {aspx_name}: {ex}")
-                    if not html_rendered:
-                        html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
-                    item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered)
+
+                    if trigger_integ:
+                        if not html_rendered:
+                            html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
+                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered)
 
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
@@ -665,15 +668,17 @@ def main(request):
                             "IsPage": True
                         }
                         
-                        detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
-                        detail_resp = http.get(detail_url, headers=headers, timeout=60)
-                        if detail_resp.status_code == 200:
-                            page_detail = detail_resp.json()
-                            html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
-                            page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
-                        if not page_obj.get("VirtualContent"):
-                            page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
-                        
+                        trigger_integ = req_data.get("trigger_integration", True)
+                        if trigger_integ:
+                            detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
+                            detail_resp = http.get(detail_url, headers=headers, timeout=60)
+                            if detail_resp.status_code == 200:
+                                page_detail = detail_resp.json()
+                                html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
+                            if not page_obj.get("VirtualContent"):
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
+
                         all_list.append(page_obj)
                         
                         needs_sync = True

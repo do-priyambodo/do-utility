@@ -98,7 +98,7 @@ def check_full_sync():
                 "sync_pages": sync_pages
             }
             req = urllib.request.Request(cf_endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=600) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 all_items = data.get("all_resources", data.get("items", []))
                 sync_items = data.get("sync_resources", data.get("items", []))
