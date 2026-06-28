@@ -176,11 +176,14 @@ gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
 ```
 
 ### Step 3.5: Verify SharePoint Connection & Traversal (Diagnostic Dry-Run)
-Before deploying the integrations, you can run a diagnostic dry-run to verify that the Cloud Function successfully connects to Microsoft Entra ID, authenticates, and discovers your SharePoint inventory:
+Before deploying the integrations, run our primary interactive diagnostic check with real-time ticking heartbeat UI to verify your Entra ID authentication, analyze inventory counts, and test GCS Delta Caching:
+```bash
+python3 check_sync_sharepoint_to_gcs.py
+```
+*(Optional)* If you want to print out the granular itemized file-by-file list of every document and page discovered in SharePoint without triggering Application Integration, run:
 ```bash
 python3 check_sharepoint_discovery_dryrun.py
 ```
-This script will print the total count and sample list of files/pages discovered in SharePoint without triggering Application Integration or transferring any files to GCS.
 
 ### Step 4: Parameterize and Deploy Integration Workflows
 Compile the template files (`child_workflow.json` and `parent_workflow.json`), substitute placeholders dynamically, and deploy them to GCP:
