@@ -5,6 +5,34 @@ import urllib.error
 import subprocess
 import os
 import sys
+import threading
+import time
+
+def run_with_heartbeat(msg, func, *args, **kwargs):
+    stop_event = threading.Event()
+    start_time = time.time()
+    def heartbeat():
+        while not stop_event.is_set():
+            elapsed = int(time.time() - start_time)
+            if elapsed > 0:
+                sys.stdout.write(f"\r   ⏳ {msg} (Elapsed time: {elapsed}s)... ")
+                sys.stdout.flush()
+            time.sleep(1)
+    t = threading.Thread(target=heartbeat, daemon=True)
+    t.start()
+    try:
+        res = func(*args, **kwargs)
+        stop_event.set()
+        t.join(timeout=1)
+        elapsed = int(time.time() - start_time)
+        sys.stdout.write(f"\r   ✅ Completed in {elapsed}s!                                    \n")
+        sys.stdout.flush()
+        return res
+    except Exception as e:
+        stop_event.set()
+        t.join(timeout=1)
+        print()
+        raise e
 try:
     import log_helper
 except ImportError:
@@ -96,7 +124,7 @@ def run_sync():
     
     try:
         print("🔒 Step 1: Invoking SharePoint traversal Cloud Function (Option B pages resolved)...")
-        with urllib.request.urlopen(req_cf, timeout=3600) as resp:
+        with run_with_heartbeat("Crawling SharePoint site & comparing Delta Cache", urllib.request.urlopen, req_cf, timeout=3600) as resp:
             cf_resp = json.loads(resp.read().decode("utf-8"))
             if log_helper:
                 log_helper.log_cloud("=== Cloud Function SharePoint Traversal Response ===")

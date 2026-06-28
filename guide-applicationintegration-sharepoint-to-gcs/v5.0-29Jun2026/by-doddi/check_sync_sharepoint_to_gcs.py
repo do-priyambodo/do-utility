@@ -5,6 +5,34 @@ import os
 import sys
 import urllib.request
 import urllib.error
+import threading
+import time
+
+def run_with_heartbeat(msg, func, *args, **kwargs):
+    stop_event = threading.Event()
+    start_time = time.time()
+    def heartbeat():
+        while not stop_event.is_set():
+            elapsed = int(time.time() - start_time)
+            if elapsed > 0:
+                sys.stdout.write(f"\r   ⏳ {msg} (Elapsed time: {elapsed}s)... ")
+                sys.stdout.flush()
+            time.sleep(1)
+    t = threading.Thread(target=heartbeat, daemon=True)
+    t.start()
+    try:
+        res = func(*args, **kwargs)
+        stop_event.set()
+        t.join(timeout=1)
+        elapsed = int(time.time() - start_time)
+        sys.stdout.write(f"\r   ✅ Completed in {elapsed}s!                                    \n")
+        sys.stdout.flush()
+        return res
+    except Exception as e:
+        stop_event.set()
+        t.join(timeout=1)
+        print()
+        raise e
 
 def get_identity_token():
     try:
@@ -98,7 +126,8 @@ def check_full_sync():
                 "sync_pages": sync_pages
             }
             req = urllib.request.Request(cf_endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
-            with urllib.request.urlopen(req, timeout=600) as resp:
+            print("   ⏳ Connecting to Cloud Function to analyze Microsoft Graph API inventory...")
+            with run_with_heartbeat("Crawling SharePoint inventory & checking Delta Cache", urllib.request.urlopen, req, timeout=600) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 all_items = data.get("all_resources", data.get("items", []))
                 sync_items = data.get("sync_resources", data.get("items", []))
