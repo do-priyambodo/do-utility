@@ -70,6 +70,8 @@ Verify credentials and names inside [parameters.json](parameters.json):
 *   `CONFIG_SharePoint_Hostname`: SharePoint tenant hostname (e.g. `yourorg.sharepoint.com`).
 *   `CONFIG_Developer_Group_Or_User`: Developer user email or SSO group granted invoker rights for manual testing runs.
 *   `CONFIG_Scheduler_Job_Name`: Name of the recurring Cloud Scheduler trigger job.
+*   `CONFIG_Batch_Size`: Number of items sliced into each micro-batch (e.g. `10`).
+*   `CONFIG_Max_Parallel_Workers`: Maximum concurrency limit for parallel thread execution (e.g. `10`).
 
 ### 2. Azure App Registration & Microsoft Graph API Scopes
 Your Azure app registration must be granted both **Delegated and Application** types for these scopes:
@@ -236,7 +238,17 @@ To deploy an automated periodic full-crawl schedule:
 ---
 
 ### Additional Diagnostic Helpers
-* **Lightning-Fast Verification (Max 10 Cutoff):** Verify Microsoft Entra ID authentication and site resolution in under 3 seconds:
+We provide dedicated verification tools so you can inspect your pipeline configuration, estimate runtimes, and verify SharePoint connections before transferring files:
+
+* **Dynamic Targeted Sync Inspection**: Check target inventory breakdown (`.aspx` pages vs documents), inspect cached GCS sizes, and view performance estimates:
+  ```bash
+  python3 check_sync_gcs_dynamic.py
+  ```
+* **Full Traversal Sync Inspection**: Verify SharePoint subsite configuration, check existing GCS bucket inventory, and review runtime delta behavior:
+  ```bash
+  python3 check_sync_sharepoint_to_gcs.py
+  ```
+* **Lightning-Fast Verification (Max 10 Cutoff)**: Verify Microsoft Entra ID authentication and site folder resolution in under 3 seconds:
   ```bash
   cd test-few-files-only && python3 check_files_subset.py
   ```
