@@ -34,20 +34,25 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 
 ---
 
-### 🧠 Phase 4: Datastore Indexing & GKA Live SharePoint Link Maintenance
+### 🧠 Phase 4a: GKA Live SharePoint Citation Link Preparation
 *Goal*: Ensure contact center agents using Generative Knowledge Assist (GKA) are directed to the live SharePoint web page when clicking citation links, rather than opening the raw GCS storage blob.
 
-- [ ] **Task 4.1: Generate `metadata.jsonl` Manifest during GCS Sync**
-  - *How to execute*: Update `cf-source/main.py` so during sync, a `metadata.jsonl` file is uploaded to GCS mapping each object URI (`gs://bucket/pages/Page.pdf`) to structured custom metadata: `"sharepoint_url": item["Url"]` and `"title": item["Name"]`.
+- [ ] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-source/main.py`)**
+  - *How to execute*: Update `cf-source/main.py` so during sync, a `metadata.jsonl` file is generated and uploaded to GCS mapping each object URI (`gs://bucket/pages/Page.pdf`) to structured custom metadata: `"id": item["Name"]`, `"structData": { "sharepoint_url": item["Url"], "title": item["Name"] }`.
 
-- [ ] **Task 4.2: Create or Replace Datastore Sync Execution Function**
-  - *How to execute*: Create or replace the Cloud Function/Run job responsible for triggering Vertex AI Datastore synchronization. Configure the `ImportDocumentsRequest` API payload to use **JSONL with metadata** pointing to `gs://bucket/metadata.jsonl`.
+- [ ] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
+  - *How to execute*: Document and provide the snippet for the contact center UI configuration (`<agent-assist-ui-modules>` in `app.js`), setting `articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "blank" }`.
 
-- [ ] **Task 4.3: Deploy Automated Datastore Sync Scheduler (`deploy_scheduler_datastore_sync.sh`)**
-  - *How to execute*: Create a deployer script that creates a Cloud Scheduler job targeting the Datastore sync function running every 12 hours (following `CONFIG_Scheduler_Cron_Schedule` in `parameters.json`).
+---
 
-- [ ] **Task 4.4: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
-  - *How to execute*: In the contact center UI configuration (`<agent-assist-ui-modules>` in `app.js`), set `articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "blank" }`.
+### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling
+*Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
+
+- [ ] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py`)**
+  - *How to execute*: Write a standalone Python script that calls Google Cloud Discovery Engine API (`importDocuments`) passing the GCS URI of `metadata.jsonl`.
+
+- [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *How to execute*: Create a deployer script that creates a Cloud Scheduler cron job (`yourorg-sharepoint-datastore-sync-hourly`) reading `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` to trigger datastore ingestion automatically every 12 hours.
 
 ---
 ---
