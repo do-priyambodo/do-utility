@@ -111,7 +111,12 @@ def run_dynamic_gcs_sync():
     for i in range(0, len(target_urls), batch_size):
         batch_urls = target_urls[i:i + batch_size]
         batch_num = (i // batch_size) + 1
-        print(f"\n⚡ Processing Micro-Batch {batch_num}/{total_batches} ({len(batch_urls)} URLs)...")
+        print(f"\n================================================================================")
+        print(f"⚡ Processing Micro-Batch {batch_num}/{total_batches} ({len(batch_urls)} URLs)...")
+        print(f"================================================================================")
+        for idx, u in enumerate(batch_urls, 1):
+            print(f"   🔹 [{idx}/{len(batch_urls)}] Target: {u}")
+        print(f"   ⏳ Invoking Cloud Function ({cf_endpoint}) to render/resolve batch...")
 
         # 2a. Invoke Cloud Function for just this micro-batch
         payload_cf = {
@@ -125,12 +130,21 @@ def run_dynamic_gcs_sync():
             with urllib.request.urlopen(req_cf, timeout=3600) as resp:
                 cf_resp = json.loads(resp.read().decode("utf-8"))
                 sync_list = cf_resp.get("items", [])
-                print(f"   🟢 Rendered/Resolved {len(sync_list)} item(s) from Cloud Function.")
+                all_count = cf_resp.get("all_resources_count", len(batch_urls))
+                skipped_count = all_count - len(sync_list)
+                print(f"   ✅ Cloud Function resolved Batch {batch_num} successfully!")
+                print(f"      • Total items scanned in batch: {all_count}")
+                print(f"      • Items needing upload (Delta hit/rendered): {len(sync_list)}")
+                if skipped_count > 0:
+                    print(f"      • Skipped (Unchanged in GCS / Delta cache hit): {skipped_count}")
+                for item in sync_list:
+                    print(f"      📄 Prepared item: {item.get('Name')} -> gs://{bucket_name}/{item.get('RelativePath')}")
         except Exception as e:
             print(f"   ❌ Cloud Function invocation failed for batch {batch_num}: {e}")
             sys.exit(1)
 
         # 2b. Trigger Application Integration for this micro-batch
+        print(f"   ⏳ Submitting Batch {batch_num} to Application Integration...")
         payload_int = {
             "triggerId": f"api_trigger/{PARENT_INTEGRATION_NAME}-trigger",
             "inputParameters": {
@@ -146,7 +160,7 @@ def run_dynamic_gcs_sync():
                 resp_data = json.loads(resp_int.read().decode("utf-8"))
                 execution_id = resp_data.get("executionId") or resp_data.get("scheduleId") or (resp_data.get("executionIds", ["Check Console"])[0])
                 execution_ids.append(execution_id)
-                print(f"   🟢 Integration triggered -> Execution ID: {execution_id}")
+                print(f"   🟢 Integration triggered successfully -> Execution ID: {execution_id}")
         except Exception as e:
             print(f"   ❌ Integration trigger failed for batch {batch_num}: {e}")
             sys.exit(1)
@@ -169,7 +183,8 @@ def run_dynamic_gcs_sync():
             with open(tmp_path, "w") as sf:
                 json.dump(status_data, sf, indent=2)
             subprocess.run(["gcloud", "storage", "cp", tmp_path, status_gcs_uri], check=True)
-            print(f"   📄 Logged completion status to {status_gcs_uri}")
+            print(f"   📄 Logged completion audit status to {status_gcs_uri}")
+            print(f"   🎉 Micro-Batch {batch_num}/{total_batches} COMPLETED SUCCESSFULLY!\n")
         except Exception as e:
             print(f"   ⚠️ Warning: Could not write completion status to GCS: {e}")
 
