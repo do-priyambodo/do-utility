@@ -188,25 +188,24 @@ python3 deploy_workflows.py
 
 ## III. How to Run This App (Execution & Scheduling)
 
-You can execute this synchronization app using three different operational models depending on how you wish to maintain your target whitelist of files:
+You can execute this synchronization app using two operational models depending on whether you are targeting specific URLs or sweeping the entire repository:
 
 | Option | Operational Model | Whitelist Source | Python On-Demand Runner | Cloud Scheduler Cron Deployer |
 | :---: | :--- | :--- | :--- | :--- |
 | **Option 1** | **Dynamic Remote Whitelist** *(Recommended)* | `gs://YOUR_BUCKET/config/target_urls.txt` | `python3 sync_gcs_dynamic.py` | `./deploy_scheduler_gcs_dynamic.sh` |
 | **Option 2** | **Full Traversal Sync** | Entire SharePoint Site | `python3 sync_sharepoint_to_gcs.py` | `./deploy_scheduler.sh` |
-| **Option 3** | **Static Local Whitelist** | Local `target_files.json` | `python3 sync_specific_urls.py` | `./deploy_scheduler_targeted.sh` |
 
 ---
 
-### Option 1: Sync specific URLs based on the `target_urls.txt` in GCS bucket (RECOMMENDED)
-Allow business users or administrators to maintain a dynamic list of synchronized URLs live inside Google Cloud Storage without requiring Git repository or terminal CLI access.
+### Option 1: Sync specific URLs based on `target_urls.txt` in GCS bucket (RECOMMENDED)
+Allow business users or administrators to maintain a dynamic list of synchronized URLs live inside Google Cloud Storage without requiring Git repository or terminal CLI access. Features micro-batching (`CONFIG_Batch_Size: 10`), delta cache filtering, and automated deletion of inactive files.
 
 #### A. Manual On-Demand Execution (Terminal)
-1. Ensure your target URLs are uploaded to GCS (e.g. `gs://YOUR_BUCKET/config/target_urls.txt`). You can populate [target_urls.txt](target_urls.txt) locally and upload it:
+1. Ensure your target URLs are uploaded to GCS (e.g. `gs://YOUR_BUCKET/config/target_urls.txt`). You can populate `target_urls.txt` locally and upload it:
    ```bash
    ./upload_gcs_targets.sh
    ```
-2. Run the dynamic standalone runner:
+2. Run the dynamic standalone runner (displays real-time console progress per batch and file):
    ```bash
    python3 sync_gcs_dynamic.py
    ```
@@ -221,7 +220,7 @@ To deploy an automated hourly background trigger that reads `target_urls.txt` fr
 ---
 
 ### Option 2: Sync the whole SharePoint Sites content
-Crawl and synchronize **all** documents and modern site pages across the configured SharePoint subsite and library.
+Crawl and synchronize **all** documents and modern site pages across the configured SharePoint subsite and library with O(1) GCS timestamp skipping.
 
 #### A. Manual On-Demand Execution (Terminal)
 ```bash
@@ -233,25 +232,6 @@ To deploy an automated periodic full-crawl schedule:
 ```bash
 ./deploy_scheduler.sh
 ```
-
----
-
-### Option 3: Sync specific URLs based on the JSON files (`target_files.json`)
-Synchronize a static selection of files defined in a local JSON configuration file.
-
-#### A. Manual On-Demand Execution (Terminal)
-1. Add target document URLs inside [target_files.json](target_files.json).
-2. Execute the targeted runner:
-   ```bash
-   python3 sync_specific_urls.py
-   ```
-
-#### B. Automated Recurring Cron (Cloud Scheduler)
-To bake the static URLs from `target_files.json` directly into a Cloud Scheduler HTTP trigger:
-```bash
-./deploy_scheduler_targeted.sh
-```
-*(Note: Whenever you add or remove URLs in `target_files.json`, you must re-run this deploy script to update the job definition in GCP).*
 
 ---
 
