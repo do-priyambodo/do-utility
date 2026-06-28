@@ -175,7 +175,7 @@ def render_html_to_pdf_base64(html_string):
     return base64.b64encode(pdf_bytes).decode("utf-8")
 
 # Parse canvas layout and render a high-fidelity Fluent UI SharePoint site page
-def render_page_to_html(page, source_url=""):
+def render_page_to_html(page, source_url="", headers=None):
     title = html.escape(page.get("title", "Untitled Page"))
     creator = html.escape(page.get("createdBy", {}).get("user", {}).get("displayName", "Unknown"))
     creator_email = html.escape(page.get("createdBy", {}).get("user", {}).get("email", "N/A"))
@@ -261,14 +261,42 @@ def render_page_to_html(page, source_url=""):
                                 caption_text = pt.get("value", "").strip()
                                 break
                                 
-                    if overlay_text or alt_text or caption_text:
+                    image_sources = processed.get("imageSources", [])
+                    img_data_uri = ""
+                    if image_sources and headers:
+                        raw_img = image_sources[0].get("value", "").strip()
+                        if raw_img:
+                            try:
+                                if raw_img.startswith("http://") or raw_img.startswith("https://"):
+                                    full_img_url = raw_img
+                                else:
+                                    parsed_src = urllib.parse.urlparse(source_url) if source_url else None
+                                    host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
+                                    full_img_url = f"{host_scheme}{raw_img}" if raw_img.startswith("/") else f"{host_scheme}/{raw_img}"
+                                encoded_share = "u!" + base64.urlsafe_b64encode(full_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
+                                share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
+                                img_resp = http.get(share_api_url, headers=headers, timeout=30)
+                                if img_resp.status_code == 200 and img_resp.content:
+                                    ct = img_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                                    b64_str = base64.b64encode(img_resp.content).decode("utf-8")
+                                    img_data_uri = f"data:{ct};base64,{b64_str}"
+                            except Exception as e:
+                                print(f"Warning: Failed to fetch inline image {raw_img}: {e}")
+
+                    if overlay_text or alt_text or caption_text or img_data_uri:
                         html_parts.append("            <div class='webpart-card people-grid'>")
+                        if img_data_uri:
+                            html_parts.append("                <table border='0' cellpadding='0' cellspacing='0' width='100%'><tr>")
+                            html_parts.append(f"                <td width='110' valign='top'><img src='{img_data_uri}' width='95' height='95' /></td>")
+                            html_parts.append("                <td valign='top'>")
                         if overlay_text:
                             html_parts.append(f"                <div class='person-name'>👤 {html.escape(overlay_text)}</div>")
                         if caption_text:
                             html_parts.append(f"                <div class='person-detail'><b>Role/Title:</b> {html.escape(caption_text)}</div>")
                         if alt_text and alt_text != overlay_text:
                             html_parts.append(f"                <div class='person-detail'><i>Description:</i> {html.escape(alt_text)}</div>")
+                        if img_data_uri:
+                            html_parts.append("                </td></tr></table>")
                         html_parts.append("            </div>")
                         continue
                     
@@ -504,7 +532,7 @@ def main(request):
                             d_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
                             d_resp = http.get(d_url, headers=headers, timeout=60)
                             if d_resp.status_code == 200:
-                                html_rendered = render_page_to_html(d_resp.json(), raw_url)
+                                html_rendered = render_page_to_html(d_resp.json(), raw_url, headers)
                         except Exception as ex:
                             print(f"Warning: Failed to render {aspx_name}: {ex}")
                     if not html_rendered:
@@ -581,7 +609,7 @@ def main(request):
                         detail_resp = http.get(detail_url, headers=headers, timeout=60)
                         if detail_resp.status_code == 200:
                             page_detail = detail_resp.json()
-                            html_content = render_page_to_html(page_detail, p.get("webUrl", ""))
+                            html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
                             page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
                         if not page_obj.get("VirtualContent"):
                             page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
