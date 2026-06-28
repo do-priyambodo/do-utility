@@ -176,10 +176,17 @@ gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
 ```
 
 ### Step 3.5: Verify SharePoint Connection & Traversal (Diagnostic Dry-Run)
-Before deploying the integrations, run our primary interactive diagnostic check with real-time ticking heartbeat UI to verify your Entra ID authentication, analyze inventory counts, and test GCS Delta Caching:
-```bash
-python3 check_sync_sharepoint_to_gcs.py
-```
+Before deploying the integrations, run our primary interactive diagnostic checks with real-time ticking heartbeat UI to verify Entra ID authentication, inspect live inventory counts, and test GCS Delta Caching depending on your operational model:
+
+* **For Option 1 (Dynamic Remote Whitelist via `target_urls.txt`)**:
+  ```bash
+  python3 check_sync_gcs_dynamic.py
+  ```
+* **For Option 2 (Full Enterprise Traversal Sync)**:
+  ```bash
+  python3 check_sync_sharepoint_to_gcs.py
+  ```
+
 *(Optional)* If you want to print out the granular itemized file-by-file list of every document and page discovered in SharePoint without triggering Application Integration, run:
 ```bash
 python3 check_sharepoint_discovery_dryrun.py
