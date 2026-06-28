@@ -22,5 +22,5 @@ This directory contains lightweight verification tooling designed to test the Se
    ```
 3. Monitor the live execution progress using the returned Execution UUID:
    ```bash
-   python3 ../check_execution.py "<PROJECT_ID>" "<LOCATION>" "<PARENT_INTEGRATION_NAME>" "<EXECUTION_ID>"
+   python3 ../check_application_integration_execution.py "<PROJECT_ID>" "<LOCATION>" "<PARENT_INTEGRATION_NAME>" "<EXECUTION_ID>"
    ```

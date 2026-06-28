@@ -172,7 +172,7 @@ def run_limited_test():
             print("================================================================")
             print(f"👉 Execution ID: {execution_id}")
             print(f"📝 Monitor execution progress with:")
-            print(f"   python3 ../check_execution.py \"{PROJECT_ID}\" \"{LOCATION}\" \"{PARENT_INTEGRATION_NAME}\" \"{execution_id}\"")
+            print(f"   python3 ../check_application_integration_execution.py \"{PROJECT_ID}\" \"{LOCATION}\" \"{PARENT_INTEGRATION_NAME}\" \"{execution_id}\"")
             print("================================================================")
     except urllib.error.HTTPError as e:
         print(f"❌ Application Integration execution failed (Code {e.code}): {e.reason}")

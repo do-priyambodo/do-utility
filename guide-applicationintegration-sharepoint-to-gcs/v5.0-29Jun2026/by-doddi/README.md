@@ -342,7 +342,7 @@ Every print statement and status report automatically streams into **Google Clou
 * Click on any generated `Execution ID` (or paste the clickable URL outputted by the terminal).
 * Inspect the node-by-node visual graph showing exactly which micro-batch succeeded and how many documents transferred. You can also run the CLI helper:
   ```bash
-  python3 check_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "<EXECUTION_ID>"
+  python3 check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "<EXECUTION_ID>"
   ```
 
 #### E. GCS Audit Manifests — *Permanent Historical File Log*

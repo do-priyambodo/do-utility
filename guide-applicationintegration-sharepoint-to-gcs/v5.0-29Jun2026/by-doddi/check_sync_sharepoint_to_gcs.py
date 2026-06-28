@@ -167,7 +167,7 @@ def check_full_sync():
     print("   • Logs Explorer          : Filter by resource.type=\"cloud_function\" AND resource.labels.function_name=\"doddi-sharepoint-list-files\"")
     print("   • Cloud Scheduler        : View Cron job execution status ('Success'/'Failed') and click 'View Logs'\n")
     print("3. Verification CLI Helper:")
-    print(f"   Run check_execution.py with an Execution ID to inspect workflow step details.")
+    print(f"   Run check_application_integration_execution.py with an Execution ID to inspect workflow step details.")
     print("================================================================================\n")
 
 if __name__ == "__main__":

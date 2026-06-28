@@ -54,6 +54,6 @@ def check_status(project_id, location, integration_name, execution_id):
 
 if __name__ == "__main__":
     if len(sys.argv) < 5:
-        print("Usage: python3 check_execution.py <project_id> <location> <integration_name> <execution_id>")
+        print("Usage: python3 check_application_integration_execution.py <project_id> <location> <integration_name> <execution_id>")
         sys.exit(1)
     check_status(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
