@@ -729,6 +729,28 @@ def main(request):
             else:
                 print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
 
+        # Phase 4a.1: Generate config/metadata.jsonl Manifest for Vertex AI Discovery Engine / CCAI GKA
+        if bucket_obj and len(all_list) > 0:
+            try:
+                print("🧠 Generating config/metadata.jsonl manifest for Vertex AI Datastore indexing...")
+                jsonl_lines = []
+                for item in all_list:
+                    meta_record = {
+                        "id": item.get("Name", ""),
+                        "structData": {
+                            "sharepoint_url": item.get("Url", ""),
+                            "title": item.get("Name", ""),
+                            "relative_path": item.get("RelativePath", "")
+                        }
+                    }
+                    jsonl_lines.append(json.dumps(meta_record))
+                jsonl_content = "\n".join(jsonl_lines)
+                meta_blob = bucket_obj.blob("config/metadata.jsonl")
+                meta_blob.upload_from_string(jsonl_content, content_type="application/x-ndjson")
+                print(f"✅ Successfully uploaded {len(jsonl_lines)} records to gs://{bucket_name}/config/metadata.jsonl")
+            except Exception as ex_meta:
+                print(f"Warning: Failed to generate or upload config/metadata.jsonl: {ex_meta}")
+
         # 8. Optionally trigger Application Integration directly (Serverless Orchestration)
         integration_triggered = False
         execution_ids = []
