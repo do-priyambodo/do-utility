@@ -345,7 +345,7 @@ Every print statement and status report automatically streams into **Google Clou
 * Paste this filter query to watch automated background runs live:
   ```text
   resource.type="cloud_function"
-  resource.labels.function_name="yourorg-sharepoint-list-files"
+  resource.labels.function_name="${FUNCTION_NAME}"
   ```
   *(If wrapped inside a Cloud Run job, filter by `resource.type="cloud_run_job"`).*
 
