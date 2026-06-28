@@ -735,7 +735,9 @@ def main(request):
                 print("🧠 Generating config/metadata.jsonl manifest for Vertex AI Datastore indexing...")
                 jsonl_lines = []
                 for item in all_list:
+                    doc_id = item.get("Name", "doc").replace(" ", "_").replace(".", "_")
                     meta_record = {
+                        "_id": doc_id,
                         "id": item.get("Name", ""),
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),
