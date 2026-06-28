@@ -5,6 +5,34 @@ import urllib.error
 import subprocess
 import os
 import sys
+import threading
+import time
+
+def run_with_heartbeat(msg, func, *args, **kwargs):
+    stop_event = threading.Event()
+    start_time = time.time()
+    def heartbeat():
+        while not stop_event.is_set():
+            elapsed = int(time.time() - start_time)
+            if elapsed > 0:
+                sys.stdout.write(f"\r   ⏳ {msg} (Elapsed time: {elapsed}s)... ")
+                sys.stdout.flush()
+            time.sleep(1)
+    t = threading.Thread(target=heartbeat, daemon=True)
+    t.start()
+    try:
+        res = func(*args, **kwargs)
+        stop_event.set()
+        t.join(timeout=1)
+        elapsed = int(time.time() - start_time)
+        sys.stdout.write(f"\r   ✅ Completed in {elapsed}s!                                    \n")
+        sys.stdout.flush()
+        return res
+    except Exception as e:
+        stop_event.set()
+        t.join(timeout=1)
+        print()
+        raise e
 try:
     import log_helper
 except ImportError:
@@ -84,7 +112,7 @@ def test_cf():
     
     try:
         print("⚡ Invoking Cloud Function (Traversal only)...")
-        with urllib.request.urlopen(req) as resp:
+        with run_with_heartbeat("Crawling SharePoint inventory for granular inspection", urllib.request.urlopen, req, timeout=600) as resp:
             response_data = json.loads(resp.read().decode("utf-8"))
             if log_helper:
                 log_helper.log_cloud(json.dumps(response_data, indent=2))
