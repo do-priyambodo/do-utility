@@ -164,7 +164,7 @@ def check_full_sync():
     print("   -----------------------------------------------------------------------------\n")
     print("2. Google Cloud Console Dashboards:")
     print(f"   • Application Integration: Go to Executions for '{integration_name}' in project '{project_id}'")
-    print("   • Logs Explorer          : Filter by resource.type=\"cloud_function\" AND resource.labels.function_name=\"doddi-sharepoint-list-files\"")
+    print(f"   • Logs Explorer          : Filter by resource.type=\"cloud_function\" AND resource.labels.function_name=\"{function_name}\"")
     print("   • Cloud Scheduler        : View Cron job execution status ('Success'/'Failed') and click 'View Logs'\n")
     print("3. Verification CLI Helper:")
     print(f"   Run check_application_integration_execution.py with an Execution ID to inspect workflow step details.")

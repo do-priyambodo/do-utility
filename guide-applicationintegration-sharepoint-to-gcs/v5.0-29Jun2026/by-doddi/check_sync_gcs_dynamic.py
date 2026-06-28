@@ -201,7 +201,7 @@ def check_dynamic_sync():
     print("   -----------------------------------------------------------------------------\n")
     print("2. Google Cloud Console Dashboards:")
     print(f"   • Application Integration: Go to Executions for '{integration_name}' in project '{project_id}'")
-    print("   • Logs Explorer          : Filter by resource.type=\"cloud_function\" AND resource.labels.function_name=\"doddi-sharepoint-list-files\"\n")
+    print(f"   • Logs Explorer          : Filter by resource.type=\"cloud_function\" AND resource.labels.function_name=\"{function_name}\"\n")
     print("3. Permanent GCS Completion Manifests:")
     print(f"   Check completion records saved after every batch: gs://{bucket_name}/config/status/")
     print("================================================================================\n")
