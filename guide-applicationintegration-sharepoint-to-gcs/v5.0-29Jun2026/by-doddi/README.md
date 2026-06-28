@@ -379,24 +379,14 @@ tail -n 50 log/cloud.log.*
 
 ---
 
-## 🧠 6. Vertex AI Search Datastore Ingestion & Manual Purging (Phase 4b)
+## 🧠 6. Vertex AI Search Datastore Ingestion & Manual Purging (Future Roadmap / Phase 4b)
 
-When files and pages are synchronized to Google Cloud Storage (`gs://yourorg-bucket-sharepoint-sync/`), our Traversal Cloud Function automatically deposits a structured JSONL manifest at `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`. Each record attaches custom schema attributes (`sharepoint_url`, `title`, and `_id`) so frontend Contact Center AI / GKA widgets redirect citation clicks directly to live SharePoint pages.
+When files and pages are synchronized to Google Cloud Storage (`gs://yourorg-bucket-sharepoint-sync/`), our Traversal Cloud Function automatically deposits a structured JSONL manifest at `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`. Each record attaches custom schema attributes (`sharepoint_url`, `title`, `_id`, and `content.uri`) so frontend Contact Center AI / GKA widgets redirect citation clicks directly to live SharePoint pages.
 
-### ⚙️ Automated Ingestion (Incremental Mode)
-Our automated ingestion pipeline runs under **`INCREMENTAL` reconciliation mode**. This allows Discovery Engine to ingest newly synchronized SharePoint documents while safely preserving any files you manually upload to GCS.
-* Every 12 hours, Cloud Scheduler (`doddi-sharepoint-datastore-sync-hourly`) triggers our dedicated Gen 2 Cloud Function (`doddi-datastore-sync-trigger`) to refresh the Datastore index.
-* To trigger an incremental sync manually anytime from your terminal, run:
-  ```bash
-  python3 sync_datastore_from_gcs.py
-  ```
-
-### 🗑️ Manual Datastore Purge Script
-If you ever need to wipe all indexed documents from your Datastore cleanly (e.g., to clear old test records or random hash IDs), run our standalone manual purge tool:
-```bash
-python3 purge_datastore_documents.py
-```
-*(Note: This script will ask for interactive confirmation before wiping the index. To bypass the prompt in scripts, pass `--force`).*
+### ⚙️ Future Ingestion Setup Guide
+When you are ready to connect Vertex AI Search Datastore to your synchronized bucket:
+1. **Create Datastore as JSONL**: In the Google Cloud Console, select **Cloud Storage > JSON lines (JSONL) with custom metadata** and enter `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`. Because each JSON line contains `"content": {"uri": "gs://..."}`, Discovery Engine automatically locates and indexes the PDF files!
+2. **Automated Trigger**: You can deploy a Cloud Function and Cloud Scheduler job to periodically hit the Discovery Engine `importDocuments` API with `"reconciliationMode": "INCREMENTAL"` to automatically refresh the Datastore index whenever new files arrive.
 
 ---
 

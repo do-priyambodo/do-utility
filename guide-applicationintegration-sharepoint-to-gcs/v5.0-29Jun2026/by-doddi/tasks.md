@@ -45,14 +45,18 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 
 ---
 
-### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling
+### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling (Pending / Future Implementation)
 *Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
+*Status*: **Paused safely after Phase 4a creation of `metadata.jsonl`**. The manifest sits ready in GCS for future connection.
 
-- [x] **Task 4b.1: Create Datastore Import Trigger Script (`sync_datastore_from_gcs.py` / `cf-datastore-sync`)**
-  - *Completed*: Created standalone trigger script and dedicated Gen 2 Cloud Function (`doddi-datastore-sync-trigger`) with structured Cloud Logging that dynamically reads Datastore configuration from `parameters.json` and submits incremental import operations to Google Cloud Discovery Engine.
+- [ ] **Task 4b.1: Create Datastore Import Trigger Cloud Function (`cf-datastore-sync`)**
+  - *Future Implementation Guide*: Create a Gen 2 Cloud Function (`doddi-datastore-sync-trigger`) triggered via HTTP POST.
+  - *Key Architectural Requirement*: The Cloud Function should hit the Discovery Engine `importDocuments` API using `"dataSchema": "custom"` and `"reconciliationMode": "INCREMENTAL"` pointing to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`.
+  - *Crucial Manifest Note*: Our Phase 4a pipeline already formats each line in `metadata.jsonl` with `"_id"` (required by Google Cloud custom schema) and `"content": {"uri": "gs://..."}` so Discovery Engine knows the exact PDF location automatically!
 
-- [x] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
-  - *Completed*: Created deployer script implementing Option B (Cloud Function + OIDC Scheduler). Successfully deployed live cron job `doddi-sharepoint-datastore-sync-hourly` running on schedule `0 */12 * * *`.
+- [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *Future Implementation Guide*: Deploy a Cloud Scheduler job (`doddi-sharepoint-datastore-sync-hourly`) running every 12 hours (`0 */12 * * *`) targeting the `cf-datastore-sync` Cloud Function URI using OIDC Service Account authentication.
+  - *GCP Console Tip*: When configuring the Data Store in the GCP Console, create it as **Cloud Storage > JSON lines (JSONL) with custom metadata** pointing directly to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl` to ensure citation URLs work seamlessly!
 
 ---
 ---
