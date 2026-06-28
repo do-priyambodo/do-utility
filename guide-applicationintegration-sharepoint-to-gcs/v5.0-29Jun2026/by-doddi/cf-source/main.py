@@ -9,6 +9,14 @@ from google.cloud import secretmanager
 from google.cloud import storage
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import base64
+import html
+import io
+
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 
 # Global resilient HTTP session with automatic retry backoff for M365 throttling (429) & Gateway timeouts (504)
 def get_resilient_session():
@@ -154,12 +162,24 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
             
     return all_results, sync_results
 
-# Parse canvas layout and render a premium modern site page as HTML
+# Convert rendered HTML string to Base64-encoded PDF bytes using xhtml2pdf
+def render_html_to_pdf_base64(html_string):
+    if not pisa:
+        print("Warning: xhtml2pdf not installed. Falling back to HTML payload.")
+        return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
+    pdf_buffer = io.BytesIO()
+    pisa_status = pisa.CreatePDF(io.StringIO(html_string), dest=pdf_buffer)
+    if pisa_status.err:
+        print(f"Warning: xhtml2pdf rendering error: {pisa_status.err}")
+    pdf_bytes = pdf_buffer.getvalue()
+    return base64.b64encode(pdf_bytes).decode("utf-8")
+
+# Parse canvas layout and render a high-fidelity Fluent UI SharePoint site page
 def render_page_to_html(page):
-    title = page.get("title", "Untitled Page")
-    creator = page.get("createdBy", {}).get("user", {}).get("displayName", "Unknown")
-    creator_email = page.get("createdBy", {}).get("user", {}).get("email", "N/A")
-    modified_time = page.get("lastModifiedDateTime", "N/A")
+    title = html.escape(page.get("title", "Untitled Page"))
+    creator = html.escape(page.get("createdBy", {}).get("user", {}).get("displayName", "Unknown"))
+    creator_email = html.escape(page.get("createdBy", {}).get("user", {}).get("email", "N/A"))
+    modified_time = html.escape(str(page.get("lastModifiedDateTime", "N/A")))
     
     html_parts = []
     html_parts.append("<!DOCTYPE html>")
@@ -168,29 +188,31 @@ def render_page_to_html(page):
     html_parts.append("    <meta charset='utf-8'>")
     html_parts.append(f"    <title>{title}</title>")
     html_parts.append("    <style>")
-    html_parts.append("        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 850px; margin: 40px auto; padding: 0 20px; color: #242424; background-color: #fafafa; }")
-    html_parts.append("        .container { background: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e1e1e1; }")
-    html_parts.append("        h1 { border-bottom: 2px solid #0078d4; padding-bottom: 12px; color: #0078d4; font-size: 2.2rem; margin-top: 0; }")
-    html_parts.append("        .metadata { font-size: 0.9rem; color: #666; margin-bottom: 30px; padding: 12px 16px; background: #f3f2f1; border-radius: 4px; border-left: 4px solid #0078d4; }")
-    html_parts.append("        .section { margin-bottom: 35px; padding-bottom: 20px; border-bottom: 1px solid #eee; }")
-    html_parts.append("        .column { margin-bottom: 20px; }")
-    html_parts.append("        .webpart { margin-bottom: 25px; padding: 20px; background: #ffffff; border: 1px solid #edebe9; border-radius: 4px; transition: box-shadow 0.2s ease; }")
-    html_parts.append("        .webpart:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }")
-    html_parts.append("        .webpart-title { font-weight: bold; color: #0078d4; font-size: 1.1rem; margin-bottom: 12px; border-bottom: 1px solid #f3f2f1; padding-bottom: 6px; }")
-    html_parts.append("        .text-content { font-size: 1.05rem; color: #323130; }")
-    html_parts.append("        ul { padding-left: 24px; }")
-    html_parts.append("        li { margin-bottom: 8px; }")
+    html_parts.append("        @page { size: A4 portrait; margin: 1.5cm; @frame footer { -pdf-frame-content: footerContent; bottom: 0.5cm; margin-left: 1.5cm; margin-right: 1.5cm; height: 1cm; } }")
+    html_parts.append("        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #323130; background-color: #ffffff; margin: 0; padding: 0; }")
+    html_parts.append("        .header-banner { background-color: #f3f2f1; border-left: 6px solid #0078d4; padding: 20px; margin-bottom: 25px; border-radius: 4px; }")
+    html_parts.append("        h1 { color: #0078d4; font-size: 24pt; font-weight: 600; margin: 0 0 12px 0; }")
+    html_parts.append("        .meta-text { font-size: 9.5pt; color: #605e5c; margin: 3px 0; }")
+    html_parts.append("        .section { margin-bottom: 25px; clear: both; }")
+    html_parts.append("        .webpart-card { background: #ffffff; border: 1px solid #edebe9; border-radius: 4px; padding: 18px; margin-bottom: 18px; }")
+    html_parts.append("        .webpart-hero { background-color: #f0f6ff; border-left: 4px solid #0078d4; padding: 20px; margin-bottom: 20px; border-radius: 4px; }")
+    html_parts.append("        .webpart-title { font-weight: 600; color: #0078d4; font-size: 13pt; margin-bottom: 12px; border-bottom: 1px solid #edebe9; padding-bottom: 6px; }")
+    html_parts.append("        .text-content { font-size: 11pt; color: #323130; margin-bottom: 10px; }")
+    html_parts.append("        .divider-hr { border: 0; height: 1px; background: #c8c6c4; margin: 25px 0; }")
+    html_parts.append("        .people-grid { margin-top: 10px; padding: 12px; background-color: #faf9f8; border-radius: 4px; border: 1px solid #edebe9; }")
+    html_parts.append("        .person-name { font-weight: 600; color: #201f1e; font-size: 11pt; margin-top: 8px; }")
+    html_parts.append("        .person-detail { font-size: 9.5pt; color: #605e5c; margin-bottom: 2px; }")
+    html_parts.append("        ul { padding-left: 20px; margin: 8px 0; list-style-type: square; }")
+    html_parts.append("        li { margin-bottom: 6px; }")
     html_parts.append("        a { color: #0078d4; text-decoration: none; font-weight: 500; }")
-    html_parts.append("        a:hover { text-decoration: underline; }")
     html_parts.append("    </style>")
     html_parts.append("</head>")
     html_parts.append("<body>")
-    html_parts.append("    <div class='container'>")
+    html_parts.append("    <div class='header-banner'>")
     html_parts.append(f"        <h1>{title}</h1>")
-    html_parts.append("        <div class='metadata'>")
-    html_parts.append(f"            <strong>Created By:</strong> {creator} ({creator_email})<br>")
-    html_parts.append(f"            <strong>Last Modified:</strong> {modified_time}")
-    html_parts.append("        </div>")
+    html_parts.append(f"        <div class='meta-text'><b>Created By:</b> {creator} &lt;{creator_email}&gt;</div>")
+    html_parts.append(f"        <div class='meta-text'><b>Last Modified:</b> {modified_time}</div>")
+    html_parts.append("    </div>")
     
     # Render Canvas Content
     canvas = page.get("canvasLayout", {})
@@ -198,40 +220,46 @@ def render_page_to_html(page):
     
     if sections:
         for sec_idx, sec in enumerate(sections):
-            html_parts.append(f"        <div class='section' id='section-{sec_idx}'>")
+            html_parts.append(f"    <div class='section' id='section-{sec_idx}'>")
             columns = sec.get("columns", [])
             for col_idx, col in enumerate(columns):
-                html_parts.append(f"            <div class='column' id='section-{sec_idx}-col-{col_idx}'>")
+                html_parts.append(f"        <div class='column' id='section-{sec_idx}-col-{col_idx}'>")
                 webparts = col.get("webparts", [])
                 for wp in webparts:
                     wp_data = wp.get("data", {})
-                    wp_title = wp_data.get("title", wp.get("webPartType", "Web Part"))
+                    raw_title = wp_data.get("title", wp.get("webPartType", "")).strip()
                     
-                    html_parts.append("                <div class='webpart'>")
-                    if wp_title:
-                        html_parts.append(f"                    <div class='webpart-title'>{wp_title}</div>")
+                    # Filter out editorial clutter: Spacer & Divider
+                    if raw_title.lower() in ["spacer", "divider"] or wp.get("webPartType", "").lower() in ["spacer", "divider"]:
+                        if raw_title.lower() == "divider" or wp.get("webPartType", "").lower() == "divider":
+                            html_parts.append("            <hr class='divider-hr'>")
+                        continue
                     
-                    # Collect texts and items inside webpart processed content
+                    card_class = "webpart-card"
+                    if raw_title.lower() in ["hero", "banner", "news", "hero web part"]:
+                        card_class = "webpart-hero"
+                    
+                    html_parts.append(f"            <div class='{card_class}'>")
+                    wp_title_clean = html.escape(raw_title)
+                    if wp_title_clean and wp_title_clean.lower() not in ["web part", "text"]:
+                        html_parts.append(f"                <div class='webpart-title'>{wp_title_clean}</div>")
+                    
                     processed = wp_data.get("serverProcessedContent", {})
                     plain_texts = processed.get("searchablePlainTexts", [])
                     html_strings = processed.get("htmlStrings", [])
                     links = processed.get("links", [])
                     
-                    # Render htmlStrings if any (typically Text webparts store HTML here)
                     if html_strings:
                         for hs in html_strings:
-                            html_parts.append(f"                    <div class='text-content'>{hs.get('value', '')}</div>")
-                    
-                    # Render plain texts and items
+                            val = hs.get("value", "")
+                            html_parts.append(f"                <div class='text-content'>{val}</div>")
                     elif plain_texts:
-                        # Let's try to find lists or key/value properties
                         items_dict = {}
                         general_texts = []
                         for pt in plain_texts:
                             key = pt.get("key", "")
                             value = pt.get("value", "")
                             if "items[" in key:
-                                # Parse nested item properties like items[0].title
                                 parts = key.split(".")
                                 item_idx_str = parts[0].replace("items[", "").replace("]", "")
                                 try:
@@ -245,46 +273,55 @@ def render_page_to_html(page):
                             elif key != "title":
                                 general_texts.append(value)
                         
-                        # Render structured items (e.g., Quick Links)
                         if items_dict:
-                            # Sort by item index
                             sorted_indices = sorted(items_dict.keys())
-                            html_parts.append("                    <ul>")
+                            html_parts.append("                <ul>")
                             for idx in sorted_indices:
                                 item = items_dict[idx]
-                                it_title = item.get("title", "Link Item")
-                                # Look for matching link URL in links
+                                it_title = html.escape(item.get("title", "Link Item"))
                                 it_url = "#"
                                 for l in links:
                                     l_key = l.get("key", "")
                                     l_val = l.get("value", "")
                                     if f"items[{idx}]." in l_key:
-                                        it_url = l_val
+                                        it_url = html.escape(l_val)
                                         break
-                                html_parts.append(f"                        <li><a href='{it_url}' target='_blank'>{it_title}</a></li>")
-                            html_parts.append("                    </ul>")
+                                html_parts.append(f"                    <li><a href='{it_url}' target='_blank'>{it_title}</a></li>")
+                            html_parts.append("                </ul>")
                         
-                        # Render general plain texts
                         if general_texts:
-                            for gt in general_texts:
-                                html_parts.append(f"                    <p class='text-content'>{gt}</p>")
-                    
-                    # Fallback webpart properties preview
+                            if raw_title.lower() == "people":
+                                html_parts.append("                <div class='people-grid'>")
+                                i = 0
+                                while i < len(general_texts):
+                                    name = html.escape(general_texts[i])
+                                    detail1 = html.escape(general_texts[i+1]) if i+1 < len(general_texts) else ""
+                                    detail2 = html.escape(general_texts[i+2]) if i+2 < len(general_texts) else ""
+                                    html_parts.append(f"                    <div class='person-name'>👤 {name}</div>")
+                                    if detail1:
+                                        html_parts.append(f"                    <div class='person-detail'>{detail1}</div>")
+                                    if detail2:
+                                        html_parts.append(f"                    <div class='person-detail'>{detail2}</div>")
+                                    i += 3
+                                html_parts.append("                </div>")
+                            else:
+                                for gt in general_texts:
+                                    clean_gt = html.escape(gt)
+                                    html_parts.append(f"                <p class='text-content'>{clean_gt}</p>")
                     else:
                         desc = wp_data.get("description", "")
                         if desc:
-                            html_parts.append(f"                    <p class='text-content'>{desc}</p>")
+                            clean_desc = html.escape(desc)
+                            html_parts.append(f"                <p class='text-content'>{clean_desc}</p>")
                             
-                    html_parts.append("                </div>")
-                html_parts.append("            </div>")
-            html_parts.append("        </div>")
+                    html_parts.append("            </div>")
+                html_parts.append("        </div>")
+            html_parts.append("    </div>")
     else:
-        html_parts.append("        <p>No section canvas layout content found on this page.</p>")
+        html_parts.append("    <p class='text-content'>No section canvas layout content found on this page.</p>")
         
-    html_parts.append("    </div>")
     html_parts.append("</body>")
     html_parts.append("</html>")
-    
     return "\n".join(html_parts)
 
 # Cloud Function entrypoint
@@ -409,7 +446,7 @@ def main(request):
                 is_page = False
                 if filename.lower().endswith(".aspx"):
                     is_page = True
-                    filename = filename[:-5] + ".html"
+                    filename = filename[:-5] + ".pdf"
                 
                 rel_path = f"pages/{filename}" if is_page else f"files/{filename}"
                 if "/sites/" in url_path:
@@ -440,7 +477,7 @@ def main(request):
                             print(f"Warning: Failed to render {aspx_name}: {ex}")
                     if not html_rendered:
                         html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
-                    item_obj["VirtualContent"] = html_rendered
+                    item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered)
 
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
@@ -498,11 +535,11 @@ def main(request):
                             break
                         page_id = p.get("id")
                         page_name = p.get("name", "Page.aspx")
-                        html_name = page_name.replace(".aspx", ".html")
-                        rel_page_path = f"pages/{site_prefix}{html_name}"
+                        pdf_name = page_name.replace(".aspx", ".pdf")
+                        rel_page_path = f"pages/{site_prefix}{pdf_name}"
                         
                         page_obj = {
-                            "Name": html_name,
+                            "Name": pdf_name,
                             "RelativePath": rel_page_path,
                             "IsPage": True
                         }
@@ -512,9 +549,9 @@ def main(request):
                         if detail_resp.status_code == 200:
                             page_detail = detail_resp.json()
                             html_content = render_page_to_html(page_detail)
-                            page_obj["VirtualContent"] = html_content
+                            page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
                         if not page_obj.get("VirtualContent"):
-                            page_obj["VirtualContent"] = f"<!DOCTYPE html><html><head><title>{html_name}</title></head><body><h1>{html_name}</h1></body></html>"
+                            page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
                         
                         all_list.append(page_obj)
                         

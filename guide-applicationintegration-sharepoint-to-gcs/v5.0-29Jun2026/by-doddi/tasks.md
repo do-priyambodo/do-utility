@@ -2,7 +2,7 @@
 
 ## Today's Objectives
 
-- [ ] **Task 1: Change SharePoint Page Sync Output from HTML to PDF**
+- [x] **Task 1: Change SharePoint Page Sync Output from HTML to PDF**
   - Modify the Traversal Cloud Function and/or synchronization logic so that modern SharePoint site pages are fetched/converted and downloaded as `.pdf` files into Google Cloud Storage (GCS) instead of raw `.html` files.
 
 - [ ] **Task 2: Create or Replace Cloud Scheduler for SharePoint Sync**
@@ -12,4 +12,4 @@
   - Create or replace the Cloud Function responsible for triggering/executing the Vertex AI Agent Builder Data Store synchronization (to index newly synced GCS files into the datastore).
 
 ---
-*Status: List created. Awaiting discussion on implementation planning.*
+*Status: Task 1 completed (Option A Fluent UI PDF). Ready for Task 2.*

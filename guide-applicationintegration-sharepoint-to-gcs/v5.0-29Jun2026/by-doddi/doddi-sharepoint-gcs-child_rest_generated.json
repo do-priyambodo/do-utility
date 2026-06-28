@@ -141,7 +141,7 @@
         "template": {
           "key": "template",
           "value": {
-            "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal pageObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = pageObject[\"Name\"];\nlocal htmlContent = pageObject[\"VirtualContent\"];\n{\n  \"`Task_7_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": std.base64(htmlContent),\n    \"ObjectName\": fileName,\n    \"FolderPath\": \"pages\",\n    \"HasBytes\": true\n  }\n}"
+            "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal pageObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = pageObject[\"Name\"];\nlocal pdfBase64 = pageObject[\"VirtualContent\"];\n{\n  \"`Task_7_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": pdfBase64,\n    \"ObjectName\": fileName,\n    \"FolderPath\": \"pages\",\n    \"HasBytes\": true\n  }\n}"
           }
         }
       },
