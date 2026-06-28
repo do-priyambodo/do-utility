@@ -52,22 +52,22 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 # 🚀 FUTURE SCOPE (Option 2: Full Enterprise Traversal)
 
 ### 🏢 Phase 5: Full Enterprise Repository Resilient Traversal
-*Goal*: Synchronize entire enterprise subsite repositories (`Sites/DEN/Consumer` - 1,743 files, 1,952 pages, 17.00 GB) without encountering Microsoft Graph API throttling rejections (`HTTP 429 / 503`).
+*Goal*: Synchronize entire enterprise subsite repositories (`Sites/YourOrg/Subsite` - [XXX] files, [XXX] pages, [XXX] GB) without encountering Microsoft Graph API throttling rejections (`HTTP 429 / 503`).
 
 #### 📊 Customer Executive Briefing: Root Cause Analysis & Justification for Rejection Errors
-*Why previous legacy sync architectures failed when traversing enterprise-scale repositories (17.00 GB+ / 3,695+ items):*
+*Why previous legacy sync architectures failed when traversing enterprise-scale repositories ([XXX] GB+ / [XXX]+ items):*
 
 1. **Microsoft Graph API Multi-Tenant Throttling (`HTTP 429 / 503`)**:
-   - *The Problem*: When legacy synchronous scripts attempt to traverse 3,695 items in a single uninterrupted execution loop—specifically firing rapid `$expand=canvasLayout` API requests for 1,952 modern site pages while simultaneously downloading 1,743 binary files—Microsoft 365's tenant protection monitors identify the traffic pattern as an automated burst spike or Denial of Service (DoS) attempt.
+   - *The Problem*: When legacy synchronous scripts attempt to traverse [XXX] items in a single uninterrupted execution loop—specifically firing rapid `$expand=canvasLayout` API requests for [XXX] modern site pages while simultaneously downloading [XXX] binary files—Microsoft 365's tenant protection monitors identify the traffic pattern as an automated burst spike or Denial of Service (DoS) attempt.
    - *The Rejection*: Microsoft Graph responds by rejecting further connections with `HTTP 429 Too Many Requests` or `HTTP 503 Service Unavailable` and injects a mandatory `Retry-After` cooldown timer. Because previous scripts did not implement asynchronous queuing or respect `Retry-After` headers, repeated immediate retries caused Microsoft to temporarily ban the OAuth Service Principal token.
 
 2. **Synchronous Execution & Cloud Function HTTP Gateway Timeouts (`HTTP 504`)**:
    - *The Problem*: Legacy architectures coupled folder traversal and file downloading into a single monolithic HTTP Cloud Function request.
-   - *The Timeout*: While Cloud Functions (2nd Gen) can run up to 60 minutes internally, downstream calling clients (such as Application Integration connectors or API Gateways) enforce hard synchronous HTTP connection drops (typically between 60 to 300 seconds). Attempting to stream 17.00 GB of binary data synchronously over a single HTTP socket guarantees a `504 Gateway Timeout` or container out-of-memory crash before the loop can finish.
+   - *The Timeout*: While Cloud Functions (2nd Gen) can run up to 60 minutes internally, downstream calling clients (such as Application Integration connectors or API Gateways) enforce hard synchronous HTTP connection drops (typically between 60 to 300 seconds). Attempting to stream [XXX] GB of binary data synchronously over a single HTTP socket guarantees a `504 Gateway Timeout` or container out-of-memory crash before the loop can finish.
 
 3. **Absence of Delta State Tracking (Redundant Daily Transfer)**:
-   - *The Problem*: Legacy pipelines executed a brute-force full scan every day, re-downloading all 17.00 GB even if 99.9% of files were unchanged.
-   - *The Solution*: Transitioning to Microsoft Graph **Delta Queries (`$delta`)** and **GCS timestamp caching** ensures the pipeline only requests items created or edited since the previous run, dropping daily data movement from 17.00 GB down to a few megabytes and completely eliminating throttling risks.
+   - *The Problem*: Legacy pipelines executed a brute-force full scan every day, re-downloading all [XXX] GB even if 99.9% of files were unchanged.
+   - *The Solution*: Transitioning to Microsoft Graph **Delta Queries (`$delta`)** and **GCS timestamp caching** ensures the pipeline only requests items created or edited since the previous run, dropping daily data movement from [XXX] GB down to a few megabytes and completely eliminating throttling risks.
 
 ---
 #### 🛠️ Phase 5 Implementation Tasks

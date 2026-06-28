@@ -157,7 +157,7 @@ def check_full_sync():
     print("   Run 'python3 sync_sharepoint_to_gcs.py' to watch batch scheduling outputs:")
     print("   -----------------------------------------------------------------------------")
     print("   🔒 Step 1: Invoking SharePoint traversal Cloud Function...")
-    print("   🟢 Found 1,743 total items (documents & pre-rendered pages) to synchronize.")
+    print("   🟢 Found [XXX] total items (documents & pre-rendered pages) to synchronize.")
     print("   🚀 Step 2: Submitting batches to Application Integration...")
     print("   🟢 Batch 1 scheduled -> Execution ID: 39017360-...")
     print("   🎉 ALL SYNC BATCHES SCHEDULED SUCCESSFULLY!")
