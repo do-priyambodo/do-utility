@@ -75,13 +75,14 @@ def check_dynamic_sync():
     existing_count = 0
     total_size_bytes = 0
     try:
-        ls_out = subprocess.check_output(["gcloud", "storage", "ls", "--long", f"gs://{bucket_name}/pages/**", f"gs://{bucket_name}/files/**"], stderr=subprocess.DEVNULL).decode("utf-8")
+        ls_out = subprocess.check_output(["gcloud", "storage", "ls", "--long", f"gs://{bucket_name}/**"], stderr=subprocess.DEVNULL).decode("utf-8")
         for line in ls_out.splitlines():
-            parts = line.strip().split()
-            if len(parts) >= 3 and parts[0].isdigit():
-                size_b = int(parts[0])
-                total_size_bytes += size_b
-                existing_count += 1
+            if "/pages/" in line or "/files/" in line:
+                parts = line.strip().split()
+                if len(parts) >= 3 and parts[0].isdigit():
+                    size_b = int(parts[0])
+                    total_size_bytes += size_b
+                    existing_count += 1
         size_mb = total_size_bytes / (1024 * 1024)
         print(f"✅ Found {existing_count} existing cached file(s) in GCS totaling {size_mb:.2f} MB.\n")
     except Exception:
