@@ -22,3 +22,10 @@ terraform.rc
 # Custom ignores
 git*.sh
 .env.local
+
+# Python Artifacts & Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
