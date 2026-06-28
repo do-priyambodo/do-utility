@@ -227,12 +227,45 @@ def render_page_to_html(page):
                 webparts = col.get("webparts", [])
                 for wp in webparts:
                     wp_data = wp.get("data", {})
+                    props = wp_data.get("properties", {})
+                    processed = wp_data.get("serverProcessedContent", {})
+                    plain_texts = processed.get("searchablePlainTexts", [])
+                    html_strings = processed.get("htmlStrings", [])
+                    links = processed.get("links", [])
+                    
+                    # 1. Handle Direct Rich Text / HTML payloads (e.g. paragraphs, quotes, welcome letters)
+                    inner_html = wp.get("innerHtml") or props.get("text", "")
+                    if inner_html and inner_html.strip():
+                        html_parts.append(f"            <div class='webpart-card text-content'>{inner_html}</div>")
+                        continue
+                        
                     raw_title = wp_data.get("title", wp.get("webPartType", "")).strip()
                     
                     # Filter out editorial clutter: Spacer & Divider
                     if raw_title.lower() in ["spacer", "divider"] or wp.get("webPartType", "").lower() in ["spacer", "divider"]:
                         if raw_title.lower() == "divider" or wp.get("webPartType", "").lower() == "divider":
                             html_parts.append("            <hr class='divider-hr'>")
+                        continue
+
+                    # 2. Handle Image / Profile cards with overlayText or altText (e.g. Leadership profiles)
+                    overlay_text = props.get("overlayText", "").strip()
+                    alt_text = props.get("altText", "").strip()
+                    caption_text = props.get("captionText", "").strip()
+                    if not caption_text and plain_texts:
+                        for pt in plain_texts:
+                            if pt.get("key") == "captionText":
+                                caption_text = pt.get("value", "").strip()
+                                break
+                                
+                    if overlay_text or alt_text or caption_text:
+                        html_parts.append("            <div class='webpart-card people-grid'>")
+                        if overlay_text:
+                            html_parts.append(f"                <div class='person-name'>👤 {html.escape(overlay_text)}</div>")
+                        if caption_text:
+                            html_parts.append(f"                <div class='person-detail'><b>Role/Title:</b> {html.escape(caption_text)}</div>")
+                        if alt_text and alt_text != overlay_text:
+                            html_parts.append(f"                <div class='person-detail'><i>Description:</i> {html.escape(alt_text)}</div>")
+                        html_parts.append("            </div>")
                         continue
                     
                     card_class = "webpart-card"
@@ -241,13 +274,8 @@ def render_page_to_html(page):
                     
                     html_parts.append(f"            <div class='{card_class}'>")
                     wp_title_clean = html.escape(raw_title)
-                    if wp_title_clean and wp_title_clean.lower() not in ["web part", "text"]:
+                    if wp_title_clean and wp_title_clean.lower() not in ["web part", "text", "image", "show an image on your page"]:
                         html_parts.append(f"                <div class='webpart-title'>{wp_title_clean}</div>")
-                    
-                    processed = wp_data.get("serverProcessedContent", {})
-                    plain_texts = processed.get("searchablePlainTexts", [])
-                    html_strings = processed.get("htmlStrings", [])
-                    links = processed.get("links", [])
                     
                     if html_strings:
                         for hs in html_strings:
