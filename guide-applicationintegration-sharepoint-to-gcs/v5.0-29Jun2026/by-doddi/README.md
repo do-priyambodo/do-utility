@@ -1,24 +1,25 @@
-# Serverless SharePoint-to-GCS Synchronization Pipeline (V3.0)
+# Serverless SharePoint-to-GCS Synchronization Pipeline (V5.0)
 
-A production-ready serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to recursively synchronize SharePoint documents and pre-render modern SharePoint site pages to Google Cloud Storage (GCS).
+A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, and automated deletion of inactive SharePoint inventory.
 
 ---
 
 ## Architecture Topology
 
-The sync pipeline follows a serverless hybrid orchestrator design:
+The sync pipeline follows an enterprise hybrid orchestrator design (V5.0):
 
 1.  **Traversal Cloud Function (`yourorg-sharepoint-list-files`)**:
-    *   Recursively queries Microsoft Graph API to traverse nested folders and document libraries.
-    *   Resolves site pages and pre-renders modern SharePoint canvas layouts into static HTML files.
-    *   Compiles all traversed objects into a JSON file manifest.
+    *   Recursively queries Microsoft Graph API or dynamically scopes targeted URLs (`gs://bucket/config/target_urls.txt`).
+    *   Resolves modern SharePoint site pages, downloads physical inline leadership images, and converts canvas layouts into executive `.pdf` documents via `xhtml2pdf`.
+    *   Performs O(1) incremental delta timestamp comparisons (`gcs_cache`) to skip unchanged files and automatically deletes orphaned/inactive SharePoint files from GCS.
+    *   Slices items into controlled micro-batches (`CONFIG_Batch_Size: 10`) to prevent timeout drops.
 2.  **Application Integration Parent Orchestrator (`yourorg-sharepoint-gcs-parent`)**:
-    *   Receives the list of files and loops over them.
-    *   Forwards loop items to the worker integration.
+    *   Receives pre-sliced micro-batches and loops over the file manifest asynchronously.
+    *   Forwards loop items to the worker integration and writes audit records to GCS (`gs://bucket/config/status/`).
 3.  **Application Integration Child Worker (`yourorg-sharepoint-gcs-child`)**:
     *   Downloads document streams from SharePoint connection (using SharePoint Connector V2).
     *   Streams raw uncorrupted document bytes directly to the GCS bucket connection (using GCS Connector V1).
-    *   Saves site pages as HTML objects into the `pages/` path.
+    *   Saves rendered high-fidelity executive `.pdf` page reports into the `pages/` path.
 
 ```
 [Cloud Scheduler]
