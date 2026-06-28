@@ -14,6 +14,6 @@
   "CONFIG_M365_Client_Id": "40e717da-e880-4013-a8ba-274593753477",
   "CONFIG_M365_Secret_Name": "projects/388889235558/secrets/doddi-sharepoint-to-gcs-credentials/versions/1",
   "CONFIG_SharePoint_Hostname": "priyambodo.sharepoint.com",
-  "CONFIG_Developer_Group_Or_User": "admin@priyambodo.altostrat.com",
-  "CONFIG_Scheduler_Job_Name": "doddi-sharepoint-sync-hourly"
+  "CONFIG_Scheduler_Job_Name": "doddi-sharepoint-sync-hourly",
+  "CONFIG_Batch_Size": 10
 }

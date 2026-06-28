@@ -6,6 +6,7 @@ import urllib.error
 import subprocess
 import os
 import sys
+import datetime
 
 try:
     import log_helper
@@ -79,83 +80,100 @@ def run_dynamic_gcs_sync():
 
     site_path = params.get("CONFIG_Sharepoint_Sites", "sites/yourorg-sharepoint-to-gcs")
     site_name = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
+    bucket_name = params.get("CONFIG_GCS_Bucket")
+    batch_size = params.get("CONFIG_Batch_Size", 10)
 
-    payload_cf = {
-        "site_name": site_name,
-        "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
-        "check_gcs_config": True
-    }
-    
-    req_cf = urllib.request.Request(cf_endpoint, data=json.dumps(payload_cf).encode("utf-8"), headers=headers_cf, method="POST")
-    
+    print(f"📂 Step 1: Reading target URLs directly from gs://{bucket_name}/config/target_urls.txt for upstream slicing...")
+    target_urls = []
     try:
-        print("🔒 Step 1: Invoking Cloud Function instructing dynamic read of gs://.../config/target_urls.txt ...")
-        with urllib.request.urlopen(req_cf, timeout=3600) as resp:
-            cf_resp = json.loads(resp.read().decode("utf-8"))
-            if log_helper:
-                log_helper.log_cloud("=== Dynamic GCS Cloud Function Response ===")
-                log_helper.log_cloud(json.dumps(cf_resp, indent=2))
-            sync_list = cf_resp.get("items", [])
-            print(f"🟢 Resolved {len(sync_list)} item(s) from dynamic GCS configuration for synchronization.")
-    except urllib.error.HTTPError as e:
-        print(f"❌ Cloud Function invocation failed (Code {e.code}): {e.reason}")
-        print(e.read().decode("utf-8"))
-        sys.exit(1)
+        raw_cfg = subprocess.check_output(["gcloud", "storage", "cat", f"gs://{bucket_name}/config/target_urls.txt"]).decode("utf-8")
+        target_urls = [l.strip() for l in raw_cfg.splitlines() if l.strip() and not l.strip().startswith("#")]
+        print(f"🟢 Resolved {len(target_urls)} total URL(s) from GCS configuration.")
     except Exception as e:
-        print(f"❌ Exception during Cloud Function invocation: {e}")
+        print(f"❌ Failed to read target_urls.txt from GCS: {e}")
         sys.exit(1)
-        
-    if not sync_list:
-        print("ℹ️ No items resolved to synchronize from GCS config. Exiting cleanly.")
+
+    if not target_urls:
+        print("ℹ️ No target URLs found to synchronize. Exiting cleanly.")
         return
-        
+
+    total_batches = (len(target_urls) + batch_size - 1) // batch_size
+    print(f"\n🚀 Step 2: Slicing into {total_batches} micro-batch(es) (max {batch_size} items per batch)...")
+
     access_token = get_auth_token()
     integration_url = f"https://{LOCATION}-integrations.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/integrations/{PARENT_INTEGRATION_NAME}:schedule"
-    
     headers_int = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
 
-    batch_size = params.get("CONFIG_Batch_Size", 100)
-    total_batches = (len(sync_list) + batch_size - 1) // batch_size
-    print(f"\n🚀 Step 2: Triggering Application Integration ({PARENT_INTEGRATION_NAME}) across {total_batches} batch(es)...")
-
     execution_ids = []
-    for i in range(0, len(sync_list), batch_size):
-        batch = sync_list[i:i + batch_size]
+    for i in range(0, len(target_urls), batch_size):
+        batch_urls = target_urls[i:i + batch_size]
         batch_num = (i // batch_size) + 1
+        print(f"\n⚡ Processing Micro-Batch {batch_num}/{total_batches} ({len(batch_urls)} URLs)...")
+
+        # 2a. Invoke Cloud Function for just this micro-batch
+        payload_cf = {
+            "site_name": site_name,
+            "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
+            "target_urls": batch_urls
+        }
+        req_cf = urllib.request.Request(cf_endpoint, data=json.dumps(payload_cf).encode("utf-8"), headers=headers_cf, method="POST")
         
+        try:
+            with urllib.request.urlopen(req_cf, timeout=3600) as resp:
+                cf_resp = json.loads(resp.read().decode("utf-8"))
+                sync_list = cf_resp.get("items", [])
+                print(f"   🟢 Rendered/Resolved {len(sync_list)} item(s) from Cloud Function.")
+        except Exception as e:
+            print(f"   ❌ Cloud Function invocation failed for batch {batch_num}: {e}")
+            sys.exit(1)
+
+        # 2b. Trigger Application Integration for this micro-batch
         payload_int = {
             "triggerId": f"api_trigger/{PARENT_INTEGRATION_NAME}-trigger",
             "inputParameters": {
                 "`Parent_Files_List`": {
-                    "jsonValue": json.dumps(batch)
+                    "jsonValue": json.dumps(sync_list)
                 }
             }
         }
-        
-        int_request_bytes = json.dumps(payload_int).encode("utf-8")
-        req_int = urllib.request.Request(integration_url, data=int_request_bytes, headers=headers_int, method="POST")
+        req_int = urllib.request.Request(integration_url, data=json.dumps(payload_int).encode("utf-8"), headers=headers_int, method="POST")
         
         try:
             with urllib.request.urlopen(req_int) as resp_int:
                 resp_data = json.loads(resp_int.read().decode("utf-8"))
-                if log_helper:
-                    log_helper.log_cloud(f"=== Dynamic GCS Batch {batch_num} Response ===")
-                    log_helper.log_cloud(json.dumps(resp_data, indent=2))
                 execution_id = resp_data.get("executionId") or resp_data.get("scheduleId") or (resp_data.get("executionIds", ["Check Console"])[0])
                 execution_ids.append(execution_id)
-                print(f" 🟢 Batch {batch_num}/{total_batches} ({len(batch)} items) triggered -> Execution ID: {execution_id}")
-        except urllib.error.HTTPError as e:
-            print(f"❌ Integration batch {batch_num} trigger failed (Code {e.code}): {e.reason}")
-            print(e.read().decode("utf-8"))
-            sys.exit(1)
+                print(f"   🟢 Integration triggered -> Execution ID: {execution_id}")
         except Exception as e:
-            print(f"❌ Exception triggering batch {batch_num}: {e}")
+            print(f"   ❌ Integration trigger failed for batch {batch_num}: {e}")
             sys.exit(1)
 
-    print("================================================================")
+        # 2c. Write completion status record to GCS
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        status_data = {
+            "batch_number": batch_num,
+            "total_batches": total_batches,
+            "timestamp_utc": now_utc.isoformat(),
+            "status": "SUCCESS",
+            "item_count": len(batch_urls),
+            "execution_id": execution_id,
+            "processed_urls": batch_urls
+        }
+        status_filename = f"batch_completion_{now_utc.strftime('%Y%m%d_%H%M%SZ')}_batch_{batch_num}_of_{total_batches}.json"
+        tmp_path = f"/tmp/{status_filename}"
+        status_gcs_uri = f"gs://{bucket_name}/config/status/{status_filename}"
+        try:
+            with open(tmp_path, "w") as sf:
+                json.dump(status_data, sf, indent=2)
+            subprocess.run(["gcloud", "storage", "cp", tmp_path, status_gcs_uri], check=True)
+            print(f"   📄 Logged completion status to {status_gcs_uri}")
+        except Exception as e:
+            print(f"   ⚠️ Warning: Could not write completion status to GCS: {e}")
+
+    print("\n================================================================")
     print("🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!")
     print("================================================================")
     for eid in execution_ids:
