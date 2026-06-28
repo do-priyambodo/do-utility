@@ -175,22 +175,29 @@ gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
   --project="${PROJECT_ID}"
 ```
 
-### Step 3.5: Verify SharePoint Connection & Traversal (Diagnostic Dry-Run)
-Before deploying the integrations, run our primary interactive diagnostic checks with real-time ticking heartbeat UI to verify Entra ID authentication, inspect live inventory counts, and test GCS Delta Caching depending on your operational model:
+### Step 3.5: Pre-Flight Interactive Diagnostics & Verification
+Before deploying integration workflows (or when upgrading an existing customer environment), run our standalone interactive diagnostic checks to verify authentication and inspect live inventory counts without modifying anything:
 
-* **For Option 1 (Dynamic Remote Whitelist via `target_urls.txt`)**:
-  ```bash
-  python3 check_sync_gcs_dynamic.py
-  ```
-* **For Option 2 (Full Enterprise Traversal Sync)**:
-  ```bash
-  python3 check_sync_sharepoint_to_gcs.py
-  ```
-
-*(Optional)* If you want to print out the granular itemized file-by-file list of every document and page discovered in SharePoint without triggering Application Integration, run:
-```bash
-python3 check_sharepoint_discovery_dryrun.py
-```
+1. **Verify Azure AD / Microsoft Graph Authentication**:
+   Verify that your Client Secret and Service Account token generation work cleanly:
+   ```bash
+   python3 check_entra_id_auth.py
+   ```
+2. **Simulate SharePoint Traversal (Dry-Run)**:
+   Test your connection to the deployed Cloud Function and see exactly which PDF documents and site pages are discovered in SharePoint (without triggering download batches):
+   * **For Option 1 (Dynamic Remote Whitelist)**:
+     ```bash
+     python3 check_sync_gcs_dynamic.py --dry-run
+     ```
+   * **For Option 2 (Full Enterprise Traversal)**:
+     ```bash
+     python3 check_sync_sharepoint_to_gcs.py --dry-run
+     ```
+3. **Granular File-by-File Audit**:
+   If you want to print out the complete itemized list of every discovered file and folder path:
+   ```bash
+   python3 check_sharepoint_discovery_dryrun.py
+   ```
 
 ### Step 4: Parameterize and Deploy Integration Workflows
 Compile the template files (`child_workflow.json` and `parent_workflow.json`), substitute placeholders dynamically, and deploy them to GCP:
