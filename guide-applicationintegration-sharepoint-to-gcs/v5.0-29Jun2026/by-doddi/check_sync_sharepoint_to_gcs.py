@@ -3,6 +3,27 @@ import json
 import subprocess
 import os
 import sys
+import urllib.request
+import urllib.error
+
+def get_identity_token():
+    try:
+        return subprocess.check_output(["gcloud", "auth", "print-identity-token"]).decode("utf-8").strip()
+    except Exception as e:
+        return None
+
+def get_cf_url(function_name, location, project_id):
+    try:
+        cmd = [
+            "gcloud", "functions", "describe", function_name,
+            "--gen2",
+            "--region", location,
+            "--project", project_id,
+            "--format", "value(serviceConfig.uri)"
+        ]
+        return subprocess.check_output(cmd).decode("utf-8").strip()
+    except Exception:
+        return None
 
 def check_full_sync():
     print("================================================================================")
@@ -57,6 +78,39 @@ def check_full_sync():
         print(f"   • Cached Document Files          : {existing_files}\n")
     except Exception:
         print("ℹ️ Could not fetch detailed sizes from GCS or bucket folders are currently empty.\n")
+
+    print(f"📂 Step 3: Analyzing Live SharePoint Inventory vs Delta Cache...")
+    cf_endpoint = params.get("CONFIG_CloudFunction_URL")
+    function_name = params.get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files")
+    location = params.get("CONFIG_Location", "asia-southeast1")
+    if not cf_endpoint and function_name:
+        cf_endpoint = get_cf_url(function_name, location, project_id)
+        
+    token = get_identity_token()
+    if cf_endpoint and token:
+        try:
+            site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
+            payload = {
+                "site_name": site_name_clean,
+                "library_name": library_name,
+                "trigger_integration": False,
+                "sync_files": sync_files,
+                "sync_pages": sync_pages
+            }
+            req = urllib.request.Request(cf_endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                all_items = data.get("all_resources", data.get("items", []))
+                sync_items = data.get("sync_resources", data.get("items", []))
+                skipped_count = len(all_items) - len(sync_items)
+                print(f"✅ Live Analysis Complete!")
+                print(f"   • Total Items Scanned in SharePoint: {len(all_items)}")
+                print(f"   • Skipped (Delta Hit / Already in GCS): {skipped_count}")
+                print(f"   • Items Needing Sync to GCS        : {len(sync_items)}\n")
+        except Exception as e:
+            print(f"ℹ️ Could not complete live dry-run against Cloud Function: {e}\n")
+    else:
+        print("ℹ️ Skipping live dry-run (Cloud Function URL or auth token unavailable).\n")
 
     print("================================================================================")
     print("⚡ HOW V5.0 FULL TRAVERSAL SYNC WORKS AT RUNTIME")
