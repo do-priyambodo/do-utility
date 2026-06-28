@@ -319,13 +319,13 @@ When executing `python3 sync_gcs_dynamic.py`, the terminal displays live item-by
 ================================================================================
 ⚡ Processing Micro-Batch 1/10 (10 URLs)...
 ================================================================================
-   🔹 [1/10] Target: https://priyambodo.sharepoint.com/sites/doddi/SitePages/Executive-Briefing.aspx
+   🔹 [1/10] Target: https://yourorg.sharepoint.com/sites/yoursubsite/SitePages/Executive-Briefing.aspx
    ⏳ Invoking Cloud Function to render/resolve batch...
    ✅ Cloud Function resolved Batch 1 successfully!
       • Total items scanned in batch: 10
       • Items needing upload (Delta hit/rendered): 8
       • Skipped (Unchanged in GCS / Delta cache hit): 2
-      📄 Prepared item: Executive-Briefing.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Executive-Briefing.pdf
+      📄 Prepared item: Executive-Briefing.pdf -> gs://yourorg-bucket-sharepoint-sync/pages/Executive-Briefing.pdf
    ⏳ Submitting Batch 1 to Application Integration...
    🟢 Integration triggered successfully -> Execution ID: 9f8a7b6c-5d4e...
    🎉 Micro-Batch 1/10 COMPLETED SUCCESSFULLY!
@@ -337,13 +337,13 @@ Every print statement and status report automatically streams into **Google Clou
 * Paste this filter query to watch automated background runs live:
   ```text
   resource.type="cloud_function"
-  resource.labels.function_name="doddi-sharepoint-list-files"
+  resource.labels.function_name="yourorg-sharepoint-list-files"
   ```
   *(If wrapped inside a Cloud Run job, filter by `resource.type="cloud_run_job"`).*
 
 #### C. Cloud Scheduler Dashboard — *Cron Trigger History*
 * Navigate to **Cloud Scheduler** in the GCP Console.
-* Locate your automated job (`doddi-sharepoint-sync-hourly`).
+* Locate your automated job (`yourorg-sharepoint-sync-hourly`).
 * Check the **Result** column (`Success` or `Failed`) and timestamp of the last execution.
 * Click the **"View Logs"** button on the far right of the row to instantly open the filtered log stream for that specific cron run.
 
@@ -357,11 +357,11 @@ Every print statement and status report automatically streams into **Google Clou
 
 #### E. GCS Audit Manifests — *Permanent Historical File Log*
 At the conclusion of every 10-item micro-batch, the orchestrator deposits a structured completion audit manifest into your bucket:
-`gs://doddi-bucket-sharepoint-sync/config/status/`
+`gs://yourorg-bucket-sharepoint-sync/config/status/`
 
 Inspect these audit records anytime via terminal or UI:
 ```bash
-gcloud storage ls gs://doddi-bucket-sharepoint-sync/config/status/
+gcloud storage ls gs://yourorg-bucket-sharepoint-sync/config/status/
 ```
 
 ### 5. Inspect Local Setup & Cloud Diagnostic Logs
