@@ -237,21 +237,43 @@ def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
 </body>
 </html>"""
 
-# Convert rendered HTML string to Base64-encoded PDF bytes using xhtml2pdf
-def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page"):
+# Convert rendered HTML string to Base64-encoded PDF bytes using selected engine
+def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", engine="weasyprint"):
+    cleaned_html = re.sub(r':\s*(revert|revert-layer|unset)\s*(;|\})', r': inherit\2', html_string, flags=re.IGNORECASE)
+    
+    # Engine 1: Headless Chromium via Playwright
+    if engine and str(engine).lower() == "playwright":
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(cleaned_html, wait_until="networkidle")
+                pdf_bytes = page.pdf(format="A4", print_background=True)
+                browser.close()
+                return base64.b64encode(pdf_bytes).decode("utf-8")
+        except Exception as pw_e:
+            print(f"Warning: Playwright engine failed ({pw_e}). Falling back to WeasyPrint engine...")
+
+    # Engine 2: WeasyPrint (Modern HTML5 Vector Engine)
+    if engine and str(engine).lower() == "weasyprint":
+        try:
+            import weasyprint
+            pdf_bytes = weasyprint.HTML(string=cleaned_html).write_pdf()
+            return base64.b64encode(pdf_bytes).decode("utf-8")
+        except Exception as wp_e:
+            print(f"Warning: WeasyPrint engine failed ({wp_e}). Falling back to xhtml2pdf engine...")
+
+    # Fallback Engine: xhtml2pdf with Simplified Layout Protection
     if not pisa:
         print("Warning: xhtml2pdf not installed. Falling back to HTML payload.")
         return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
     try:
-        # Sanitize unsupported CSS keywords like 'revert' or 'unset' that cause xhtml2pdf float conversion errors
-        cleaned_html = re.sub(r':\s*(revert|revert-layer|unset)\s*(;|\})', r': inherit\2', html_string, flags=re.IGNORECASE)
         pdf_buffer = io.BytesIO()
         pisa_status = pisa.CreatePDF(io.StringIO(cleaned_html), dest=pdf_buffer)
         if pisa_status.err:
-            print(f"Warning: xhtml2pdf rendering error: {pisa_status.err}")
             raise RuntimeError(f"xhtml2pdf reported error: {pisa_status.err}")
-        pdf_bytes = pdf_buffer.getvalue()
-        return base64.b64encode(pdf_bytes).decode("utf-8")
+        return base64.b64encode(pdf_buffer.getvalue()).decode("utf-8")
     except Exception as e:
         print(f"Warning: High-fidelity PDF rendering failed ({e}). Generating simplified Document Reader layout...")
         try:
@@ -588,6 +610,7 @@ def main(request):
     # Option 1: Incremental sync bucket client init
     bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
     force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
+    conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "weasyprint")
     
     bucket_obj = None
     gcs_cache = {}
@@ -774,7 +797,7 @@ def main(request):
                     if trigger_integ:
                         if not html_rendered:
                             html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
-                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered, fallback_title=filename)
+                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered, fallback_title=filename, engine=conv_engine)
 
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
@@ -851,9 +874,9 @@ def main(request):
                             if detail_resp.status_code == 200:
                                 page_detail = detail_resp.json()
                                 html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content, fallback_title=pdf_name)
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content, fallback_title=pdf_name, engine=conv_engine)
                             if not page_obj.get("VirtualContent"):
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>", fallback_title=pdf_name)
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>", fallback_title=pdf_name, engine=conv_engine)
 
                         all_list.append(page_obj)
                         

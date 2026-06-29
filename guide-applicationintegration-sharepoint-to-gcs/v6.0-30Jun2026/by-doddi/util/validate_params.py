@@ -190,6 +190,14 @@ def validate():
         "CONFIG_SharePoint_Hostname": {
             "pattern": r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
             "error": "Must be a valid domain/hostname format"
+        },
+        "CONFIG_Developer_Group_Or_User": {
+            "pattern": r"^(user:|group:|ggrp)[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$",
+            "error": "Must be prefixed with user: or group: followed by email address"
+        },
+        "CONFIG_PDF_Conversion_Engine": {
+            "pattern": r"^(weasyprint|playwright)$",
+            "error": "Must be either 'weasyprint' or 'playwright'"
         }
     }
 
