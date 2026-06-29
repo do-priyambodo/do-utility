@@ -247,10 +247,12 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
             from playwright.sync_api import sync_playwright
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.set_content(cleaned_html, wait_until="networkidle")
-                pdf_bytes = page.pdf(format="A4", print_background=True)
-                browser.close()
+                try:
+                    page = browser.new_page()
+                    page.set_content(cleaned_html, wait_until="networkidle")
+                    pdf_bytes = page.pdf(format="A4", print_background=True)
+                finally:
+                    browser.close()
                 return base64.b64encode(pdf_bytes).decode("utf-8")
         except Exception as pw_e:
             print(f"Warning: Playwright engine failed ({pw_e}). Falling back to WeasyPrint engine...")
