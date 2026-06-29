@@ -161,14 +161,14 @@ export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('param
      --project="${PROJECT_ID}"
    ```
 2. Choose your deployment method based on your selected PDF conversion engine:
-   * **Option A: Custom Docker Container (Recommended for Playwright / Headless Chromium)**:
-     Builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries baked inside:
+   * **👉 Option A: Custom Docker Container (MANDATORY & RECOMMENDED FOR V6.0 DEFAULT)**:
+     **Use this option!** We are currently using this deployment method because V6.0 defaults to Playwright (Headless Chromium) to solve customer feedback regarding missing visual images and complex page layouts. This script builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries pre-installed:
      ```bash
      chmod +x deploy_cloud_run.sh
      ./deploy_cloud_run.sh
      ```
-   * **Option B: Standard Buildpacks (Recommended for WeasyPrint)**:
-     Deploys via standard Google Cloud Function Gen 2 buildpacks without container overhead:
+   * **Option B: Standard Buildpacks (Alternative Fallback Only)**:
+     *Skip this option unless your organization strictly bans custom Docker containers.* Deploys via standard Google Cloud Function Gen 2 buildpacks without container overhead or Chromium binaries (requires changing `parameters.json` to `"CONFIG_PDF_Conversion_Engine": "weasyprint"`):
      ```bash
      chmod +x deploy_cloud_function.sh
      ./deploy_cloud_function.sh
