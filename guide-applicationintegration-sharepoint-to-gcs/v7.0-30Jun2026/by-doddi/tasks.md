@@ -1,0 +1,97 @@
+# 🎯 Enterprise SharePoint to GCS Sync & Agent Assist Roadmap
+
+This document outlines the execution roadmap for synchronizing Microsoft SharePoint repositories into Google Cloud Storage (GCS) and indexing them into Vertex AI Agent Builder. It is divided into **TODAY'S SCOPE** (Option 1: Targeted Sync & Cloud Run Migration) and **FUTURE SCOPE** (Option 2: Full Enterprise Repository Traversal).
+
+---
+
+# 📅 TODAY'S SCOPE (Option 1: Targeted Sync)
+
+### ✅ Phase 1: Output Formatting (Completed)
+- [x] **Task 1: Change SharePoint Page Sync Output from HTML to PDF**
+  - *Completed*: Converted SharePoint `.aspx` site pages into clean executive `.pdf` documents using `xhtml2pdf` with Fluent UI styling.
+
+---
+
+### 🎯 Phase 2: Targeted Sync & Cloud Run Migration
+*Goal*: Synchronize a curated list of specific SharePoint URLs/files defined in a GCS config file (`gs://bucket/config/target_urls.txt`). Migrate from Cloud Functions to **Cloud Run** for improved stability, larger memory allocation, and longer execution timeout limits.
+
+- [x] **Task 2.1: Migrate Execution Engine to Cloud Run (Deprecated / Solved via Task 2.3 Micro-Batching)**
+  - *Completed*: Solved via Task 2.3 Micro-Batching. Pre-slicing payloads upstream into controlled batches keeps executions well within Cloud Function timeouts, eliminating the immediate need for Cloud Run migration.
+
+- [x] **Task 2.2: Verify Targeted Sync via GCS Config List (`target_urls.txt`)**
+  - *Completed*: Verified targeted sync workflow (`sync_gcs_dynamic.py`). Enhanced engine to dynamically read `gs://bucket/config/target_urls.txt`, convert targeted `.aspx` pages to high-fidelity executive `.pdf` reports (with embedded Rich Text, clickable SharePoint Source citations, and physical inline Base64 leadership photos), and upload them reliably to GCS (`1.38 MiB`).
+
+- [x] **Task 2.3: Micro-Batching & GCS Execution Audit Logs**
+  - *Completed*: Implemented upstream pre-slicing in `sync_gcs_dynamic.py` (`CONFIG_Batch_Size: 10`). For every batch submitted to Application Integration, a structured completion audit manifest (`batch_completion_{datetime}_batch_{N}.json`) is written to `gs://bucket/config/status/` recording timestamps, item counts, and processed URLs. Verified with live GCS artifact generation.
+
+---
+
+### ⏰ Phase 3: Automated Scheduling
+*Goal*: Automate periodic execution of the targeted synchronization pipeline.
+
+- [x] **Task 3: Create or Replace Cloud Scheduler Jobs**
+  - *Completed*: Updated scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to dynamically read `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` and point to the Cloud Function URI with OIDC authentication. Successfully executed `./deploy_scheduler_targeted_gcs_sync.sh` creating active Cloud Scheduler job `doddi-sharepoint-sync-hourly-gcs-dynamic`.
+
+---
+
+### 🧠 Phase 4a: GKA Live SharePoint Citation Link Preparation
+*Goal*: Ensure contact center agents using Generative Knowledge Assist (GKA) are directed to the live SharePoint web page when clicking citation links, rather than opening the raw GCS storage blob.
+
+- [x] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-source/main.py`)**
+  - *Completed*: Updated `cf-source/main.py` to automatically compile all traversed items in memory and upload a JSONL manifest directly to `gs://bucket/config/metadata.jsonl` containing custom `"sharepoint_url"` and `"title"` fields without any extra SharePoint requests.
+
+- [x] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
+  - *Completed*: Created standalone integration guide (`GUIDE_GKA_Live_SharePoint_Links.md`) providing frontend web developers with step-by-step instructions and code snippets (`articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "_blank" }`) to route CCAI / GKA citations to live SharePoint pages.
+
+---
+
+### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling (Pending / Future Implementation)
+*Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
+*Status*: **Paused safely after Phase 4a creation of `metadata.jsonl`**. The manifest sits ready in GCS for future connection.
+
+- [ ] **Task 4b.1: Create Datastore Import Trigger Cloud Function (`cf-datastore-sync`)**
+  - *Future Implementation Guide*: Create a Gen 2 Cloud Function (`doddi-datastore-sync-trigger`) triggered via HTTP POST.
+  - *Key Architectural Requirement*: The Cloud Function should hit the Discovery Engine `importDocuments` API using `"dataSchema": "custom"` and `"reconciliationMode": "INCREMENTAL"` pointing to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`.
+  - *Crucial Manifest Note*: Our Phase 4a pipeline already formats each line in `metadata.jsonl` with `"_id"` (required by Google Cloud custom schema) and `"content": {"uri": "gs://..."}` so Discovery Engine knows the exact PDF location automatically!
+
+- [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *Future Implementation Guide*: Deploy a Cloud Scheduler job (`doddi-sharepoint-datastore-sync-hourly`) running every 12 hours (`0 */12 * * *`) targeting the `cf-datastore-sync` Cloud Function URI using OIDC Service Account authentication.
+  - *GCP Console Tip*: When configuring the Data Store in the GCP Console, create it as **Cloud Storage > JSON lines (JSONL) with custom metadata** pointing directly to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl` to ensure citation URLs work seamlessly!
+
+---
+---
+
+# 🚀 FUTURE SCOPE (Option 2: Full Enterprise Traversal)
+
+### 🏢 Phase 5: Full Enterprise Repository Resilient Traversal
+*Goal*: Synchronize entire enterprise subsite repositories (`Sites/YourOrg/Subsite` - [XXX] files, [XXX] pages, [XXX] GB) without encountering Microsoft Graph API throttling rejections (`HTTP 429 / 503`).
+
+#### 📊 Customer Executive Briefing: Root Cause Analysis & Justification for Rejection Errors
+*Why previous legacy sync architectures failed when traversing enterprise-scale repositories ([XXX] GB+ / [XXX]+ items):*
+
+1. **Microsoft Graph API Multi-Tenant Throttling (`HTTP 429 / 503`)**:
+   - *The Problem*: When legacy synchronous scripts attempt to traverse [XXX] items in a single uninterrupted execution loop—specifically firing rapid `$expand=canvasLayout` API requests for [XXX] modern site pages while simultaneously downloading [XXX] binary files—Microsoft 365's tenant protection monitors identify the traffic pattern as an automated burst spike or Denial of Service (DoS) attempt.
+   - *The Rejection*: Microsoft Graph responds by rejecting further connections with `HTTP 429 Too Many Requests` or `HTTP 503 Service Unavailable` and injects a mandatory `Retry-After` cooldown timer. Because previous scripts did not implement asynchronous queuing or respect `Retry-After` headers, repeated immediate retries caused Microsoft to temporarily ban the OAuth Service Principal token.
+
+2. **Synchronous Execution & Cloud Function HTTP Gateway Timeouts (`HTTP 504`)**:
+   - *The Problem*: Legacy architectures coupled folder traversal and file downloading into a single monolithic HTTP Cloud Function request.
+   - *The Timeout*: While Cloud Functions (2nd Gen) can run up to 60 minutes internally, downstream calling clients (such as Application Integration connectors or API Gateways) enforce hard synchronous HTTP connection drops (typically between 60 to 300 seconds). Attempting to stream [XXX] GB of binary data synchronously over a single HTTP socket guarantees a `504 Gateway Timeout` or container out-of-memory crash before the loop can finish.
+
+3. **Absence of Delta State Tracking (Redundant Daily Transfer)**:
+   - *The Problem*: Legacy pipelines executed a brute-force full scan every day, re-downloading all [XXX] GB even if 99.9% of files were unchanged.
+   - *The Solution*: Transitioning to Microsoft Graph **Delta Queries (`$delta`)** and **GCS timestamp caching** ensures the pipeline only requests items created or edited since the previous run, dropping daily data movement from [XXX] GB down to a few megabytes and completely eliminating throttling risks.
+
+---
+#### 🛠️ Phase 5 Implementation Tasks
+
+- [x] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-source/main.py`)**
+  - *Completed*: Implemented `get_resilient_session()` with 5 exponential backoff retries across status codes `[429, 500, 502, 503, 504]` and mounted custom adapters for both HTTP and HTTPS sockets to automatically absorb Microsoft Graph API throttling bursts.
+
+- [x] **Task 5.2: Implement GCS Delta Cache Filter & Automated Deletion (Skip Unchanged Files / Clean Inactive Files)**
+  - *Completed*: Implemented O(1) in-memory GCS timestamp pre-fetching (`gcs_cache`) and applied delta comparison across **both sync mechanisms** (Full Folder Traversal and Targeted Sync via `target_urls.txt`). Additionally implemented automated detection and deletion of inactive/deleted `.aspx` pages and SharePoint files from GCS bucket with clear status logging (`🗑️ Status Log: Deleted inactive file from GCS`).
+
+- [x] **Task 5.3: Chunked & Parallel Batch Execution for Application Integration**
+  - *Completed*: Implemented thread-safe parallel micro-batch execution (`CONFIG_Max_Parallel_Workers: 10`) using Python `ThreadPoolExecutor` and buffered console logging. Sliced batches run concurrently for ~10x speedup while maintaining unbroken visual console logs and independent GCS audit records.
+
+---
+*Status: All core synchronization and scheduling phases (Phase 1, Phase 2, Phase 3, and Phase 5) are 100% completed, verified via live diagnostic check scripts, and deployed as automated Cloud Scheduler cron jobs. Next optional step: Phase 4 (Datastore Indexing / Vertex AI Search integration).*
