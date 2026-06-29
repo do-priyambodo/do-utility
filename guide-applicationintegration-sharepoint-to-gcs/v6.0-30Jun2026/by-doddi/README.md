@@ -9,8 +9,10 @@ A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Fu
 The sync pipeline follows an enterprise hybrid orchestrator design (V6.0):
 
 1.  **Traversal Cloud Function (`yourorg-sharepoint-list-files`)**:
+    *   **Modular Architecture:** Cleanly refactored from a single monolithic file into specialized modules (`graph_client.py` for resilient M365 auth/retries, `pdf_renderer.py` for multi-engine Playwright/WeasyPrint PDF conversion, `sharepoint_traversal.py` for recursive drive inventory and DOM layout harvesting, and `main.py` for HTTP orchestration).
+    *   **Monolithic Revertability:** A pre-refactor backup (`cf-source/main.py.monolithic.bak`) and git tag (`v6.0-monolithic-backup`) are maintained for instant rollback if desired.
     *   Recursively queries Microsoft Graph API or dynamically scopes targeted URLs (`gs://bucket/config/target_urls.txt`).
-    *   Resolves modern SharePoint site pages, downloads physical inline leadership images, and converts canvas layouts into executive `.pdf` documents via `xhtml2pdf`.
+    *   Resolves modern SharePoint site pages, downloads physical inline leadership images, and converts canvas layouts into executive `.pdf` documents via Playwright (default).
     *   Performs O(1) incremental delta timestamp comparisons (`gcs_cache`) to skip unchanged files and automatically deletes orphaned/inactive SharePoint files from GCS.
     *   Slices items into controlled micro-batches (`CONFIG_Batch_Size: 10`) to prevent timeout drops.
 2.  **Application Integration Parent Orchestrator (`yourorg-sharepoint-gcs-parent`)**:
