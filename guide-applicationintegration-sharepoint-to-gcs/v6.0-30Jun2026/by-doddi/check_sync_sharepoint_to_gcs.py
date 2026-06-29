@@ -55,7 +55,7 @@ def get_cf_url(function_name, location, project_id):
 
 def check_full_sync():
     print("================================================================================")
-    print("🔍 DIAGNOSTIC CHECK: FULL SHAREPOINT-TO-GCS TRAVERSAL SYNC (V5.0)")
+    print("🔍 DIAGNOSTIC CHECK: FULL SHAREPOINT-TO-GCS TRAVERSAL SYNC (V6.0)")
     print("================================================================================\n")
 
     if not os.path.exists("parameters.json"):
@@ -142,7 +142,7 @@ def check_full_sync():
         print("ℹ️ Skipping live dry-run (Cloud Function URL or auth token unavailable).\n")
 
     print("================================================================================")
-    print("⚡ HOW V5.0 FULL TRAVERSAL SYNC WORKS AT RUNTIME")
+    print("⚡ HOW V6.0 FULL TRAVERSAL SYNC WORKS AT RUNTIME")
     print("================================================================================")
     print("1. O(1) Memory Cache : The Cloud Function pre-fetches all existing GCS timestamps.")
     print("2. Graph API Crawl   : Recursively crawls SharePoint folders & modern site pages.")

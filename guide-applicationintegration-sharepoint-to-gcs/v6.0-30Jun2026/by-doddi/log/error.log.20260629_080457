@@ -1,0 +1,14 @@
+[2026-06-28T18:21:23.002750] ❌ HTTP Error querying status (Code 404): Not Found
+[2026-06-28T18:21:23.003572] {
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.DebugInfo",
+        "detail": "[ORIGINAL ERROR] generic::not_found: com.google.enterprise.crm.exceptions.IpCanonicalCodeException: Execution for name projects/work-mylab-machinelearning/locations/asia-southeast1/integrations/doddi-sharepoint-gcs-parent/executions/\u003cEXECUTION_ID\u003e could not be found Code: NOT_FOUND"
+      }
+    ]
+  }
+}

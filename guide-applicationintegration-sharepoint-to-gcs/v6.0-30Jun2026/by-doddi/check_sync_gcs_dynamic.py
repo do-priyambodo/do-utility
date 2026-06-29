@@ -56,7 +56,7 @@ def get_cf_url(function_name, location, project_id):
 
 def check_dynamic_sync():
     print("================================================================================")
-    print("🔍 DIAGNOSTIC CHECK: DYNAMIC SHAREPOINT-TO-GCS SYNC PIPELINE (V5.0)")
+    print("🔍 DIAGNOSTIC CHECK: DYNAMIC SHAREPOINT-TO-GCS SYNC PIPELINE (V6.0)")
     print("================================================================================\n")
 
     if not os.path.exists("parameters.json"):

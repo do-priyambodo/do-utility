@@ -1,4 +1,4 @@
-# Serverless SharePoint-to-GCS Synchronization Pipeline (V5.0)
+# Serverless SharePoint-to-GCS Synchronization Pipeline (V6.0)
 
 A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, and automated deletion of inactive SharePoint inventory.
 
@@ -6,7 +6,7 @@ A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Fu
 
 ## Architecture Topology
 
-The sync pipeline follows an enterprise hybrid orchestrator design (V5.0):
+The sync pipeline follows an enterprise hybrid orchestrator design (V6.0):
 
 1.  **Traversal Cloud Function (`yourorg-sharepoint-list-files`)**:
     *   Recursively queries Microsoft Graph API or dynamically scopes targeted URLs (`gs://bucket/config/target_urls.txt`).
