@@ -21,5 +21,7 @@
   "CONFIG_Sync_SharePoint_Pages": true,
   "CONFIG_Scheduler_Cron_Schedule": "0 */12 * * *",
   "CONFIG_Datastore_Id": "doddi-sharepoint-gcs-datastore_1782663558460_gcs_store",
-  "CONFIG_Datastore_Location": "global"
+  "CONFIG_Datastore_Location": "global",
+  "CONFIG_Developer_Group_Or_User": "user:admin@priyambodo.altostrat.com",
+  "CONFIG_PDF_Conversion_Engine": "weasyprint"
 }
