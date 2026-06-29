@@ -9,15 +9,15 @@ This document serves as the master architectural reference and future scaling pl
 
 To solve customer feedback regarding missing content, unrendered images, and 1-line error files ("too complex to render") during `.aspx` export, three primary rendering architectures were evaluated:
 
-### Methodology 1: Headless Chromium via Playwright (Full Pixel Rendering)
-*   **Mechanism**: Spawns a complete headless Chromium browser instance inside the Cloud Function container. Loads the extracted HTML payload, waits for DOM/network stabilization (`networkidle`), and prints an exact vector PDF (`page.pdf()`).
-*   **Pros**: 100% pixel-perfect rendering matching modern browser layouts; handles complex CSS grid, flexbox, and dynamic client-side JS seamlessly.
+### Methodology 1: Headless Chromium via Playwright (Recommended Production Default)
+*   **Mechanism**: Spawns a complete headless Chromium browser instance inside our Option A custom Docker container (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`). Loads the extracted HTML payload, waits for DOM/network stabilization (`networkidle`), and prints an exact desktop vector PDF (`page.pdf()`).
+*   **Pros**: 100% pixel-perfect rendering matching modern browser layouts; handles complex CSS grid, flexbox, and dynamic client-side JS seamlessly; produces rich, executive-grade reports (~300KB–1.2MB).
 *   **Cons**: Higher memory consumption (~250MB–400MB RAM per page); slower container startup (~4-5 seconds launch).
 
-### Methodology 2: WeasyPrint HTML5 Vector Engine (Recommended Production Default)
+### Methodology 2: WeasyPrint HTML5 Vector Engine (Fallback Engine)
 *   **Mechanism**: Utilizes the lightweight WeasyPrint HTML/CSS compilation library. Takes our universal HTML extractor output (which harvests main sections, sidebars, accordions, and inline base64 images) and compiles it directly into a clean executive PDF document.
 *   **Pros**: Extremely fast container execution (<2 seconds); low memory footprint (~100MB–150MB RAM); produces clean, selectable text and vector graphics.
-*   **Cons**: Does not execute client-side JavaScript (mitigated by our pre-harvesting extraction pipeline).
+*   **Cons**: Does not execute client-side JavaScript (mitigated by our pre-harvesting extraction pipeline). Used as automatic fallback if container Chromium binaries are missing.
 
 ### Methodology 3: Gotenberg / External Dedicated Microservice
 *   **Mechanism**: Offloads document rendering to an external Dockerized API container (Gotenberg) running Chrome/LibreOffice.
@@ -28,13 +28,13 @@ To solve customer feedback regarding missing content, unrendered images, and 1-l
 
 ## 2. Engine Comparison Matrix
 
-| Feature / Criteria | Methodology 2: WeasyPrint (Recommended Default) | Methodology 1: Playwright (Headless Chromium) | Methodology 3: Gotenberg Microservice |
+| Feature / Criteria | Methodology 1: Playwright (Recommended Default) | Methodology 2: WeasyPrint (Fallback Engine) | Methodology 3: Gotenberg Microservice |
 | :--- | :--- | :--- | :--- |
-| **Configuration Value** | `"weasyprint"` | `"playwright"` | N/A (External Service) |
-| **Rendering Engine** | Lightweight HTML5 / CSS Vector Compilation | Full Headless Chromium Browser | External Dockerized API |
-| **Memory Consumption**| ~100MB – 150MB per page | ~250MB – 400MB per page | Low locally / High remotely |
-| **Execution Speed** | Fast (<2s per page) | Moderate (~4-5s per page) | Network dependent |
-| **Maintenance** | Zero external infrastructure | Zero external infrastructure | Requires dedicated VM/Cluster |
+| **Configuration Value** | `"playwright"` | `"weasyprint"` | N/A (External Service) |
+| **Rendering Engine** | Full Headless Chromium Browser | Lightweight HTML5 / CSS Vector Compilation | External Dockerized API |
+| **Memory Consumption**| ~250MB – 400MB per page | ~100MB – 150MB per page | Low locally / High remotely |
+| **Execution Speed** | Moderate (~4-5s per page) | Fast (<2s per page) | Network dependent |
+| **Maintenance** | Option A Custom Docker Container | Zero external infrastructure | Requires dedicated VM/Cluster |
 
 ---
 
