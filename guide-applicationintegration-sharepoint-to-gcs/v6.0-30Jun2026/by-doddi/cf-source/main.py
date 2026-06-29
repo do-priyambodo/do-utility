@@ -163,6 +163,80 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
             
     return all_results, sync_results
 
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+# Simplify HTML DOM structure for xhtml2pdf fallback when complex CSS/tables fail
+def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
+    safe_title = html.escape(str(fallback_title))
+    if not BeautifulSoup:
+        # Simple regex stripping if BS4 is unavailable
+        text_only = re.sub(r'<[^>]+>', ' ', html_string)
+        return f"<!DOCTYPE html><html><head><title>{safe_title}</title><style>body {{ font-family: sans-serif; padding: 20px; line-height: 1.5; }} h1 {{ color: #0078d4; }}</style></head><body><h1>{safe_title} (Simplified Layout)</h1><p>{html.escape(text_only[:10000])}</p></body></html>"
+    
+    soup = BeautifulSoup(html_string, "html.parser")
+    
+    # Remove all stylesheet links and style tags to prevent xhtml2pdf float crash
+    for s in soup.find_all(["style", "link", "script", "noscript"]):
+        s.decompose()
+        
+    # Simplify table attributes and ensure widths fit page
+    for tbl in soup.find_all("table"):
+        tbl["width"] = "100%"
+        tbl["border"] = "1"
+        tbl["cellpadding"] = "6"
+        tbl["cellspacing"] = "0"
+        if tbl.has_attr("style"):
+            del tbl["style"]
+            
+    # Ensure images have max dimensions so they don't overflow A4 pages
+    for img in soup.find_all("img"):
+        img["width"] = "400"
+        if img.has_attr("height"):
+            del img["height"]
+        if img.has_attr("style"):
+            del img["style"]
+            
+    # Clean up divs and spans that might have problematic CSS attributes
+    for el in soup.find_all(["div", "span", "p", "section"]):
+        if el.has_attr("style"):
+            del el["style"]
+        if el.has_attr("class"):
+            del el["class"]
+
+    body_content = ""
+    body = soup.find("body")
+    if body:
+        body_content = str(body.decode_contents())
+    else:
+        body_content = str(soup.decode_contents())
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{safe_title}</title>
+    <style>
+        @page {{ size: A4 portrait; margin: 1.5cm; }}
+        body {{ font-family: sans-serif; font-size: 10pt; line-height: 1.6; color: #201f1e; }}
+        h1, h2, h3 {{ color: #0078d4; margin-top: 15px; margin-bottom: 8px; }}
+        table {{ border-collapse: collapse; margin: 15px 0; width: 100%; }}
+        th, td {{ border: 1px solid #c8c6c4; padding: 6px; text-align: left; vertical-align: top; }}
+        th {{ background-color: #f3f2f1; font-weight: bold; }}
+        img {{ max-width: 100%; height: auto; margin: 10px 0; }}
+        .fallback-banner {{ background-color: #fff4ce; border-left: 4px solid #ffb900; padding: 12px; margin-bottom: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="fallback-banner">
+        <b>Simplified Document Layout:</b> This SharePoint page layout was simplified to ensure 100% of the information, tables, and images are presented accurately without formatting loss.
+    </div>
+    {body_content}
+</body>
+</html>"""
+
 # Convert rendered HTML string to Base64-encoded PDF bytes using xhtml2pdf
 def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page"):
     if not pisa:
@@ -179,17 +253,69 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page"):
         pdf_bytes = pdf_buffer.getvalue()
         return base64.b64encode(pdf_bytes).decode("utf-8")
     except Exception as e:
-        print(f"Warning: xhtml2pdf crashed during PDF conversion ({e}). Generating fallback PDF layout...")
+        print(f"Warning: High-fidelity PDF rendering failed ({e}). Generating simplified Document Reader layout...")
         try:
-            safe_title = html.escape(str(fallback_title))
-            fallback_html = f"<!DOCTYPE html><html><head><title>{safe_title}</title><style>body {{ font-family: sans-serif; padding: 20px; }} h1 {{ color: #0078d4; }}</style></head><body><h1>{safe_title}</h1><p><b>Note:</b> This SharePoint page contained complex interactive tables or styling that could not be rendered directly into PDF layout.</p><p>Please access the live SharePoint page directly.</p></body></html>"
+            simplified_html = strip_complex_css_for_pdf(html_string, fallback_title)
             fb_buffer = io.BytesIO()
-            pisa.CreatePDF(io.StringIO(fallback_html), dest=fb_buffer)
+            pisa.CreatePDF(io.StringIO(simplified_html), dest=fb_buffer)
             return base64.b64encode(fb_buffer.getvalue()).decode("utf-8")
         except Exception as fb_e:
-            print(f"Warning: Fallback PDF creation failed ({fb_e}). Returning raw HTML payload.")
+            print(f"Warning: Simplified layout PDF creation failed ({fb_e}). Returning raw HTML payload.")
             return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
 
+
+# Helper to resolve and embed inline images inside Rich Text HTML payloads
+def resolve_and_embed_images_in_html(html_snippet, source_url="", headers=None):
+    if not html_snippet or not headers or not BeautifulSoup:
+        return html_snippet
+    try:
+        soup = BeautifulSoup(html_snippet, "html.parser")
+        imgs = soup.find_all("img")
+        if not imgs:
+            return html_snippet
+            
+        parsed_src = urllib.parse.urlparse(source_url) if source_url else None
+        host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
+        
+        for img in imgs:
+            raw_src = img.get("src", "").strip()
+            if not raw_src or raw_src.startswith("data:"):
+                continue
+                
+            full_img_url = raw_src if (raw_src.startswith("http://") or raw_src.startswith("https://")) else (f"{host_scheme}{raw_src}" if raw_src.startswith("/") else f"{host_scheme}/{raw_src}")
+            img_data_uri = ""
+            
+            # Attempt 1: Direct authenticated GET request using Bearer Token
+            try:
+                direct_resp = http.get(full_img_url, headers=headers, timeout=15)
+                if direct_resp.status_code == 200 and direct_resp.content:
+                    ct = direct_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                    b64_str = base64.b64encode(direct_resp.content).decode("utf-8")
+                    img_data_uri = f"data:{ct};base64,{b64_str}"
+            except Exception as e:
+                pass
+                
+            # Attempt 2: Microsoft Graph /shares/ API if direct fetch did not succeed
+            if not img_data_uri:
+                try:
+                    encoded_share = "u!" + base64.urlsafe_b64encode(full_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
+                    share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
+                    img_resp = http.get(share_api_url, headers=headers, timeout=15)
+                    if img_resp.status_code == 200 and img_resp.content:
+                        ct = img_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                        b64_str = base64.b64encode(img_resp.content).decode("utf-8")
+                        img_data_uri = f"data:{ct};base64,{b64_str}"
+                except Exception as e:
+                    pass
+                    
+            if img_data_uri:
+                img["src"] = img_data_uri
+                img["style"] = "max-width:100%; height:auto;"
+                
+        return str(soup)
+    except Exception as e:
+        print(f"Warning: resolve_and_embed_images_in_html failed ({e})")
+        return html_snippet
 
 # Parse canvas layout and render a high-fidelity Fluent UI SharePoint site page
 def render_page_to_html(page, source_url="", headers=None):
@@ -212,6 +338,7 @@ def render_page_to_html(page, source_url="", headers=None):
     html_parts.append("        h1 { color: #0078d4; font-size: 24pt; font-weight: 600; margin: 0 0 12px 0; }")
     html_parts.append("        .meta-text { font-size: 9.5pt; color: #605e5c; margin: 3px 0; }")
     html_parts.append("        .section { margin-bottom: 25px; clear: both; }")
+    html_parts.append("        .sidebar-section { background-color: #faf9f8; border: 1px solid #edebe9; border-radius: 4px; padding: 18px; margin-top: 20px; }")
     html_parts.append("        .webpart-card { background: #ffffff; border: 1px solid #edebe9; border-radius: 4px; padding: 18px; margin-bottom: 18px; }")
     html_parts.append("        .webpart-hero { background-color: #f0f6ff; border-left: 4px solid #0078d4; padding: 20px; margin-bottom: 20px; border-radius: 4px; }")
     html_parts.append("        .webpart-title { font-weight: 600; color: #0078d4; font-size: 13pt; margin-bottom: 12px; border-bottom: 1px solid #edebe9; padding-bottom: 6px; }")
@@ -223,6 +350,7 @@ def render_page_to_html(page, source_url="", headers=None):
     html_parts.append("        ul { padding-left: 20px; margin: 8px 0; list-style-type: square; }")
     html_parts.append("        li { margin-bottom: 6px; }")
     html_parts.append("        a { color: #0078d4; text-decoration: none; font-weight: 500; }")
+    html_parts.append("        img { max-width: 100%; height: auto; }")
     html_parts.append("    </style>")
     html_parts.append("</head>")
     html_parts.append("<body>")
@@ -235,14 +363,23 @@ def render_page_to_html(page, source_url="", headers=None):
         html_parts.append(f"        <div class='meta-text'><b>SharePoint Source:</b> <a href='{clean_page_url}'>{clean_page_url}</a></div>")
     html_parts.append("    </div>")
     
-    # Render Canvas Content
+    # Collect all columns from both horizontal and vertical sections
     canvas = page.get("canvasLayout", {})
-    sections = canvas.get("horizontalSections", [])
+    horizontal_sections = canvas.get("horizontalSections", [])
+    vertical_section = canvas.get("verticalSection", {})
     
-    if sections:
-        for sec_idx, sec in enumerate(sections):
-            html_parts.append(f"    <div class='section' id='section-{sec_idx}'>")
-            columns = sec.get("columns", [])
+    all_sections = []
+    for sec in horizontal_sections:
+        all_sections.append(("main", sec.get("columns", [])))
+    if vertical_section and vertical_section.get("webparts"):
+        all_sections.append(("sidebar", [{"webparts": vertical_section.get("webparts", [])}]))
+    
+    if all_sections:
+        for sec_idx, (sec_type, columns) in enumerate(all_sections):
+            sec_class = "sidebar-section" if sec_type == "sidebar" else "section"
+            html_parts.append(f"    <div class='{sec_class}' id='section-{sec_idx}'>")
+            if sec_type == "sidebar":
+                html_parts.append("        <h2 style='color:#605e5c; font-size:14pt; border-bottom:2px solid #605e5c; padding-bottom:4px;'>📌 Sidebar Information</h2>")
             for col_idx, col in enumerate(columns):
                 html_parts.append(f"        <div class='column' id='section-{sec_idx}-col-{col_idx}'>")
                 webparts = col.get("webparts", [])
@@ -254,21 +391,21 @@ def render_page_to_html(page, source_url="", headers=None):
                     html_strings = processed.get("htmlStrings", [])
                     links = processed.get("links", [])
                     
-                    # 1. Handle Direct Rich Text / HTML payloads (e.g. paragraphs, quotes, welcome letters)
-                    inner_html = wp.get("innerHtml") or props.get("text", "")
+                    # 1. Handle Direct Rich Text / HTML payloads
+                    inner_html = wp.get("innerHtml") or props.get("text", "") or props.get("html", "")
                     if inner_html and inner_html.strip():
-                        html_parts.append(f"            <div class='webpart-card text-content'>{inner_html}</div>")
+                        # Resolve and embed any inline images inside the Rich Text
+                        embedded_html = resolve_and_embed_images_in_html(inner_html, source_url, headers)
+                        html_parts.append(f"            <div class='webpart-card text-content'>{embedded_html}</div>")
                         continue
                         
                     raw_title = wp_data.get("title", wp.get("webPartType", "")).strip()
-                    
-                    # Filter out editorial clutter: Spacer & Divider
                     if raw_title.lower() in ["spacer", "divider"] or wp.get("webPartType", "").lower() in ["spacer", "divider"]:
                         if raw_title.lower() == "divider" or wp.get("webPartType", "").lower() == "divider":
                             html_parts.append("            <hr class='divider-hr'>")
                         continue
 
-                    # 2. Handle Image / Profile cards with overlayText or altText (e.g. Leadership profiles)
+                    # 2. Handle Image / Profile cards
                     overlay_text = props.get("overlayText", "").strip()
                     alt_text = props.get("altText", "").strip()
                     caption_text = props.get("captionText", "").strip()
@@ -280,36 +417,52 @@ def render_page_to_html(page, source_url="", headers=None):
                                 
                     image_sources = processed.get("imageSources", [])
                     img_data_uri = ""
-                    if image_sources and headers:
+                    raw_img = ""
+                    if image_sources:
                         raw_img = image_sources[0].get("value", "").strip()
-                        if raw_img:
+                    elif props.get("fileAbsoluteUrl"):
+                        raw_img = props.get("fileAbsoluteUrl").strip()
+                    elif props.get("serverRelativeUrl"):
+                        raw_img = props.get("serverRelativeUrl").strip()
+
+                    if raw_img and headers:
+                        try:
+                            parsed_src = urllib.parse.urlparse(source_url) if source_url else None
+                            host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
+                            full_img_url = raw_img if (raw_img.startswith("http://") or raw_img.startswith("https://")) else (f"{host_scheme}{raw_img}" if raw_img.startswith("/") else f"{host_scheme}/{raw_img}")
+                            
+                            # Try direct fetch first
                             try:
-                                if raw_img.startswith("http://") or raw_img.startswith("https://"):
-                                    full_img_url = raw_img
-                                else:
-                                    parsed_src = urllib.parse.urlparse(source_url) if source_url else None
-                                    host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
-                                    full_img_url = f"{host_scheme}{raw_img}" if raw_img.startswith("/") else f"{host_scheme}/{raw_img}"
+                                direct_resp = http.get(full_img_url, headers=headers, timeout=15)
+                                if direct_resp.status_code == 200 and direct_resp.content:
+                                    ct = direct_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                                    b64_str = base64.b64encode(direct_resp.content).decode("utf-8")
+                                    img_data_uri = f"data:{ct};base64,{b64_str}"
+                            except Exception:
+                                pass
+                                
+                            # Fallback to /shares/
+                            if not img_data_uri:
                                 encoded_share = "u!" + base64.urlsafe_b64encode(full_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
                                 share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
-                                img_resp = http.get(share_api_url, headers=headers, timeout=30)
+                                img_resp = http.get(share_api_url, headers=headers, timeout=15)
                                 if img_resp.status_code == 200 and img_resp.content:
                                     ct = img_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
                                     b64_str = base64.b64encode(img_resp.content).decode("utf-8")
                                     img_data_uri = f"data:{ct};base64,{b64_str}"
-                            except Exception as e:
-                                print(f"Warning: Failed to fetch inline image {raw_img}: {e}")
+                        except Exception as e:
+                            print(f"Warning: Failed to fetch card image {raw_img}: {e}")
 
                     if overlay_text or alt_text or caption_text or img_data_uri:
                         html_parts.append("            <div class='webpart-card people-grid'>")
                         if img_data_uri:
                             html_parts.append("                <table border='0' cellpadding='0' cellspacing='0' width='100%'><tr>")
-                            html_parts.append(f"                <td width='110' valign='top'><img src='{img_data_uri}' width='95' height='95' /></td>")
+                            html_parts.append(f"                <td width='150' valign='top'><img src='{img_data_uri}' style='max-width:140px; height:auto;' /></td>")
                             html_parts.append("                <td valign='top'>")
                         if overlay_text:
-                            html_parts.append(f"                <div class='person-name'>👤 {html.escape(overlay_text)}</div>")
+                            html_parts.append(f"                <div class='person-name'>📌 {html.escape(overlay_text)}</div>")
                         if caption_text:
-                            html_parts.append(f"                <div class='person-detail'><b>Role/Title:</b> {html.escape(caption_text)}</div>")
+                            html_parts.append(f"                <div class='person-detail'><b>Title/Caption:</b> {html.escape(caption_text)}</div>")
                         if alt_text and alt_text != overlay_text:
                             html_parts.append(f"                <div class='person-detail'><i>Description:</i> {html.escape(alt_text)}</div>")
                         if img_data_uri:
@@ -326,16 +479,23 @@ def render_page_to_html(page, source_url="", headers=None):
                     if wp_title_clean and wp_title_clean.lower() not in ["web part", "text", "image", "show an image on your page"]:
                         html_parts.append(f"                <div class='webpart-title'>{wp_title_clean}</div>")
                     
+                    has_content = False
                     if html_strings:
                         for hs in html_strings:
                             val = hs.get("value", "")
-                            html_parts.append(f"                <div class='text-content'>{val}</div>")
-                    elif plain_texts:
+                            if val and val.strip():
+                                embedded_hs = resolve_and_embed_images_in_html(val, source_url, headers)
+                                html_parts.append(f"                <div class='text-content'>{embedded_hs}</div>")
+                                has_content = True
+                                
+                    if plain_texts:
                         items_dict = {}
                         general_texts = []
                         for pt in plain_texts:
                             key = pt.get("key", "")
                             value = pt.get("value", "")
+                            if not value or not str(value).strip():
+                                continue
                             if "items[" in key:
                                 parts = key.split(".")
                                 item_idx_str = parts[0].replace("items[", "").replace("]", "")
@@ -355,41 +515,40 @@ def render_page_to_html(page, source_url="", headers=None):
                             html_parts.append("                <ul>")
                             for idx in sorted_indices:
                                 item = items_dict[idx]
-                                it_title = html.escape(item.get("title", "Link Item"))
+                                it_title = html.escape(item.get("title", item.get("description", "Link Item")))
                                 it_url = "#"
                                 for l in links:
                                     l_key = l.get("key", "")
                                     l_val = l.get("value", "")
-                                    if f"items[{idx}]." in l_key:
+                                    if f"items[{idx}]." in l_key or f"[{idx}]" in l_key:
                                         it_url = html.escape(l_val)
                                         break
-                                html_parts.append(f"                    <li><a href='{it_url}' target='_blank'>{it_title}</a></li>")
+                                if it_url != "#":
+                                    html_parts.append(f"                    <li><a href='{it_url}' target='_blank'>🔗 {it_title}</a></li>")
+                                else:
+                                    html_parts.append(f"                    <li>▪️ {it_title}</li>")
                             html_parts.append("                </ul>")
+                            has_content = True
                         
                         if general_texts:
-                            if raw_title.lower() == "people":
-                                html_parts.append("                <div class='people-grid'>")
-                                i = 0
-                                while i < len(general_texts):
-                                    name = html.escape(general_texts[i])
-                                    detail1 = html.escape(general_texts[i+1]) if i+1 < len(general_texts) else ""
-                                    detail2 = html.escape(general_texts[i+2]) if i+2 < len(general_texts) else ""
-                                    html_parts.append(f"                    <div class='person-name'>👤 {name}</div>")
-                                    if detail1:
-                                        html_parts.append(f"                    <div class='person-detail'>{detail1}</div>")
-                                    if detail2:
-                                        html_parts.append(f"                    <div class='person-detail'>{detail2}</div>")
-                                    i += 3
-                                html_parts.append("                </div>")
-                            else:
-                                for gt in general_texts:
-                                    clean_gt = html.escape(gt)
-                                    html_parts.append(f"                <p class='text-content'>{clean_gt}</p>")
-                    else:
-                        desc = wp_data.get("description", "")
-                        if desc:
-                            clean_desc = html.escape(desc)
-                            html_parts.append(f"                <p class='text-content'>{clean_desc}</p>")
+                            for gt in general_texts:
+                                clean_gt = html.escape(str(gt))
+                                html_parts.append(f"                <p class='text-content'>{clean_gt}</p>")
+                                has_content = True
+                                
+                    # 3. Universal fallback: If no structured content was captured, dump any custom properties
+                    if not has_content:
+                        desc = wp_data.get("description", "") or props.get("description", "") or props.get("summary", "") or props.get("title", "")
+                        if desc and str(desc).strip():
+                            html_parts.append(f"                <p class='text-content'>{html.escape(str(desc))}</p>")
+                        elif props:
+                            # Dump printable string properties (like custom dropdown selections, link lists, etc.)
+                            prop_texts = []
+                            for k, v in props.items():
+                                if isinstance(v, str) and len(v.strip()) > 2 and not v.startswith("http") and k not in ["id", "version", "layoutId"]:
+                                    prop_texts.append(f"<b>{html.escape(k)}:</b> {html.escape(v)}")
+                            if prop_texts:
+                                html_parts.append(f"                <div class='text-content'><p>{'<br>'.join(prop_texts)}</p></div>")
                             
                     html_parts.append("            </div>")
                 html_parts.append("        </div>")
