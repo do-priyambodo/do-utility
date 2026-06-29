@@ -122,12 +122,15 @@ def run_dynamic_gcs_sync():
             log_buf.append(f"   🔹 [{idx}/{len(batch_urls)}] Target: {u}")
         log_buf.append(f"   ⏳ Invoking Cloud Function ({cf_endpoint}) to render/resolve batch...")
 
+        force_sync = "--force" in sys.argv or "--force-full-sync" in sys.argv
         payload_cf = {
             "site_name": site_name,
             "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
             "target_urls": batch_urls,
             "sync_files": params.get("CONFIG_Sync_SharePoint_Files", True),
-            "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True)
+            "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True),
+            "pdf_conversion_engine": params.get("CONFIG_PDF_Conversion_Engine", "weasyprint"),
+            "force_full_sync": force_sync
         }
         req_cf = urllib.request.Request(cf_endpoint, data=json.dumps(payload_cf).encode("utf-8"), headers=headers_cf, method="POST")
         

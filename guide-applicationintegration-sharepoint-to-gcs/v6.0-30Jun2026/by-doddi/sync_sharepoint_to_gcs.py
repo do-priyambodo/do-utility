@@ -112,11 +112,14 @@ def run_sync():
     else:
         site_name = site_path
 
+    force_sync = "--force" in sys.argv or "--force-full-sync" in sys.argv
     payload_cf = {
         "site_name": site_name,
         "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
         "sync_files": params.get("CONFIG_Sync_SharePoint_Files", True),
-        "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True)
+        "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True),
+        "pdf_conversion_engine": params.get("CONFIG_PDF_Conversion_Engine", "weasyprint"),
+        "force_full_sync": force_sync
     }
     
     cf_request_bytes = json.dumps(payload_cf).encode("utf-8")
