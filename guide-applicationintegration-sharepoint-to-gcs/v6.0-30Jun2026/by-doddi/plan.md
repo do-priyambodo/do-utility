@@ -41,6 +41,7 @@ To solve customer feedback regarding missing content, unrendered images, and 1-l
 ## 3. Enterprise Production Readiness & Scaling Roadmap (3,000+ Pages)
 
 ### Phase 1: Enterprise Scaling & Rate-Limit Mitigation
+*   **Modular Backend Architecture:** Decomposed monolithic 1,023-line code into `graph_client.py`, `pdf_renderer.py`, `sharepoint_traversal.py`, and `main.py` following industry best practices. Maintained `main.py.monolithic.bak` and git tag `v6.0-monolithic-backup` for instant revertability.
 *   **O(1) GCS Delta Cache (`$delta`)**: The pipeline automatically checks existing files in `gs://doddi-bucket-sharepoint-sync/pages/`. Pages matching existing timestamps are skipped instantly, protecting Microsoft Graph API limits and ensuring daily incremental runs finish in under 60 seconds.
 *   **Parallel Micro-Batching**: Inventory is sliced into micro-batches (`CONFIG_Batch_Size: 10`) running concurrently across 10 parallel workers (`CONFIG_Max_Parallel_Workers: 10`).
 *   **Action Item**: Execute an off-peak **Initial Seed Warm-Up** run to populate the delta cache across all 3,000+ items.
