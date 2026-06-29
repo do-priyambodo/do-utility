@@ -1,0 +1,48 @@
+🔍 Fetching Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+🔒 Retrieving Google OIDC Identity Token...
+📤 Sending test payload to Cloud Function:
+{
+  "site_name": "doddi-sharepoint-to-gcs",
+  "library_name": "Documents",
+  "trigger_integration": false
+}
+⚡ Invoking Cloud Function (Traversal only)...
+================================================================
+🎉 CLOUD FUNCTION TEST SUCCESSFUL!
+================================================================
+📦 RESULT 1: ALL RESOURCES IN SHAREPOINT (Total: 14)
+----------------------------------------------------------------
+ - [Document] 17June2026-by-DODDI.txt (Path: 17June2026-by-DODDI/17June2026-by-DODDI.txt)
+ - [Document] Judges InfoPack.pdf (Path: 17June2026-by-DODDI/Judges InfoPack.pdf)
+ - [Document] Judges Judging Criteria Final.pdf (Path: 17June2026-by-DODDI/Judges Judging Criteria Final.pdf)
+ - [Document] Judging Criteria Prelim.pdf (Path: 17June2026-by-DODDI/Judging Criteria Prelim.pdf)
+ - [Document] doddi-is-speaking-optimized.webp (Path: Files by Doddi/doddi-is-speaking-optimized.webp)
+ - [Document] BidBot.png (Path: BidBot.png)
+ - [Document] bitbot-google.jpeg (Path: bitbot-google.jpeg)
+ - [Page] Culture.html (Path: pages/Culture.html)
+ - [Page] DepartmentHome.html (Path: pages/DepartmentHome.html)
+ - [Page] Home.html (Path: pages/Home.html)
+ - [Page] Newsletter-template.html (Path: pages/Newsletter-template.html)
+ - [Page] Our-Leadership.html (Path: pages/Our-Leadership.html)
+ - [Page] Our-teams.html (Path: pages/Our-teams.html)
+ - [Page] Vision-and-Priorities.html (Path: pages/Vision-and-Priorities.html)
+
+================================================================
+⚡ RESULT 2: RESOURCES THAT NEED TO BE SYNCED (Total: 14)
+----------------------------------------------------------------
+ - [Document] 17June2026-by-DODDI.txt (Path: 17June2026-by-DODDI/17June2026-by-DODDI.txt) [NEW/MODIFIED]
+ - [Document] Judges InfoPack.pdf (Path: 17June2026-by-DODDI/Judges InfoPack.pdf) [NEW/MODIFIED]
+ - [Document] Judges Judging Criteria Final.pdf (Path: 17June2026-by-DODDI/Judges Judging Criteria Final.pdf) [NEW/MODIFIED]
+ - [Document] Judging Criteria Prelim.pdf (Path: 17June2026-by-DODDI/Judging Criteria Prelim.pdf) [NEW/MODIFIED]
+ - [Document] doddi-is-speaking-optimized.webp (Path: Files by Doddi/doddi-is-speaking-optimized.webp) [NEW/MODIFIED]
+ - [Document] BidBot.png (Path: BidBot.png) [NEW/MODIFIED]
+ - [Document] bitbot-google.jpeg (Path: bitbot-google.jpeg) [NEW/MODIFIED]
+ - [Page] Culture.html (Path: pages/Culture.html) [NEW/MODIFIED]
+ - [Page] DepartmentHome.html (Path: pages/DepartmentHome.html) [NEW/MODIFIED]
+ - [Page] Home.html (Path: pages/Home.html) [NEW/MODIFIED]
+ - [Page] Newsletter-template.html (Path: pages/Newsletter-template.html) [NEW/MODIFIED]
+ - [Page] Our-Leadership.html (Path: pages/Our-Leadership.html) [NEW/MODIFIED]
+ - [Page] Our-teams.html (Path: pages/Our-teams.html) [NEW/MODIFIED]
+ - [Page] Vision-and-Priorities.html (Path: pages/Vision-and-Priorities.html) [NEW/MODIFIED]
+================================================================

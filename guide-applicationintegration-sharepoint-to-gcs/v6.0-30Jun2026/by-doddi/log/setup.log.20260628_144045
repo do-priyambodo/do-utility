@@ -1,0 +1,25 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🚀 STARTING DYNAMIC GCS CONFIG ON-DEMAND SYNC PIPELINE
+================================================================
+📂 Step 1: Reading target URLs directly from gs://doddi-bucket-sharepoint-sync/config/target_urls.txt for upstream slicing...
+🟢 Resolved 4 total URL(s) from GCS configuration.
+
+🚀 Step 2: Slicing into 1 micro-batch(es) (max 10 items per batch)...
+
+⚡ Processing Micro-Batch 1/1 (4 URLs)...
+   🟢 Rendered/Resolved 4 item(s) from Cloud Function.
+   🟢 Integration triggered -> Execution ID: Check Console
+/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v5.0-29Jun2026/by-doddi/sync_gcs_dynamic.py:158: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp_utc": datetime.datetime.utcnow().isoformat() + "Z",
+/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v5.0-29Jun2026/by-doddi/sync_gcs_dynamic.py:164: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  status_filename = f"batch_completion_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%SZ')}_batch_{batch_num}_of_{total_batches}.json"
+   📄 Logged completion status to gs://doddi-bucket-sharepoint-sync/config/status/batch_completion_20260628_133700Z_batch_1_of_1.json
+
+================================================================
+🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!
+================================================================
+ - Check Console
+   https://console.cloud.google.com/integrations/logs;integration_name=doddi-sharepoint-gcs-parent;execution_id=Check Console;region=asia-southeast1?project=work-mylab-machinelearning
+================================================================

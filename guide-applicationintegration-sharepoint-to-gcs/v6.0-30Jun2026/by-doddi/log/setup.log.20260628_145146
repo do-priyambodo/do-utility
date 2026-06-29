@@ -1,0 +1,37 @@
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+================================================================
+🚀 STARTING DYNAMIC GCS CONFIG ON-DEMAND SYNC PIPELINE
+================================================================
+📂 Step 1: Reading target URLs directly from gs://doddi-bucket-sharepoint-sync/config/target_urls.txt for upstream slicing...
+🟢 Resolved 4 total URL(s) from GCS configuration.
+
+🚀 Step 2: Slicing into 1 micro-batch(es) (max 10 items/batch, running up to 10 batches in parallel)...
+
+================================================================================
+⚡ Processing Micro-Batch 1/1 (4 URLs)...
+================================================================================
+   🔹 [1/4] Target: https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Our-Leadership.aspx
+   🔹 [2/4] Target: https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Our-teams.aspx
+   🔹 [3/4] Target: https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Vision-and-Priorities.aspx
+   🔹 [4/4] Target: https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Culture.aspx
+   ⏳ Invoking Cloud Function (https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app) to render/resolve batch...
+   ✅ Cloud Function resolved Batch 1 successfully!
+      • Total items scanned in batch: 4
+      • Items needing upload (Delta hit/rendered): 4
+      📄 Prepared item: Our-Leadership.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Our-Leadership.pdf
+      📄 Prepared item: Our-teams.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Our-teams.pdf
+      📄 Prepared item: Vision-and-Priorities.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Vision-and-Priorities.pdf
+      📄 Prepared item: Culture.pdf -> gs://doddi-bucket-sharepoint-sync/pages/Culture.pdf
+   ⏳ Submitting Batch 1 to Application Integration...
+   🟢 Integration triggered successfully -> Execution ID: Check Console
+   📄 Logged completion audit status to gs://doddi-bucket-sharepoint-sync/config/status/batch_completion_20260628_144134Z_batch_1_of_1.json
+   🎉 Micro-Batch 1/1 COMPLETED SUCCESSFULLY!
+
+
+================================================================
+🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!
+================================================================
+ - Check Console
+   https://console.cloud.google.com/integrations/logs;integration_name=doddi-sharepoint-gcs-parent;execution_id=Check Console;region=asia-southeast1?project=work-mylab-machinelearning
+================================================================

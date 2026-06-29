@@ -1,0 +1,60 @@
+🚀 Setting project to work-mylab-machinelearning...
+[environment: untagged] Read more to tag: g.co/cloud/project-env-tag.
+WARNING: Property [project] is overridden by environment setting [CLOUDSDK_CORE_PROJECT=work-mylab-machinelearning]
+Updated property [core/project].
+⚠️ Cloud Function 'doddi-sharepoint-list-files' already exists in region 'asia-southeast1'.
+Do you want to delete the existing function first? (y/N): ⏭️ Proceeding with update deployment...
+📦 Copying parameters.json to cf-source for function deployment context...
+📦 Deploying Python Cloud Function: doddi-sharepoint-list-files...
+Preparing function...
+......done.
+Updating function (may take a while)...
+[Build].........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................done
+[Service]................................................................................................................................................................warning
+Completed with warnings:
+  [INFO] A new revision will be deployed serving with 100% traffic.
+You can view your function in the Cloud Console here: https://console.cloud.google.com/functions/details/asia-southeast1/doddi-sharepoint-list-files?project=work-mylab-machinelearning
+
+buildConfig:
+  automaticUpdatePolicy: {}
+  build: projects/388889235558/locations/asia-southeast1/builds/539bfc99-4502-4108-a130-5796ee991591
+  dockerRegistry: ARTIFACT_REGISTRY
+  dockerRepository: projects/work-mylab-machinelearning/locations/asia-southeast1/repositories/gcf-artifacts
+  entryPoint: main
+  runtime: python310
+  source:
+    storageSource:
+      bucket: gcf-v2-sources-388889235558-asia-southeast1
+      generation: '1782666256192927'
+      object: doddi-sharepoint-list-files/function-source.zip
+  sourceProvenance:
+    resolvedStorageSource:
+      bucket: gcf-v2-sources-388889235558-asia-southeast1
+      generation: '1782666256192927'
+      object: doddi-sharepoint-list-files/function-source.zip
+createTime: '2026-06-28T10:53:18.877298054Z'
+environment: GEN_2
+labels:
+  deployment-tool: cli-gcloud
+name: projects/work-mylab-machinelearning/locations/asia-southeast1/functions/doddi-sharepoint-list-files
+satisfiesPzi: true
+satisfiesPzs: true
+serviceConfig:
+  allTrafficOnLatestRevision: true
+  availableCpu: '4'
+  availableMemory: 8G
+  environmentVariables:
+    LOG_EXECUTION_ID: 'true'
+  ingressSettings: ALLOW_ALL
+  maxInstanceCount: 100
+  maxInstanceRequestConcurrency: 1
+  revision: doddi-sharepoint-list-files-00006-nah
+  service: projects/work-mylab-machinelearning/locations/asia-southeast1/services/doddi-sharepoint-list-files
+  serviceAccountEmail: doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com
+  timeoutSeconds: 3600
+  uri: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
+state: ACTIVE
+updateTime: '2026-06-28T17:05:24.941549955Z'
+url: https://asia-southeast1-work-mylab-machinelearning.cloudfunctions.net/doddi-sharepoint-list-files
+🧹 Cleaning up deployment context copy...
+🎉 Cloud Function successfully deployed!
