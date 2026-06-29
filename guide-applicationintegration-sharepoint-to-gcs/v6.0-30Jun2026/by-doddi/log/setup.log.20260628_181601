@@ -1,45 +1,0 @@
-🔍 Fetching Cloud Function URI dynamically...
-✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
-🔒 Retrieving Google OIDC Identity Token...
-📤 Sending test payload to Cloud Function:
-{
-  "site_name": "doddi-sharepoint-to-gcs",
-  "library_name": "Documents",
-  "trigger_integration": false
-}
-⚡ Invoking Cloud Function (Traversal only)...
-   ⏳ Crawling SharePoint inventory for granular inspection (Elapsed time: 1s)...    ⏳ Crawling SharePoint inventory for granular inspection (Elapsed time: 2s)...    ⏳ Crawling SharePoint inventory for granular inspection (Elapsed time: 3s)...    ⏳ Crawling SharePoint inventory for granular inspection (Elapsed time: 4s)...    ✅ Completed in 5s!                                    
-================================================================
-🎉 CLOUD FUNCTION TEST SUCCESSFUL!
-================================================================
-📦 RESULT 1: ALL RESOURCES IN SHAREPOINT (Total: 14)
-----------------------------------------------------------------
- - [Document] 17June2026-by-DODDI.txt (Path: 17June2026-by-DODDI/17June2026-by-DODDI.txt)
- - [Document] Judges InfoPack.pdf (Path: 17June2026-by-DODDI/Judges InfoPack.pdf)
- - [Document] Judges Judging Criteria Final.pdf (Path: 17June2026-by-DODDI/Judges Judging Criteria Final.pdf)
- - [Document] Judging Criteria Prelim.pdf (Path: 17June2026-by-DODDI/Judging Criteria Prelim.pdf)
- - [Document] doddi-is-speaking-optimized.webp (Path: Files by Doddi/doddi-is-speaking-optimized.webp)
- - [Document] BidBot.png (Path: BidBot.png)
- - [Document] bitbot-google.jpeg (Path: bitbot-google.jpeg)
- - [Page] Culture.pdf (Path: pages/Culture.pdf)
- - [Page] DepartmentHome.pdf (Path: pages/DepartmentHome.pdf)
- - [Page] Home.pdf (Path: pages/Home.pdf)
- - [Page] Newsletter-template.pdf (Path: pages/Newsletter-template.pdf)
- - [Page] Our-Leadership.pdf (Path: pages/Our-Leadership.pdf)
- - [Page] Our-teams.pdf (Path: pages/Our-teams.pdf)
- - [Page] Vision-and-Priorities.pdf (Path: pages/Vision-and-Priorities.pdf)
-
-================================================================
-⚡ RESULT 2: RESOURCES THAT NEED TO BE SYNCED (Total: 10)
-----------------------------------------------------------------
- - [Document] 17June2026-by-DODDI.txt (Path: 17June2026-by-DODDI/17June2026-by-DODDI.txt) [NEW/MODIFIED]
- - [Document] Judges InfoPack.pdf (Path: 17June2026-by-DODDI/Judges InfoPack.pdf) [NEW/MODIFIED]
- - [Document] Judges Judging Criteria Final.pdf (Path: 17June2026-by-DODDI/Judges Judging Criteria Final.pdf) [NEW/MODIFIED]
- - [Document] Judging Criteria Prelim.pdf (Path: 17June2026-by-DODDI/Judging Criteria Prelim.pdf) [NEW/MODIFIED]
- - [Document] doddi-is-speaking-optimized.webp (Path: Files by Doddi/doddi-is-speaking-optimized.webp) [NEW/MODIFIED]
- - [Document] BidBot.png (Path: BidBot.png) [NEW/MODIFIED]
- - [Document] bitbot-google.jpeg (Path: bitbot-google.jpeg) [NEW/MODIFIED]
- - [Page] DepartmentHome.pdf (Path: pages/DepartmentHome.pdf) [NEW/MODIFIED]
- - [Page] Home.pdf (Path: pages/Home.pdf) [NEW/MODIFIED]
- - [Page] Newsletter-template.pdf (Path: pages/Newsletter-template.pdf) [NEW/MODIFIED]
-================================================================
