@@ -2,6 +2,7 @@ import os
 import json
 import urllib.parse
 import datetime
+import re
 import functions_framework
 from google.cloud import storage
 
@@ -361,14 +362,23 @@ def main(request):
                 print("🧠 Generating config/metadata.jsonl manifest for Vertex AI Datastore indexing...")
                 jsonl_lines = []
                 for item in all_list:
-                    doc_id = item.get("Name", "doc").replace(" ", "_").replace(".", "_")
+                    raw_name = item.get("Name", "doc")
+                    rel_path = item.get("RelativePath", "")
+                    # Sanitize doc_id strictly to [a-zA-Z0-9_-]
+                    base_name = raw_name.rsplit('.', 1)[0]
+                    doc_id = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
+                    gcs_uri = f"gs://{bucket_name}/{rel_path}"
                     meta_record = {
                         "_id": doc_id,
-                        "id": item.get("Name", ""),
+                        "id": doc_id,
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),
-                            "title": item.get("Name", ""),
-                            "relative_path": item.get("RelativePath", "")
+                            "title": raw_name,
+                            "relative_path": rel_path
+                        },
+                        "content": {
+                            "mimeType": "application/pdf",
+                            "uri": gcs_uri
                         }
                     }
                     jsonl_lines.append(json.dumps(meta_record))

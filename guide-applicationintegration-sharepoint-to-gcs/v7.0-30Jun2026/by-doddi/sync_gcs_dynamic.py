@@ -9,6 +9,7 @@ import sys
 import datetime
 import concurrent.futures
 import threading
+import re
 
 try:
     import log_helper
@@ -111,6 +112,8 @@ def run_dynamic_gcs_sync():
     }
 
     print_lock = threading.Lock()
+    manifest_lock = threading.Lock()
+    unified_manifest_records = []
     execution_ids = []
 
     def process_batch(batch_num, batch_urls):
@@ -147,6 +150,25 @@ def run_dynamic_gcs_sync():
                     log_buf.append(f"      • Skipped (Unchanged in GCS / Delta cache hit): {skipped_count}")
                 for item in sync_list:
                     log_buf.append(f"      📄 Prepared item: {item.get('Name')} -> gs://{bucket_name}/{item.get('RelativePath')}")
+                    raw_name = item.get("Name", "doc")
+                    rel_path = item.get("RelativePath", "")
+                    base_name = raw_name.rsplit('.', 1)[0]
+                    doc_id = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
+                    record = {
+                        "_id": doc_id,
+                        "id": doc_id,
+                        "structData": {
+                            "sharepoint_url": item.get("Url", ""),
+                            "title": raw_name,
+                            "relative_path": rel_path
+                        },
+                        "content": {
+                            "mimeType": "application/pdf",
+                            "uri": f"gs://{bucket_name}/{rel_path}"
+                        }
+                    }
+                    with manifest_lock:
+                        unified_manifest_records.append(record)
         except Exception as e:
             with print_lock:
                 print("\n".join(log_buf))
@@ -214,6 +236,16 @@ def run_dynamic_gcs_sync():
             eid = future.result()
             if eid:
                 execution_ids.append(eid)
+
+    if unified_manifest_records:
+        print(f"\n🧠 Uploading consolidated config/metadata.jsonl ({len(unified_manifest_records)} records) to GCS...")
+        try:
+            jsonl_str = "\n".join(json.dumps(r) for r in unified_manifest_records)
+            upload_cmd = ["gcloud", "storage", "cp", "-", f"gs://{bucket_name}/config/metadata.jsonl"]
+            proc = subprocess.run(upload_cmd, input=jsonl_str.encode("utf-8"), check=True, capture_output=True)
+            print(f"✅ Successfully written consolidated metadata manifest to gs://{bucket_name}/config/metadata.jsonl")
+        except Exception as e_manifest:
+            print(f"❌ Failed to write consolidated metadata manifest: {e_manifest}")
 
     print("\n================================================================")
     print("🎉 ALL DYNAMIC GCS SYNC BATCHES SCHEDULED SUCCESSFULLY!")
