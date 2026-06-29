@@ -118,7 +118,7 @@ def run_sync():
         "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
         "sync_files": params.get("CONFIG_Sync_SharePoint_Files", True),
         "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True),
-        "pdf_conversion_engine": params.get("CONFIG_PDF_Conversion_Engine", "weasyprint"),
+        "pdf_conversion_engine": params.get("CONFIG_PDF_Conversion_Engine", "playwright"),
         "force_full_sync": force_sync
     }
     

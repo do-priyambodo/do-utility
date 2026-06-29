@@ -238,7 +238,7 @@ def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
 </html>"""
 
 # Convert rendered HTML string to Base64-encoded PDF bytes using selected engine
-def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", engine="weasyprint"):
+def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", engine="playwright"):
     cleaned_html = re.sub(r':\s*(revert|revert-layer|unset)\s*(;|\})', r': inherit\2', html_string, flags=re.IGNORECASE)
     
     # Engine 1: Headless Chromium via Playwright
@@ -610,7 +610,7 @@ def main(request):
     # Option 1: Incremental sync bucket client init
     bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
     force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
-    conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "weasyprint")
+    conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "playwright")
     
     bucket_obj = None
     gcs_cache = {}

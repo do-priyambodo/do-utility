@@ -20,5 +20,5 @@
   "CONFIG_Sync_SharePoint_Files": true,
   "CONFIG_Sync_SharePoint_Pages": true,
   "CONFIG_Developer_Group_Or_User": "group:yourorg-developer-group@yourdomain.com",
-  "CONFIG_PDF_Conversion_Engine": "weasyprint"
+  "CONFIG_PDF_Conversion_Engine": "playwright"
 }

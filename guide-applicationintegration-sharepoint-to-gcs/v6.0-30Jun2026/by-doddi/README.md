@@ -74,9 +74,9 @@ Verify credentials and names inside [parameters.json](parameters.json):
 *   `CONFIG_Max_Parallel_Workers`: Maximum concurrency limit for parallel thread execution (e.g. `10`).
 *   `CONFIG_Sync_SharePoint_Files`: Boolean flag (`true` or `false`) to enable/disable syncing standard documents from Document Libraries.
 *   `CONFIG_Sync_SharePoint_Pages`: Boolean flag (`true` or `false`) to enable/disable querying and converting Modern Site Pages (`.aspx`) into executive PDFs.
-*   `CONFIG_PDF_Conversion_Engine`: Selects the rendering engine for `.aspx` to PDF conversion (`weasyprint` vs `playwright`).
-    *   **`weasyprint` (Default / Recommended)**: Lightweight, pure Python HTML5 vector PDF generator. Extracts 100% of page text across all layout columns and converts inline images to Base64 data URIs. Ideal for standard serverless Cloud Functions without container overhead.
-    *   **`playwright`**: Launches full Headless Chromium browser automation (`playwright-python`). Executes live JavaScript, dropdowns, and dynamic widgets to capture exact browser snapshots. Best suited for high-memory container environments (e.g., Cloud Run with Chromium binaries installed). Automatically falls back to `weasyprint` if Chromium is unavailable.
+*   `CONFIG_PDF_Conversion_Engine`: Selects the rendering engine for `.aspx` to PDF conversion (`playwright` vs `weasyprint`).
+    *   **`playwright` (Default / Recommended)**: Launches full Headless Chromium browser automation (`playwright-python`). Executes live JavaScript, dropdowns, and dynamic widgets to capture exact desktop browser snapshots with high-definition styling. Deployed via custom Docker container (Option A) with Chromium binaries baked inside.
+    *   **`weasyprint` (Fallback Engine)**: Pure Python HTML5 vector PDF generator. Used as an automatic fallback if Chromium container binaries are unavailable in standard buildpacks.
 
 ### 2. Azure App Registration & Microsoft Graph API Scopes
 Your Azure app registration must be granted both **Delegated and Application** types for these scopes:
