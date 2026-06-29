@@ -90,6 +90,16 @@ Your Azure app registration must be granted both **Delegated and Application** t
 
 ## II. Deployment Guide
 
+### ⚡ Customer Quick-Start Checklist (Step-by-Step for Tomorrow)
+If you are deploying V6.0 tomorrow in a fresh customer environment or upgrading an existing setup, follow this exact 5-step order:
+1. **Validate Environment**: Fill in `parameters.json` and run `python3 util/validate_params.py` (or run `./prereq/sa-roles.sh` first if IAM/Service Accounts are not yet created).
+2. **Export Shell Variables**: Copy and run the block in **Step 1** to export `PROJECT_ID`, `LOCATION`, `FUNCTION_NAME`, etc., into your terminal session.
+3. **Deploy Cloud Run Backend**: Run `./deploy_cloud_run.sh` (**Step 2 Option A**) to deploy the high-fidelity Playwright container, then copy and paste the IAM commands in **Step 3** (which include auto-retry fallback for Google Cloud Identity groups).
+4. **Deploy Application Integration Workflows**: Run `python3 deploy_workflows.py` (**Step 4**) to publish the orchestrator pipelines.
+5. **Execute Verification Test**: Run `python3 sync_gcs_dynamic.py --force` to test dynamic URL syncing and verify that PDFs render perfectly in your GCS bucket!
+
+---
+
 ### Step 0: Validate Configuration Parameters
 Before running any setup or deployment script, run the parameters validation tool to verify that all parameters in `parameters.json` are properly formatted and that the referenced GCP/SharePoint resources (project, service account, bucket, secret, and connector connections) are active and exist in your environment:
 ```bash
@@ -175,18 +185,33 @@ gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
   --project="${PROJECT_ID}"
 
 # 2. Grant invoker rights to Developer Principal (for manual testing runs)
-# Auto-format member prefix (user: or group:)
-if [[ "${DEVELOPER_PRINCIPAL}" == *"group"* || "${DEVELOPER_PRINCIPAL}" == *"ggrp"* || "${DEVELOPER_PRINCIPAL}" == "group:"* ]]; then
-  DEV_MEMBER="group:${DEVELOPER_PRINCIPAL#group:}"
+# Automatically clean user:/group: prefix and apply intelligent retry fallback
+CLEAN_PRINCIPAL="${DEVELOPER_PRINCIPAL#group:}"
+CLEAN_PRINCIPAL="${CLEAN_PRINCIPAL#user:}"
+
+if [[ "${DEVELOPER_PRINCIPAL}" == "group:"* || "${DEVELOPER_PRINCIPAL}" == *"group"* || "${DEVELOPER_PRINCIPAL}" == *"ggrp"* || "${DEVELOPER_PRINCIPAL}" == *"Agentassist"* ]]; then
+  DEV_MEMBER="group:${CLEAN_PRINCIPAL}"
 else
-  DEV_MEMBER="user:${DEVELOPER_PRINCIPAL#user:}"
+  DEV_MEMBER="user:${CLEAN_PRINCIPAL}"
 fi
 
-gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
+if ! gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
   --region="${LOCATION}" \
   --member="${DEV_MEMBER}" \
   --role="roles/run.invoker" \
-  --project="${PROJECT_ID}"
+  --project="${PROJECT_ID}"; then
+  echo "⚠️ Binding failed for ${DEV_MEMBER}. Automatically retrying with alternate IAM principal type..."
+  if [[ "${DEV_MEMBER}" == "user:"* ]]; then
+    DEV_MEMBER="group:${CLEAN_PRINCIPAL}"
+  else
+    DEV_MEMBER="user:${CLEAN_PRINCIPAL}"
+  fi
+  gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
+    --region="${LOCATION}" \
+    --member="${DEV_MEMBER}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}"
+fi
 ```
 
 ### Step 3.5: Pre-Flight Interactive Diagnostics & Verification
