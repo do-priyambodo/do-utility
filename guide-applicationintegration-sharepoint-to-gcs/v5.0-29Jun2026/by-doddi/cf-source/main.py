@@ -12,6 +12,7 @@ from urllib3.util.retry import Retry
 import base64
 import html
 import io
+import re
 
 try:
     from xhtml2pdf import pisa
@@ -163,16 +164,32 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
     return all_results, sync_results
 
 # Convert rendered HTML string to Base64-encoded PDF bytes using xhtml2pdf
-def render_html_to_pdf_base64(html_string):
+def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page"):
     if not pisa:
         print("Warning: xhtml2pdf not installed. Falling back to HTML payload.")
         return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
-    pdf_buffer = io.BytesIO()
-    pisa_status = pisa.CreatePDF(io.StringIO(html_string), dest=pdf_buffer)
-    if pisa_status.err:
-        print(f"Warning: xhtml2pdf rendering error: {pisa_status.err}")
-    pdf_bytes = pdf_buffer.getvalue()
-    return base64.b64encode(pdf_bytes).decode("utf-8")
+    try:
+        # Sanitize unsupported CSS keywords like 'revert' or 'unset' that cause xhtml2pdf float conversion errors
+        cleaned_html = re.sub(r':\s*(revert|revert-layer|unset)\s*(;|\})', r': inherit\2', html_string, flags=re.IGNORECASE)
+        pdf_buffer = io.BytesIO()
+        pisa_status = pisa.CreatePDF(io.StringIO(cleaned_html), dest=pdf_buffer)
+        if pisa_status.err:
+            print(f"Warning: xhtml2pdf rendering error: {pisa_status.err}")
+            raise RuntimeError(f"xhtml2pdf reported error: {pisa_status.err}")
+        pdf_bytes = pdf_buffer.getvalue()
+        return base64.b64encode(pdf_bytes).decode("utf-8")
+    except Exception as e:
+        print(f"Warning: xhtml2pdf crashed during PDF conversion ({e}). Generating fallback PDF layout...")
+        try:
+            safe_title = html.escape(str(fallback_title))
+            fallback_html = f"<!DOCTYPE html><html><head><title>{safe_title}</title><style>body {{ font-family: sans-serif; padding: 20px; }} h1 {{ color: #0078d4; }}</style></head><body><h1>{safe_title}</h1><p><b>Note:</b> This SharePoint page contained complex interactive tables or styling that could not be rendered directly into PDF layout.</p><p>Please access the live SharePoint page directly.</p></body></html>"
+            fb_buffer = io.BytesIO()
+            pisa.CreatePDF(io.StringIO(fallback_html), dest=fb_buffer)
+            return base64.b64encode(fb_buffer.getvalue()).decode("utf-8")
+        except Exception as fb_e:
+            print(f"Warning: Fallback PDF creation failed ({fb_e}). Returning raw HTML payload.")
+            return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
+
 
 # Parse canvas layout and render a high-fidelity Fluent UI SharePoint site page
 def render_page_to_html(page, source_url="", headers=None):
@@ -598,7 +615,7 @@ def main(request):
                     if trigger_integ:
                         if not html_rendered:
                             html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
-                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered)
+                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered, fallback_title=filename)
 
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
@@ -675,9 +692,9 @@ def main(request):
                             if detail_resp.status_code == 200:
                                 page_detail = detail_resp.json()
                                 html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content)
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content, fallback_title=pdf_name)
                             if not page_obj.get("VirtualContent"):
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>")
+                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>", fallback_title=pdf_name)
 
                         all_list.append(page_obj)
                         
