@@ -148,11 +148,19 @@ export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('param
      --role="roles/secretmanager.secretAccessor" \
      --project="${PROJECT_ID}"
    ```
-2. Deploy the Cloud Function by running:
-```bash
-chmod +x deploy_cloud_function.sh
-./deploy_cloud_function.sh
-```
+2. Choose your deployment method based on your selected PDF conversion engine:
+   * **Option A: Custom Docker Container (Recommended for Playwright / Headless Chromium)**:
+     Builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries baked inside:
+     ```bash
+     chmod +x deploy_cloud_run.sh
+     ./deploy_cloud_run.sh
+     ```
+   * **Option B: Standard Buildpacks (Recommended for WeasyPrint)**:
+     Deploys via standard Google Cloud Function Gen 2 buildpacks without container overhead:
+     ```bash
+     chmod +x deploy_cloud_function.sh
+     ./deploy_cloud_function.sh
+     ```
 
 ### Step 3: Set up Cloud Run Invoker Bindings
 Since Gen2 Cloud Functions run on top of Cloud Run, grant both the Cloud Scheduler Service Account (for automated runs) and your Developer Group / User (for manual sync runs) invoker rights on the Cloud Run revision:
