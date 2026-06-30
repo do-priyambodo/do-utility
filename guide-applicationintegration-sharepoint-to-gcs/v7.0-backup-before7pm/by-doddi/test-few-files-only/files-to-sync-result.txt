@@ -1,0 +1,67 @@
+================================================================
+SHAREPOINT TO GCS - SYNCHRONIZATION INSPECTION REPORT
+================================================================
+📊 SUMMARY OF SHAREPOINT RESOURCES & SYNC STATUS:
+----------------------------------------------------------------
+Total Available Resources in SharePoint : 14
+  - Total Documents (Files)             : 7
+  - Total Site Pages                    : 7
+
+Total Items Requiring Synchronization   : 0
+  - Documents to Sync                   : 0
+  - Site Pages to Sync                  : 0
+================================================================
+
+--- PART 1: ALL AVAILABLE RESOURCES IN SHAREPOINT (14) ---
+1. [Document] 17June2026-by-DODDI.txt
+   Relative Path : 17June2026-by-DODDI/17June2026-by-DODDI.txt
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/17June2026-by-DODDI.txt
+
+2. [Document] Judges InfoPack.pdf
+   Relative Path : 17June2026-by-DODDI/Judges InfoPack.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judges%20InfoPack.pdf
+
+3. [Document] Judges Judging Criteria Final.pdf
+   Relative Path : 17June2026-by-DODDI/Judges Judging Criteria Final.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judges%20Judging%20Criteria%20Final.pdf
+
+4. [Document] Judging Criteria Prelim.pdf
+   Relative Path : 17June2026-by-DODDI/Judging Criteria Prelim.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judging%20Criteria%20Prelim.pdf
+
+5. [Document] doddi-is-speaking-optimized.webp
+   Relative Path : Files by Doddi/doddi-is-speaking-optimized.webp
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/Files%20by%20Doddi/doddi-is-speaking-optimized.webp
+
+6. [Document] BidBot.png
+   Relative Path : BidBot.png
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/BidBot.png
+
+7. [Document] bitbot-google.jpeg
+   Relative Path : bitbot-google.jpeg
+   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/bitbot-google.jpeg
+
+8. [Page] Culture.html
+   Relative Path : pages/Culture.html
+
+9. [Page] DepartmentHome.html
+   Relative Path : pages/DepartmentHome.html
+
+10. [Page] Home.html
+   Relative Path : pages/Home.html
+
+11. [Page] Newsletter-template.html
+   Relative Path : pages/Newsletter-template.html
+
+12. [Page] Our-Leadership.html
+   Relative Path : pages/Our-Leadership.html
+
+13. [Page] Our-teams.html
+   Relative Path : pages/Our-teams.html
+
+14. [Page] Vision-and-Priorities.html
+   Relative Path : pages/Vision-and-Priorities.html
+
+================================================================
+--- PART 2: FILES THAT WILL BE SYNCHRONIZED (0) ---
+No files or pages require synchronization at this time.
