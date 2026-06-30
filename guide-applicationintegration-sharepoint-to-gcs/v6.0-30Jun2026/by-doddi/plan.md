@@ -52,6 +52,9 @@ To solve customer feedback regarding missing content, unrendered images, and 1-l
     {"id": "gs://doddi-bucket-sharepoint-sync/pages/Culture.pdf", "structData": {"sharepoint_url": "https://maxis.sharepoint.com/.../Culture.aspx"}}
     ```
 *   **Action Item**: Configure Genesys Agent Assist widget with `linkMetadataKey: "sharepoint_url"` so agent clicks navigate directly to authenticated live SharePoint pages instead of storage blobs.
+*   **Automated 12-Hour Datastore Indexing Scheduler (`deploy_scheduler_datastore_sync.sh`)**: Deployed an automated Cloud Scheduler cron job (`doddi-sharepoint-datastore-sync-12h`) running every 12 hours (`0 */12 * * *`) targeting the Discovery Engine `importDocuments` API (`INCREMENTAL` mode) with OIDC/OAuth Service Account authentication (`roles/discoveryengine.editor`).
+*   **Standalone Manual Test Runner (`sync_datastore.py`)**: A lightweight script to immediately trigger incremental indexing and verify Datastore ingestion from `gs://YOUR_BUCKET/config/metadata.jsonl`.
+
 
 ### Phase 3: Operational Monitoring & Lifecycle Management
 *   **Action Item**: Configure Cloud Logging alerts for `HTTP 500` or container crashes on `doddi-sharepoint-list-files`.

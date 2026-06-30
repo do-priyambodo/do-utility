@@ -45,18 +45,17 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 
 ---
 
-### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling (Pending / Future Implementation)
+### 🔎 Phase 4b: Automated Vertex AI Datastore Indexing & Scheduling (Completed & Validated)
 *Goal*: Automate periodic ingestion of synchronized GCS PDF reports and documents into Vertex AI Search (Discovery Engine).
-*Status*: **Paused safely after Phase 4a creation of `metadata.jsonl`**. The manifest sits ready in GCS for future connection.
+*Status*: **100% Completed & Validated in Production**. Standalone manual test runner (`sync_datastore.py`) and automated 12-hour cron scheduler script (`deploy_scheduler_datastore_sync.sh`) are deployed and active.
 
-- [ ] **Task 4b.1: Create Datastore Import Trigger Cloud Function (`cf-datastore-sync`)**
-  - *Future Implementation Guide*: Create a Gen 2 Cloud Function (`doddi-datastore-sync-trigger`) triggered via HTTP POST.
-  - *Key Architectural Requirement*: The Cloud Function should hit the Discovery Engine `importDocuments` API using `"dataSchema": "custom"` and `"reconciliationMode": "INCREMENTAL"` pointing to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`.
-  - *Crucial Manifest Note*: Our Phase 4a pipeline already formats each line in `metadata.jsonl` with `"_id"` (required by Google Cloud custom schema) and `"content": {"uri": "gs://..."}` so Discovery Engine knows the exact PDF location automatically!
+- [x] **Task 4b.1: Create Standalone Datastore Import Helper (`sync_datastore.py`)**
+  - *Delivered Architecture*: Created `sync_datastore.py`, a lightweight standalone script that hits the Discovery Engine `importDocuments` API directly with `"reconciliationMode": "INCREMENTAL"` pointing to `gs://YOUR_BUCKET/config/metadata.jsonl`.
+  - *IAM Validation*: Confirmed that granting `roles/discoveryengine.editor` to the service account allows clean 1-second import submission without permission errors.
 
-- [ ] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
-  - *Future Implementation Guide*: Deploy a Cloud Scheduler job (`doddi-sharepoint-datastore-sync-hourly`) running every 12 hours (`0 */12 * * *`) targeting the `cf-datastore-sync` Cloud Function URI using OIDC Service Account authentication.
-  - *GCP Console Tip*: When configuring the Data Store in the GCP Console, create it as **Cloud Storage > JSON lines (JSONL) with custom metadata** pointing directly to `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl` to ensure citation URLs work seamlessly!
+- [x] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
+  - *Delivered Architecture*: Deployed Cloud Scheduler job `doddi-sharepoint-datastore-sync-12h` running every 12 hours (`0 */12 * * *`) directly targeting the Google Cloud Discovery Engine import endpoint (`discoveryengine.googleapis.com/.../documents:import`) using OAuth Service Account token authentication (`--oauth-service-account-email`).
+  - *GCP Console Tip*: When configuring the Data Store in the GCP Console, create it as **Cloud Storage > JSON lines (JSONL) with custom metadata** pointing directly to `gs://YOUR_BUCKET/config/metadata.jsonl` to ensure citation URLs work seamlessly!
 
 ---
 ---
@@ -94,4 +93,4 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
   - *Completed*: Implemented thread-safe parallel micro-batch execution (`CONFIG_Max_Parallel_Workers: 10`) using Python `ThreadPoolExecutor` and buffered console logging. Sliced batches run concurrently for ~10x speedup while maintaining unbroken visual console logs and independent GCS audit records.
 
 ---
-*Status: All core synchronization and scheduling phases (Phase 1, Phase 2, Phase 3, and Phase 5) are 100% completed, verified via live diagnostic check scripts, and deployed as automated Cloud Scheduler cron jobs. Next optional step: Phase 4 (Datastore Indexing / Vertex AI Search integration).*
+*Status: All synchronization, scheduling, and Datastore indexing phases (Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5) are 100% completed, verified via live diagnostic scripts, and deployed as automated Cloud Scheduler cron jobs.*
