@@ -30,12 +30,12 @@ fi
 echo "🚀 Setting project to ${PROJECT_ID}..."
 gcloud config set project "${PROJECT_ID}"
 
-echo "📦 Copying parameters.json to cf-source for Docker build context..."
-cp parameters.json cf-source/
+echo "📦 Copying parameters.json to cf-sharepoint for Docker build context..."
+cp parameters.json cf-sharepoint/
 
 echo "🐳 Building and Deploying Custom Docker Cloud Run Service: ${SERVICE_NAME}..."
 gcloud run deploy "${SERVICE_NAME}" \
-  --source=./cf-source \
+  --source=./cf-sharepoint \
   --region="${LOCATION}" \
   --service-account="${SERVICE_ACCOUNT}" \
   --no-allow-unauthenticated \
@@ -45,6 +45,6 @@ gcloud run deploy "${SERVICE_NAME}" \
   --clear-base-image
 
 echo "🧹 Cleaning up deployment context copy..."
-rm cf-source/parameters.json
+rm cf-sharepoint/parameters.json
 
 echo "🎉 Cloud Run service successfully deployed with custom Docker container!"

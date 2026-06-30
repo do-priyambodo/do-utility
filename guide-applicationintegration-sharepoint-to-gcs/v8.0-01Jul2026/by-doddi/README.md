@@ -13,7 +13,7 @@ The V8.0 codebase is organized into clean domain-specific subdirectories with au
 * **`test/`**: Verification unit tests (`test_image_fetch.py`), Jupyter notebooks, and subset trial runners.
 * **`util/`**: Prerequisite IAM scripts (`prereq/`), parameter validation (`validate_params.py`), and logging helpers (`log_helper.py`).
 * **`docs/`**: Architecture guides (`GUIDE_GKA_Live_SharePoint_Links.md`), parameter reference (`PARAM.md`), and roadmaps.
-* **Root (`by-doddi/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`) and Cloud Run backend source (`cf-source/`).
+* **Root (`by-doddi/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`), SharePoint Traversal & PDF backend source (`cf-sharepoint/`), and dedicated Datastore import service (`cf-datastore/`).
 
 ---
 
@@ -23,7 +23,7 @@ The sync pipeline follows an enterprise hybrid orchestrator design (V8.0):
 
 1.  **Traversal Cloud Function (`yourorg-sharepoint-list-files`)**:
     *   **Modular Architecture:** Cleanly refactored from a single monolithic file into specialized modules (`graph_client.py` for resilient M365 auth/retries, `pdf_renderer.py` for multi-engine Playwright/WeasyPrint PDF conversion, `sharepoint_traversal.py` for recursive drive inventory and DOM layout harvesting, and `main.py` for HTTP orchestration).
-    *   **Monolithic Revertability:** A pre-refactor backup (`cf-source/main.py.monolithic.bak`) and git tag (`v6.0-monolithic-backup`) are maintained for instant rollback if desired.
+    *   **Monolithic Revertability:** A pre-refactor backup (`cf-sharepoint/main.py.monolithic.bak`) and git tag (`v6.0-monolithic-backup`) are maintained for instant rollback if desired.
     *   Recursively queries Microsoft Graph API or dynamically scopes targeted URLs (`gs://bucket/config/target_urls.txt`).
     *   Resolves modern SharePoint site pages, downloads physical inline leadership images, and converts canvas layouts into executive `.pdf` documents via Playwright (default).
     *   Performs O(1) incremental delta timestamp comparisons (`gcs_cache`) to skip unchanged files and automatically deletes orphaned/inactive SharePoint files from GCS.

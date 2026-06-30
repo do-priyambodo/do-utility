@@ -53,8 +53,8 @@ if gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --
   fi
 fi
 
-echo "📦 Copying parameters.json to cf-source for function deployment context..."
-cp parameters.json cf-source/
+echo "📦 Copying parameters.json to cf-sharepoint for function deployment context..."
+cp parameters.json cf-sharepoint/
 
 echo "📦 Deploying Python Cloud Function: ${FUNCTION_NAME}..."
 gcloud functions deploy "${FUNCTION_NAME}" \
@@ -68,9 +68,9 @@ gcloud functions deploy "${FUNCTION_NAME}" \
   --timeout=3600 \
   --memory=8GB \
   --cpu=4 \
-  --source=./cf-source
+  --source=./cf-sharepoint
 
 echo "🧹 Cleaning up deployment context copy..."
-rm cf-source/parameters.json
+rm cf-sharepoint/parameters.json
 
 echo "🎉 Cloud Function successfully deployed!"

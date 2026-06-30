@@ -33,24 +33,35 @@ echo "⏰ Cron Schedule:     ${CRON_SCHEDULE}"
 echo "🤖 Service Account:   ${SERVICE_ACCOUNT}"
 echo "================================================================"
 
-IMPORT_URL="https://discoveryengine.googleapis.com/v1beta/projects/${PROJECT_ID}/locations/${DATASTORE_LOC}/collections/default_collection/dataStores/${DATASTORE_ID}/branches/0/documents:import"
-PAYLOAD='{"gcsSource":{"inputUris":["gs://'${BUCKET_NAME}'/config/metadata.jsonl"]},"reconciliationMode":"INCREMENTAL"}'
+FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Function_Name', 'yourorg-datastore-import'))")
+
+echo "🔍 Resolving Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
+FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)")
+
+if [ -z "$FUNCTION_URL" ]; then
+  echo "❌ Error: Could not resolve Cloud Function URI for '${FUNCTION_NAME}'. Is the datastore function deployed? Try running ./deploy/deploy_cf_datastore.sh first."
+  exit 1
+fi
+
+PAYLOAD='{"reconciliation_mode":"INCREMENTAL"}'
 
 if gcloud scheduler jobs describe "${JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
   echo "🗑️ Deleting existing scheduler job '${JOB_NAME}'..."
   gcloud scheduler jobs delete "${JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" --quiet
 fi
 
-echo "🚀 Creating Cloud Scheduler job '${JOB_NAME}'..."
+echo "🚀 Creating Cloud Scheduler job '${JOB_NAME}' targeting ${FUNCTION_URL}..."
 gcloud scheduler jobs create http "${JOB_NAME}" \
   --location="${LOCATION}" \
   --schedule="${CRON_SCHEDULE}" \
-  --uri="${IMPORT_URL}" \
+  --uri="${FUNCTION_URL}" \
   --http-method="POST" \
   --headers="Content-Type=application/json" \
   --message-body="${PAYLOAD}" \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
-  --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
+  --oidc-service-account-email="${SERVICE_ACCOUNT}" \
+  --oidc-token-audience="${FUNCTION_URL}" \
+  --attempt-deadline=600s \
+  --max-retry-attempts=1 \
   --project="${PROJECT_ID}"
 
 echo "================================================================"

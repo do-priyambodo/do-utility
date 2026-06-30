@@ -37,8 +37,8 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ### 🧠 Phase 4a: GKA Live SharePoint Citation Link Preparation
 *Goal*: Ensure contact center agents using Generative Knowledge Assist (GKA) are directed to the live SharePoint web page when clicking citation links, rather than opening the raw GCS storage blob.
 
-- [x] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-source/main.py`)**
-  - *Completed*: Updated `cf-source/main.py` to automatically compile all traversed items in memory and upload a JSONL manifest directly to `gs://bucket/config/metadata.jsonl` containing custom `"sharepoint_url"` and `"title"` fields without any extra SharePoint requests.
+- [x] **Task 4a.1: Generate `metadata.jsonl` Manifest during GCS Sync (`cf-sharepoint/main.py`)**
+  - *Completed*: Updated `cf-sharepoint/main.py` to automatically compile all traversed items in memory and upload a JSONL manifest directly to `gs://bucket/config/metadata.jsonl` containing custom `"sharepoint_url"` and `"title"` fields without any extra SharePoint requests.
 
 - [x] **Task 4a.2: Configure Frontend Agent Assist Widget (`linkMetadataKey`)**
   - *Completed*: Created standalone integration guide (`GUIDE_GKA_Live_SharePoint_Links.md`) providing frontend web developers with step-by-step instructions and code snippets (`articleLinkConfig: { linkMetadataKey: "sharepoint_url", target: "_blank" }`) to route CCAI / GKA citations to live SharePoint pages.
@@ -83,7 +83,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 ---
 #### 🛠️ Phase 5 Implementation Tasks
 
-- [x] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-source/main.py`)**
+- [x] **Task 5.1: Enhance Resilient HTTP Session & Throttling Backoff (`cf-sharepoint/main.py`)**
   - *Completed*: Implemented `get_resilient_session()` with 5 exponential backoff retries across status codes `[429, 500, 502, 503, 504]` and mounted custom adapters for both HTTP and HTTPS sockets to automatically absorb Microsoft Graph API throttling bursts.
 
 - [x] **Task 5.2: Implement GCS Delta Cache Filter & Automated Deletion (Skip Unchanged Files / Clean Inactive Files)**

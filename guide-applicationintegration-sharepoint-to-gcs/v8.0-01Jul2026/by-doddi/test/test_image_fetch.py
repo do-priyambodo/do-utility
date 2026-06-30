@@ -14,8 +14,8 @@ import os
 import sys
 import urllib.parse
 
-# Add cf-source to path so we can import modules directly
-sys.path.insert(0, os.path.join(ROOT_DIR, "cf-source"))
+# Add cf-sharepoint to path so we can import modules directly
+sys.path.insert(0, os.path.join(ROOT_DIR, "cf-sharepoint"))
 
 from graph_client import get_secret, get_graph_token, http
 from sharepoint_traversal import render_page_to_html, fetch_image_as_data_uri

@@ -1,8 +1,0 @@
-🔍 Resolving Cloud Function URI dynamically...
-✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-rzmyhdhywa-as.a.run.app
-================================================================
-🚀 STARTING E2E SHAREPOINT TO GCS SYNC PIPELINE (V4-HYBRID)
-================================================================
-🔒 Step 1: Invoking SharePoint traversal Cloud Function (Option B pages resolved)...
-🟢 Found 0 total items (documents & pre-rendered pages) to synchronize.
-ℹ️ No files or pages found to synchronize. Pipeline exiting cleanly.
