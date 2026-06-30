@@ -318,9 +318,37 @@ We provide dedicated verification tools so you can inspect your pipeline configu
 
 ---
 
-## IV. Troubleshooting & Observability
+## IV. Datastore Incremental Indexing Scheduler (12-Hour Cron)
+
+To ensure that newly synchronized SharePoint files and converted `.aspx` PDFs in GCS are automatically ingested and indexed into Vertex AI Agent Assist without manual intervention, deploy an automated 12-hour Datastore sync schedule.
+
+### Step 1: Verify Datastore Configuration in `parameters.json`
+Before creating the scheduler or running manual tests, open `parameters.json` and verify that your Discovery Engine Datastore credentials and location are configured:
+*   `CONFIG_Datastore_Id`: The ID of your Vertex AI Search / Agent Assist Datastore (e.g. `doddi-sharepoint-gcs-datastore_1782668342491_gcs_store`).
+*   `CONFIG_Datastore_Location`: The location of your Datastore (e.g. `global` or `us`, `eu`, `asia-southeast1`).
+*   `CONFIG_GCS_Bucket`: Your sync bucket where `config/metadata.jsonl` is written.
+*   `CONFIG_Scheduler_Cron_Schedule`: The recurrence interval (default: `0 */12 * * *` for every 12 hours).
+
+### Step 2: Test Datastore Indexing Manually (Terminal)
+We provide a standalone helper script (`sync_datastore.py`) that triggers an immediate `importDocuments` call in `INCREMENTAL` reconciliation mode pointing to `gs://YOUR_BUCKET/config/metadata.jsonl`:
+```bash
+python3 sync_datastore.py
+```
+*(This verifies that your Service Account has `roles/discoveryengine.editor` permissions and that the Datastore accepts your metadata manifest!)*
+
+### Step 3: Deploy Automated 12-Hour Cron Scheduler
+Deploy the automated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-12h`) to run every 12 hours in the background:
+```bash
+./deploy_scheduler_datastore_sync.sh
+```
+*(You can also trigger this job on-demand in the Google Cloud Console under **Cloud Scheduler** by clicking **Force Run**.)*
+
+---
+
+## V. Troubleshooting & Observability
 
 If any step in the synchronization pipeline fails, use the following diagnostic commands.
+
 
 > [!NOTE]
 > To ensure the CLI commands below run seamlessly without unexpanded variable errors, export your environment variables from `parameters.json` first:
@@ -430,7 +458,7 @@ tail -n 50 log/cloud.log.*
 
 ---
 
-## 🧠 6. Vertex AI Search Datastore Ingestion & Manual Purging (Future Roadmap / Phase 4b)
+## VI. Vertex AI Search Datastore Ingestion & Manual Purging (Future Roadmap / Phase 4b)
 
 When files and pages are synchronized to Google Cloud Storage (`gs://yourorg-bucket-sharepoint-sync/`), our Traversal Cloud Function automatically deposits a structured JSONL manifest at `gs://yourorg-bucket-sharepoint-sync/config/metadata.jsonl`. Each record attaches custom schema attributes (`sharepoint_url`, `title`, `_id`, and `content.uri`) so frontend Contact Center AI / GKA widgets redirect citation clicks directly to live SharePoint pages.
 
@@ -441,7 +469,8 @@ When you are ready to connect Vertex AI Search Datastore to your synchronized bu
 
 ---
 
-## 🏗️ 7. Preparing for Vertex AI Search Datastore from Synced GCS
+## VII. Preparing for Vertex AI Search Datastore from Synced GCS
+
 
 To ensure that your Contact Center AI (CCAI) / Generative Knowledge Assist (GKA) agents always receive custom metadata attributes (`sharepoint_url`) and avoid random hash IDs, follow these step-by-step best practices when configuring your Data Store in Google Cloud Console:
 

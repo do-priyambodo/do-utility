@@ -1,7 +1,7 @@
 # Maxis SharePoint to GCS Synchronization — Master Architecture & Scaling Plan
 
 ## Executive Summary
-This document serves as the master architectural reference and future scaling plan for the Maxis SharePoint-to-GCS synchronization pipeline (V6.0). It captures all evaluated conversion methodologies, engine comparison matrices, and production scaling steps.
+This document serves as the master architectural reference and future scaling plan for the Maxis SharePoint-to-GCS synchronization pipeline (V7.0). It captures all evaluated conversion methodologies, engine comparison matrices, and production scaling steps.
 
 ---
 
