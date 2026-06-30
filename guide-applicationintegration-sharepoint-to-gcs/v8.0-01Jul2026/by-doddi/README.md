@@ -104,12 +104,12 @@ Your Azure app registration must be granted both **Delegated and Application** t
 ## II. Deployment Guide
 
 ### ⚡ Customer Quick-Start Checklist (Step-by-Step for Tomorrow)
-If you are deploying V7.0 tomorrow in a fresh customer environment or upgrading an existing setup, follow this exact 5-step order:
-1. **Validate Environment**: Fill in `parameters.json` and run `python3 util/validate_params.py` (or run `./prereq/sa-roles.sh` first if IAM/Service Accounts are not yet created).
+If you are deploying V8.0 tomorrow in a fresh customer environment or upgrading an existing setup, follow this exact 5-step order:
+1. **Validate Environment**: Fill in `parameters.json` and run `python3 util/validate_params.py` (or run `./util/prereq/sa-roles.sh` first if IAM/Service Accounts are not yet created).
 2. **Export Shell Variables**: Copy and run the block in **Step 1** to export `PROJECT_ID`, `LOCATION`, `FUNCTION_NAME`, etc., into your terminal session.
-3. **Deploy Cloud Run Backend**: Run `./deploy_cloud_run.sh` (**Step 2 Option A**) to deploy the high-fidelity Playwright container, then copy and paste the IAM commands in **Step 3** (which include auto-retry fallback for Google Cloud Identity groups).
-4. **Deploy Application Integration Workflows**: Run `python3 deploy_workflows.py` (**Step 4**) to publish the orchestrator pipelines.
-5. **Execute Verification Test**: Run `python3 sync_gcs_dynamic.py --force` to test dynamic URL syncing and verify that PDFs render perfectly in your GCS bucket!
+3. **Deploy Cloud Run Backend**: Run `./deploy/deploy_cloud_run.sh` (**Step 2 Option A**) to deploy the high-fidelity Playwright container, then copy and paste the IAM commands in **Step 3** (which include auto-retry fallback for Google Cloud Identity groups).
+4. **Deploy Application Integration Workflows**: Run `python3 deploy/deploy_workflows.py` (**Step 4**) to publish the orchestrator pipelines.
+5. **Execute Verification Test**: Run `python3 sync/sync_gcs_dynamic.py --force` to test dynamic URL syncing and verify that PDFs render perfectly in your GCS bucket!
 
 ---
 
@@ -123,13 +123,13 @@ This tool will perform format verification and live resource checks. Only procee
 🎉 ALL PARAMETERS AND GCP RESOURCES COMPLETED VALIDATION SUCCESSFULLY!
 ```
 
-For a detailed explanation of each parameter and how to create them, see the [Parameters Creation Guide](util/PARAM.md).
+For a detailed explanation of each parameter and how to create them, see the [Parameters Creation Guide](docs/PARAM.md).
 
 ### (OPTIONAL!) Step 0.5: Provision Service Account and IAM Roles
 Before deploying the Cloud Function or workflows, run the pre-configured role-binding script to automatically create your custom Service Account and configure both the Service Account (runtime) and your Developer User (deployment) IAM permissions:
 ```bash
-chmod +x prereq/sa-roles.sh
-./prereq/sa-roles.sh
+chmod +x util/prereq/sa-roles.sh
+./util/prereq/sa-roles.sh
 ```
 This script will read `parameters.json` and execute all necessary `gcloud` commands to bind the roles.
 
@@ -174,17 +174,17 @@ export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('param
      --project="${PROJECT_ID}"
    ```
 2. Choose your deployment method based on your selected PDF conversion engine:
-   * **👉 Option A: Custom Docker Container (MANDATORY & RECOMMENDED FOR V6.0 DEFAULT)**:
-     **Use this option!** We are currently using this deployment method because V7.0 defaults to Playwright (Headless Chromium) to solve customer feedback regarding missing visual images and complex page layouts. This script builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries pre-installed:
+   * **👉 Option A: Custom Docker Container (MANDATORY & RECOMMENDED FOR V8.0 DEFAULT)**:
+     **Use this option!** We are currently using this deployment method because V8.0 defaults to Playwright (Headless Chromium) to solve customer feedback regarding missing visual images and complex page layouts. This script builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries pre-installed:
      ```bash
-     chmod +x deploy_cloud_run.sh
-     ./deploy_cloud_run.sh
+     chmod +x deploy/deploy_cloud_run.sh
+     ./deploy/deploy_cloud_run.sh
      ```
    * **Option B: Standard Buildpacks (Alternative Fallback Only)**:
      *Skip this option unless your organization strictly bans custom Docker containers.* Deploys via standard Google Cloud Function Gen 2 buildpacks without container overhead or Chromium binaries (requires changing `parameters.json` to `"CONFIG_PDF_Conversion_Engine": "weasyprint"`):
      ```bash
-     chmod +x deploy_cloud_function.sh
-     ./deploy_cloud_function.sh
+     chmod +x deploy/deploy_cloud_function.sh
+     ./deploy/deploy_cloud_function.sh
      ```
 
 ### Step 3: Set up Cloud Run Invoker Bindings
@@ -233,28 +233,28 @@ Before deploying integration workflows (or when upgrading an existing customer e
 1. **Verify Azure AD / Microsoft Graph Authentication**:
    Verify that your Client Secret and Service Account token generation work cleanly:
    ```bash
-   python3 check_entra_id_auth.py
+   python3 check/check_entra_id_auth.py
    ```
 2. **Simulate SharePoint Traversal (Dry-Run)**:
    Test your connection to the deployed Cloud Function and see exactly which PDF documents and site pages are discovered in SharePoint (without triggering download batches):
    * **For Option 1 (Dynamic Remote Whitelist)**:
      ```bash
-     python3 check_sync_gcs_dynamic.py --dry-run
+     python3 check/check_sync_gcs_dynamic.py --dry-run
      ```
    * **For Option 2 (Full Enterprise Traversal)**:
      ```bash
-     python3 check_sync_sharepoint_to_gcs.py --dry-run
+     python3 check/check_sync_sharepoint_to_gcs.py --dry-run
      ```
 3. **Granular File-by-File Audit**:
    If you want to print out the complete itemized list of every discovered file and folder path:
    ```bash
-   python3 check_sharepoint_discovery_dryrun.py
+   python3 check/check_sharepoint_discovery_dryrun.py
    ```
 
 ### Step 4: Parameterize and Deploy Integration Workflows
 Compile the template files (`child_workflow.json` and `parent_workflow.json`), substitute placeholders dynamically, and deploy them to GCP:
 ```bash
-python3 deploy_workflows.py
+python3 deploy/deploy_workflows.py
 ```
 
 ---
@@ -265,8 +265,8 @@ You can execute this synchronization app using two operational models depending 
 
 | Option | Operational Model | Whitelist Source | Python On-Demand Runner | Cloud Scheduler Cron Deployer |
 | :---: | :--- | :--- | :--- | :--- |
-| **Option 1** | **Dynamic Remote Whitelist** *(Recommended)* | `gs://YOUR_BUCKET/config/target_urls.txt` | `python3 sync_gcs_dynamic.py` | `./deploy_scheduler_targeted_gcs_sync.sh` |
-| **Option 2** | **Full Traversal Sync** | Entire SharePoint Site | `python3 sync_sharepoint_to_gcs.py` | `./deploy_scheduler_full_sharepoint_sync.sh` |
+| **Option 1** | **Dynamic Remote Whitelist** *(Recommended)* | `gs://YOUR_BUCKET/config/target_urls.txt` | `python3 sync/sync_gcs_dynamic.py` | `./deploy/deploy_scheduler_targeted_gcs_sync.sh` |
+| **Option 2** | **Full Traversal Sync** | Entire SharePoint Site | `python3 sync/sync_sharepoint_to_gcs.py` | `./deploy/deploy_scheduler_full_sharepoint_sync.sh` |
 
 ---
 
@@ -276,22 +276,22 @@ Allow business users or administrators to maintain a dynamic list of synchronize
 #### A. Manual On-Demand Execution (Terminal)
 1. Ensure your target URLs are uploaded to GCS (e.g. `gs://YOUR_BUCKET/config/target_urls.txt`). You can populate `target_urls.txt` locally and upload it:
    ```bash
-   ./upload_gcs_targets.sh
+   ./sync/upload_gcs_targets.sh
    ```
 2. Run the dynamic standalone runner (displays real-time console progress per batch and file):
    * **Default Mode (Incremental Delta Caching):** Automatically compares timestamps against existing files in your GCS bucket (`gcs_cache`). If an identical file already exists with an unchanged timestamp, it is **instantly skipped** to drop transfer volume by 99.9% and eliminate Microsoft Graph API throttling:
      ```bash
-     python3 sync_gcs_dynamic.py
+     python3 sync/sync_gcs_dynamic.py
      ```
    * **Force Full Sync Mode (`--force`):** Completely bypasses the GCS Delta Cache and forces a fresh re-download, re-render (via headless Playwright Chromium), and re-upload of **every single URL** in `target_urls.txt` regardless of timestamp. Use this during live customer demos or to force-refresh PDF layout styles:
      ```bash
-     python3 sync_gcs_dynamic.py --force
+     python3 sync/sync_gcs_dynamic.py --force
      ```
 
 #### B. Automated Recurring Cron (Cloud Scheduler)
 To deploy an automated hourly background trigger that reads `target_urls.txt` from GCS on every run:
 ```bash
-./deploy_scheduler_targeted_gcs_sync.sh
+./deploy/deploy_scheduler_targeted_gcs_sync.sh
 ```
 *(Whenever users update `target_urls.txt` inside the GCP Storage Console, the recurring cron automatically picks up the new files live!)*
 
@@ -302,13 +302,13 @@ Crawl and synchronize **all** documents and modern site pages across the configu
 
 #### A. Manual On-Demand Execution (Terminal)
 ```bash
-python3 sync_sharepoint_to_gcs.py
+python3 sync/sync_sharepoint_to_gcs.py
 ```
 
 #### B. Automated Recurring Cron (Cloud Scheduler)
 To deploy an automated periodic full-crawl schedule:
 ```bash
-./deploy_scheduler_full_sharepoint_sync.sh
+./deploy/deploy_scheduler_full_sharepoint_sync.sh
 ```
 
 ---
@@ -318,15 +318,15 @@ We provide dedicated verification tools so you can inspect your pipeline configu
 
 * **Dynamic Targeted Sync Inspection**: Check target inventory breakdown (`.aspx` pages vs documents), inspect cached GCS sizes, and view performance estimates:
   ```bash
-  python3 check_sync_gcs_dynamic.py
+  python3 check/check_sync_gcs_dynamic.py
   ```
 * **Full Traversal Sync Inspection**: Verify SharePoint subsite configuration, check existing GCS bucket inventory, and review runtime delta behavior:
   ```bash
-  python3 check_sync_sharepoint_to_gcs.py
+  python3 check/check_sync_sharepoint_to_gcs.py
   ```
 * **Lightning-Fast Verification (Max 10 Cutoff)**: Verify Microsoft Entra ID authentication and site folder resolution in under 3 seconds:
   ```bash
-  cd test-few-files-only && python3 check_files_subset.py
+  python3 test/few-files/check_files_subset.py
   ```
 
 ---
@@ -364,16 +364,16 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
 *(If your security governance team prefers zero new IAM roles, you can rely on Google Cloud's built-in automated background pull instead!)*
 
 ### Step 3: Test Datastore Indexing Manually (Terminal)
-We provide a standalone helper script (`sync_datastore.py`) that triggers an immediate `importDocuments` call in `INCREMENTAL` reconciliation mode pointing to `gs://YOUR_BUCKET/config/metadata.jsonl`:
+We provide a standalone helper script (`sync/sync_datastore.py`) that triggers an immediate `importDocuments` call in `INCREMENTAL` reconciliation mode pointing to `gs://YOUR_BUCKET/config/metadata.jsonl`:
 ```bash
-python3 sync_datastore.py
+python3 sync/sync_datastore.py
 ```
 *(This confirms your Service Account IAM role is active and that your Datastore accepts the metadata manifest!)*
 
 ### Step 4: Deploy Automated 12-Hour Cron Scheduler
 Deploy the automated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-12h`) to run every 12 hours in the background:
 ```bash
-./deploy_scheduler_datastore_sync.sh
+./deploy/deploy_scheduler_datastore_sync.sh
 ```
 *(You can also trigger this job on-demand in the Google Cloud Console under **Cloud Scheduler** by clicking **Force Run**.)*
 
@@ -427,7 +427,7 @@ gcloud logging read 'resource.type="cloud_scheduler_job" AND resource.labels.job
 When executing the sync pipeline (either manually via terminal or automated via **Cloud Scheduler**), real-time progress and status reports are automatically ingested by Google Cloud and can be monitored across five dedicated views:
 
 #### A. Interactive Terminal Console (Manual Runs)
-When executing `python3 sync_gcs_dynamic.py`, the terminal displays live item-by-item progress, delta cache hits, and prepared upload paths:
+When executing `python3 sync/sync_gcs_dynamic.py`, the terminal displays live item-by-item progress, delta cache hits, and prepared upload paths:
 ```text
 ================================================================================
 ⚡ Processing Micro-Batch 1/10 (10 URLs)...
@@ -465,7 +465,7 @@ Every print statement and status report automatically streams into **Google Clou
 * Click on any generated `Execution ID` (or paste the clickable URL outputted by the terminal).
 * Inspect the node-by-node visual graph showing exactly which micro-batch succeeded and how many documents transferred. You can also run the CLI helper:
   ```bash
-  python3 check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "<EXECUTION_ID>"
+  python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION_NAME}" "<EXECUTION_ID>"
   ```
 
 #### E. GCS Audit Manifests — *Permanent Historical File Log*

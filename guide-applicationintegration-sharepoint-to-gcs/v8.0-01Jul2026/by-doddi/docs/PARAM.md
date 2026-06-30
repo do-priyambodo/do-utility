@@ -24,9 +24,9 @@ The validator script [validate_params.py](file:///usr/local/google/home/yourorg/
      * Integration Connector GCS Connection status (must be `ACTIVE`)
 
 ### How to Run:
-Run the script from the `util/` directory:
+Run the script from the project root directory:
 ```bash
-python3 validate_params.py
+python3 util/validate_params.py
 ```
 Outputs and exceptions are logged into the standard setup logs directory `log/setup.log` (with any failures mirrored to `log/error.log`).
 
@@ -64,7 +64,7 @@ Outputs and exceptions are logged into the standard setup logs directory `log/se
   1. Go to **IAM & Admin** > **Service Accounts** in the GCP Console.
   2. Click **Create Service Account**.
   3. Enter a name (e.g., `yourorg-sa-sharepoint-gcs`) and click **Create and Continue**.
-  4. (Optional) Assign temporary roles or configure them later using `check_permissions.py` recommendations.
+  4. (Optional) Assign temporary roles or configure them later using `util/prereq/check_permissions.py` recommendations.
   5. Click **Done**.
   6. Copy the fully qualified email address: `yourorg-sa-sharepoint-gcs@<project-id>.iam.gserviceaccount.com`.
 
@@ -172,11 +172,11 @@ Outputs and exceptions are logged into the standard setup logs directory `log/se
   4. `CONFIG_Sharepoint_Library` is the Microsoft Graph API Drive name for the target document library (typically `"Documents"` for the default library shown as "Shared Documents" in the Web UI).
 
 ### 10. `CONFIG_CloudFunction_Name`
-* **Goal**: Name of the deployed traversal Cloud Function.
+* **Goal**: Name of the deployed traversal Cloud Function / Cloud Run service.
 * **Creation Step**:
-  * Set this string parameter (e.g., `yourorg-sharepoint-list-files`). Running `./deploy_cf.sh` will deploy it.
+  * Set this string parameter (e.g., `yourorg-sharepoint-list-files`). Running `./deploy/deploy_cloud_run.sh` will deploy it.
 
 ### 11. `CONFIG_Parent_Integration_Name` & `CONFIG_Child_Integration_Name`
 * **Goal**: Names of the deployed Application Integration workflows.
 * **Creation Step**:
-  * Set these strings (e.g., `yourorg-sharepoint-gcs-parent` and `yourorg-sharepoint-gcs-child`). Running `deploy_workflows.py` will deploy and link them.
+  * Set these strings (e.g., `yourorg-sharepoint-gcs-parent` and `yourorg-sharepoint-gcs-child`). Running `python3 deploy/deploy_workflows.py` will deploy and link them.

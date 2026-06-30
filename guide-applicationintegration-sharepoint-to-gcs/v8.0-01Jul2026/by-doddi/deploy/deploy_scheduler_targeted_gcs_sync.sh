@@ -1,5 +1,6 @@
 #!/bin/bash
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/.."
+export PYTHONPATH="$(pwd)/util:${PYTHONPATH:-}"
 set -e
 
 mkdir -p log
