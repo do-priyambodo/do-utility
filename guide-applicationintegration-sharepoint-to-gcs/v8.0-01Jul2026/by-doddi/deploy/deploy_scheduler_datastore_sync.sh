@@ -37,30 +37,21 @@ IMPORT_URL="https://discoveryengine.googleapis.com/v1beta/projects/${PROJECT_ID}
 PAYLOAD='{"gcsSource":{"inputUris":["gs://'${BUCKET_NAME}'/config/metadata.jsonl"]},"reconciliationMode":"INCREMENTAL"}'
 
 if gcloud scheduler jobs describe "${JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
-  echo "ℹ️ Scheduler job '${JOB_NAME}' already exists. Updating..."
-  gcloud scheduler jobs update http "${JOB_NAME}" \
-    --location="${LOCATION}" \
-    --schedule="${CRON_SCHEDULE}" \
-    --uri="${IMPORT_URL}" \
-    --http-method="POST" \
-    --headers="Content-Type=application/json" \
-    --message-body="${PAYLOAD}" \
-    --oauth-service-account-email="${SERVICE_ACCOUNT}" \
-    --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
-    --project="${PROJECT_ID}"
-else
-  echo "🚀 Creating new Cloud Scheduler job '${JOB_NAME}'..."
-  gcloud scheduler jobs create http "${JOB_NAME}" \
-    --location="${LOCATION}" \
-    --schedule="${CRON_SCHEDULE}" \
-    --uri="${IMPORT_URL}" \
-    --http-method="POST" \
-    --headers="Content-Type=application/json" \
-    --message-body="${PAYLOAD}" \
-    --oauth-service-account-email="${SERVICE_ACCOUNT}" \
-    --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
-    --project="${PROJECT_ID}"
+  echo "🗑️ Deleting existing scheduler job '${JOB_NAME}'..."
+  gcloud scheduler jobs delete "${JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" --quiet
 fi
+
+echo "🚀 Creating Cloud Scheduler job '${JOB_NAME}'..."
+gcloud scheduler jobs create http "${JOB_NAME}" \
+  --location="${LOCATION}" \
+  --schedule="${CRON_SCHEDULE}" \
+  --uri="${IMPORT_URL}" \
+  --http-method="POST" \
+  --headers="Content-Type=application/json" \
+  --message-body="${PAYLOAD}" \
+  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
+  --oauth-token-scope="https://www.googleapis.com/auth/cloud-platform" \
+  --project="${PROJECT_ID}"
 
 echo "================================================================"
 echo "🎉 AUTOMATED DATASTORE SYNC SCHEDULER DEPLOYED SUCCESSFULLY!"
