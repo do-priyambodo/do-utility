@@ -381,7 +381,7 @@ def main():
         project_id=PROJECT_ID,
         location=LOCATION,
         integration_id=CHILD_INTEGRATION_NAME,
-        file_path="child_workflow.json",
+        file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "child_workflow.json"),
         token=token,
         service_account=SERVICE_ACCOUNT,
         params=params
@@ -396,7 +396,7 @@ def main():
         project_id=PROJECT_ID,
         location=LOCATION,
         integration_id=PARENT_INTEGRATION_NAME,
-        file_path="parent_workflow.json",
+        file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "parent_workflow.json"),
         token=token,
         service_account=SERVICE_ACCOUNT,
         params=params
