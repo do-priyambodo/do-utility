@@ -97,6 +97,62 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
             
     return all_results, sync_results
 
+# Helper to download SharePoint image and return as Base64 data URI
+def fetch_image_as_data_uri(raw_src, source_url="", headers=None):
+    if not raw_src or not headers or raw_src.startswith("data:"):
+        return ""
+    try:
+        parsed_src = urllib.parse.urlparse(source_url) if source_url else None
+        host_name = parsed_src.netloc if (parsed_src and parsed_src.netloc) else "priyambodo.sharepoint.com"
+        host_scheme = f"{parsed_src.scheme}://{host_name}" if (parsed_src and parsed_src.scheme) else f"https://{host_name}"
+        
+        full_img_url = raw_src if (raw_src.startswith("http://") or raw_src.startswith("https://")) else (f"{host_scheme}{raw_src}" if raw_src.startswith("/") else f"{host_scheme}/{raw_src}")
+        
+        # Strip query parameters for canonical Graph API and Shares resolution
+        clean_img_url = full_img_url.split("?")[0].strip()
+        parsed_img = urllib.parse.urlparse(clean_img_url)
+        img_host = parsed_img.netloc or host_name
+        img_path = parsed_img.path
+        
+        # Method 1: Native Graph API Site-Path Content Endpoint (Reliable with Graph OAuth token)
+        if img_path and img_path.startswith("/"):
+            try:
+                graph_site_path_url = f"https://graph.microsoft.com/v1.0/sites/{img_host}:{img_path}:/content"
+                g_resp = http.get(graph_site_path_url, headers=headers, timeout=15)
+                if g_resp.status_code == 200 and g_resp.content:
+                    ct = g_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                    b64_str = base64.b64encode(g_resp.content).decode("utf-8")
+                    return f"data:{ct};base64,{b64_str}"
+            except Exception:
+                pass
+                
+        # Method 2: Graph Shares Endpoint with cleaned canonical URL without query string
+        try:
+            encoded_share = "u!" + base64.urlsafe_b64encode(clean_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
+            share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
+            share_resp = http.get(share_api_url, headers=headers, timeout=15)
+            if share_resp.status_code == 200 and share_resp.content:
+                ct = share_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                b64_str = base64.b64encode(share_resp.content).decode("utf-8")
+                return f"data:{ct};base64,{b64_str}"
+        except Exception:
+            pass
+            
+        # Method 3: Direct HTTP GET fallback
+        try:
+            direct_resp = http.get(full_img_url, headers=headers, timeout=15)
+            if direct_resp.status_code == 200 and direct_resp.content:
+                ct = direct_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                b64_str = base64.b64encode(direct_resp.content).decode("utf-8")
+                return f"data:{ct};base64,{b64_str}"
+        except Exception:
+            pass
+            
+        return ""
+    except Exception as e:
+        print(f"Warning: fetch_image_as_data_uri failed for {raw_src}: {e}")
+        return ""
+
 # Helper to resolve and embed inline images inside Rich Text HTML payloads
 def resolve_and_embed_images_in_html(html_snippet, source_url="", headers=None):
     if not html_snippet or not headers or not BeautifulSoup:
@@ -107,38 +163,12 @@ def resolve_and_embed_images_in_html(html_snippet, source_url="", headers=None):
         if not imgs:
             return html_snippet
             
-        parsed_src = urllib.parse.urlparse(source_url) if source_url else None
-        host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
-        
         for img in imgs:
             raw_src = img.get("src", "").strip()
             if not raw_src or raw_src.startswith("data:"):
                 continue
                 
-            full_img_url = raw_src if (raw_src.startswith("http://") or raw_src.startswith("https://")) else (f"{host_scheme}{raw_src}" if raw_src.startswith("/") else f"{host_scheme}/{raw_src}")
-            img_data_uri = ""
-            
-            try:
-                direct_resp = http.get(full_img_url, headers=headers, timeout=15)
-                if direct_resp.status_code == 200 and direct_resp.content:
-                    ct = direct_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                    b64_str = base64.b64encode(direct_resp.content).decode("utf-8")
-                    img_data_uri = f"data:{ct};base64,{b64_str}"
-            except Exception:
-                pass
-                
-            if not img_data_uri:
-                try:
-                    encoded_share = "u!" + base64.urlsafe_b64encode(full_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
-                    share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
-                    img_resp = http.get(share_api_url, headers=headers, timeout=15)
-                    if img_resp.status_code == 200 and img_resp.content:
-                        ct = img_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                        b64_str = base64.b64encode(img_resp.content).decode("utf-8")
-                        img_data_uri = f"data:{ct};base64,{b64_str}"
-                except Exception:
-                    pass
-                    
+            img_data_uri = fetch_image_as_data_uri(raw_src, source_url, headers)
             if img_data_uri:
                 img["src"] = img_data_uri
                 img["style"] = "max-width:100%; height:auto;"
@@ -254,27 +284,7 @@ def render_page_to_html(page, source_url="", headers=None):
 
                     if raw_img and headers:
                         try:
-                            parsed_src = urllib.parse.urlparse(source_url) if source_url else None
-                            host_scheme = f"{parsed_src.scheme}://{parsed_src.netloc}" if (parsed_src and parsed_src.netloc) else "https://priyambodo.sharepoint.com"
-                            full_img_url = raw_img if (raw_img.startswith("http://") or raw_img.startswith("https://")) else (f"{host_scheme}{raw_img}" if raw_img.startswith("/") else f"{host_scheme}/{raw_img}")
-                            
-                            try:
-                                direct_resp = http.get(full_img_url, headers=headers, timeout=15)
-                                if direct_resp.status_code == 200 and direct_resp.content:
-                                    ct = direct_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                                    b64_str = base64.b64encode(direct_resp.content).decode("utf-8")
-                                    img_data_uri = f"data:{ct};base64,{b64_str}"
-                            except Exception:
-                                pass
-                                
-                            if not img_data_uri:
-                                encoded_share = "u!" + base64.urlsafe_b64encode(full_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
-                                share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
-                                img_resp = http.get(share_api_url, headers=headers, timeout=15)
-                                if img_resp.status_code == 200 and img_resp.content:
-                                    ct = img_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                                    b64_str = base64.b64encode(img_resp.content).decode("utf-8")
-                                    img_data_uri = f"data:{ct};base64,{b64_str}"
+                            img_data_uri = fetch_image_as_data_uri(raw_img, source_url, headers)
                         except Exception as e:
                             print(f"Warning: Failed to fetch card image {raw_img}: {e}")
 
