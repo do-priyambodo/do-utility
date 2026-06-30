@@ -1,3 +1,10 @@
+import os, sys
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path: sys.path.insert(0, ROOT_DIR)
+if os.path.join(ROOT_DIR, "util") not in sys.path: sys.path.insert(0, os.path.join(ROOT_DIR, "util"))
+try: os.chdir(ROOT_DIR)
+except Exception: pass
+
 #!/usr/bin/env python3
 import json
 import urllib.request
@@ -7,7 +14,6 @@ import subprocess
 import os
 import sys
 
-# Locate parent directory for config reference
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_identity_token():
@@ -33,7 +39,7 @@ def get_cf_url(function_name, location, project_id):
 
 def main():
     print("================================================================")
-    print("🔍 CHECKING FILES TO SYNC VIA SHAREPOINT TRAVERSAL CLOUD FUNCTION")
+    print("⚡ FAST SUBSET TEST: CHECKING 10 SHAREPOINT FILES VIA CLOUD FUNCTION")
     print("================================================================")
 
     param_path = "parameters.json"
@@ -57,7 +63,7 @@ def main():
         cf_endpoint = get_cf_url(FUNCTION_NAME, LOCATION, PROJECT_ID)
         
     if not cf_endpoint:
-        print("❌ Could not resolve Cloud Function URI. Please ensure Cloud Function is deployed.")
+        print("❌ Could not resolve Cloud Function URI.")
         sys.exit(1)
     else:
         print(f"✅ Resolved Cloud Function URI: {cf_endpoint}")
@@ -71,17 +77,19 @@ def main():
     site_path = params.get("CONFIG_Sharepoint_Sites", "sites/yourorg-sharepoint-to-gcs")
     site_name = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
 
+    # Request only max 10 items for lightning fast verification
     payload_cf = {
         "site_name": site_name,
         "library_name": params.get("CONFIG_Sharepoint_Library", "Documents"),
-        "force_full_sync": False
+        "force_full_sync": False,
+        "max_items": 10
     }
 
     req_cf = urllib.request.Request(cf_endpoint, data=json.dumps(payload_cf).encode("utf-8"), headers=headers_cf, method="POST")
 
-    print("🔒 Invoking Cloud Function to inspect SharePoint and GCS incremental sync state...")
+    print("🔒 Invoking Cloud Function (Max 10 items lightning-fast subset request)...")
     try:
-        with urllib.request.urlopen(req_cf, timeout=3600) as resp:
+        with urllib.request.urlopen(req_cf, timeout=60) as resp:
             cf_resp = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         print(f"❌ Cloud Function invocation failed (Code {e.code}): {e.reason}")
@@ -98,70 +106,30 @@ def main():
     sync_list = cf_resp.get("items", [])
     sync_list = [item for item in sync_list if not (not item.get("IsPage") and item.get("Name", "").lower().endswith(".aspx"))]
 
-    all_docs = [x for x in all_resources if not x.get("IsPage")]
-    all_pages = [x for x in all_resources if x.get("IsPage")]
-    sync_docs = [x for x in sync_list if not x.get("IsPage")]
-    sync_pages = [x for x in sync_list if x.get("IsPage")]
-
-    output_file = "files-to-sync-result.txt"
+    output_file = "files-subset-result.txt"
     output_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), output_file)
 
     with open(output_path, "w", encoding="utf-8") as out:
         out.write("================================================================\n")
-        out.write("SHAREPOINT TO GCS - SYNCHRONIZATION INSPECTION REPORT\n")
+        out.write("SHAREPOINT TO GCS - FAST SUBSET TEST REPORT (MAX 10)\n")
         out.write("================================================================\n")
-        out.write("📊 SUMMARY OF SHAREPOINT RESOURCES & SYNC STATUS:\n")
-        out.write("----------------------------------------------------------------\n")
-        out.write(f"Total Available Resources in SharePoint : {all_count}\n")
-        out.write(f"  - Total Documents (Files)             : {len(all_docs)}\n")
-        out.write(f"  - Total Site Pages                    : {len(all_pages)}\n\n")
-        out.write(f"Total Items Requiring Synchronization   : {len(sync_list)}\n")
-        out.write(f"  - Documents to Sync                   : {len(sync_docs)}\n")
-        out.write(f"  - Site Pages to Sync                  : {len(sync_pages)}\n")
+        out.write(f"Items Sampled from SharePoint : {all_count}\n")
+        out.write(f"Items Requiring Sync          : {len(sync_list)}\n")
         out.write("================================================================\n\n")
         
-        out.write(f"--- PART 1: ALL AVAILABLE RESOURCES IN SHAREPOINT ({all_count}) ---\n")
-        if not all_resources:
-            out.write("No resources found in SharePoint library.\n\n")
-        else:
-            for idx, item in enumerate(all_resources, 1):
-                res_type = "Page" if item.get("IsPage") else "Document"
-                name = item.get("Name", "")
-                rel_path = item.get("RelativePath", "")
-                url = item.get("Url", "")
-                out.write(f"{idx}. [{res_type}] {name}\n")
-                out.write(f"   Relative Path : {rel_path}\n")
-                if url:
-                    out.write(f"   Source URL    : {url}\n")
-                out.write("\n")
-
-        out.write("================================================================\n")
-        out.write(f"--- PART 2: FILES THAT WILL BE SYNCHRONIZED ({len(sync_list)}) ---\n")
-        if not sync_list:
-            out.write("No files or pages require synchronization at this time.\n")
-        else:
-            for idx, item in enumerate(sync_list, 1):
-                res_type = "Page" if item.get("IsPage") else "Document"
-                name = item.get("Name", "")
-                rel_path = item.get("RelativePath", "")
-                url = item.get("Url", "")
-                out.write(f"{idx}. [{res_type}] {name}\n")
-                out.write(f"   Relative Path : {rel_path}\n")
-                if url:
-                    out.write(f"   Source URL    : {url}\n")
-                out.write("\n")
+        for idx, item in enumerate(all_resources, 1):
+            res_type = "Page" if item.get("IsPage") else "Document"
+            name = item.get("Name", "")
+            rel_path = item.get("RelativePath", "")
+            out.write(f"{idx}. [{res_type}] {name} (Path: {rel_path})\n")
 
     print("\n================================================================")
-    print("📊 SUMMARY OF SHAREPOINT RESOURCES & SYNC STATUS:")
+    print("⚡ FAST SUBSET VERIFICATION COMPLETE!")
     print("================================================================")
-    print(f" 📂 Total Available Resources : {all_count}")
-    print(f"    - Documents (Files)       : {len(all_docs)}")
-    print(f"    - Site Pages              : {len(all_pages)}")
-    print(f" 🔄 Total Items to Sync       : {len(sync_list)}")
-    print(f"    - Documents to Sync       : {len(sync_docs)}")
-    print(f"    - Site Pages to Sync      : {len(sync_pages)}")
+    print(f" 📂 Items Sampled : {all_count}")
+    print(f" 🔄 Need Sync     : {len(sync_list)}")
     print("================================================================")
-    print(f"💾 Detailed report written to: {output_path}")
+    print(f"💾 Subset report saved to: {output_path}")
 
 if __name__ == "__main__":
     main()

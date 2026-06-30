@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")/.."
 # ==============================================================================
 # CLI Commands to Create and Configure Custom Service Account & Developer Permissions
 # ==============================================================================

@@ -1,3 +1,10 @@
+import os, sys
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path: sys.path.insert(0, ROOT_DIR)
+if os.path.join(ROOT_DIR, "util") not in sys.path: sys.path.insert(0, os.path.join(ROOT_DIR, "util"))
+try: os.chdir(ROOT_DIR)
+except Exception: pass
+
 import sys
 import os
 import shutil

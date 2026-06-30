@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")/../.."
 set -e
 
 # Run log rotation and backup

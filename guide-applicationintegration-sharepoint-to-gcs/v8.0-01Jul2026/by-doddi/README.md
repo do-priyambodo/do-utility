@@ -1,12 +1,25 @@
-# Serverless SharePoint-to-GCS Synchronization Pipeline (V7.0)
+# Serverless SharePoint-to-GCS Synchronization Pipeline (V8.0)
 
-A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, and automated deletion of inactive SharePoint inventory.
+A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, automated deletion of inactive SharePoint inventory, and an **Intelligent Image URL Resolver** for enterprise OData/thumbnail endpoints.
+
+---
+
+## 📂 Modular Directory Architecture (V8.0)
+
+The V8.0 codebase is organized into clean domain-specific subdirectories with automated root path resolution:
+* **`deploy/`**: Infrastructure and workflow deployment scripts (`deploy_cloud_run.sh`, `deploy_workflows.py`, cron schedulers) and workflow JSON templates.
+* **`sync/`**: Synchronization pipeline runners (`sync_sharepoint_to_gcs.py`, `sync_gcs_dynamic.py`, `sync_datastore.py`, `upload_gcs_targets.sh`).
+* **`check/`**: Read-only pre-flight inspection and diagnostic scripts (`check_entra_id_auth.py`, discovery dry-runs).
+* **`test/`**: Verification unit tests (`test_image_fetch.py`), Jupyter notebooks, and subset trial runners.
+* **`util/`**: Prerequisite IAM scripts (`prereq/`), parameter validation (`validate_params.py`), and logging helpers (`log_helper.py`).
+* **`docs/`**: Architecture guides (`GUIDE_GKA_Live_SharePoint_Links.md`), parameter reference (`PARAM.md`), and roadmaps.
+* **Root (`by-doddi/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`) and Cloud Run backend source (`cf-source/`).
 
 ---
 
 ## Architecture Topology
 
-The sync pipeline follows an enterprise hybrid orchestrator design (V7.0):
+The sync pipeline follows an enterprise hybrid orchestrator design (V8.0):
 
 1.  **Traversal Cloud Function (`yourorg-sharepoint-list-files`)**:
     *   **Modular Architecture:** Cleanly refactored from a single monolithic file into specialized modules (`graph_client.py` for resilient M365 auth/retries, `pdf_renderer.py` for multi-engine Playwright/WeasyPrint PDF conversion, `sharepoint_traversal.py` for recursive drive inventory and DOM layout harvesting, and `main.py` for HTTP orchestration).

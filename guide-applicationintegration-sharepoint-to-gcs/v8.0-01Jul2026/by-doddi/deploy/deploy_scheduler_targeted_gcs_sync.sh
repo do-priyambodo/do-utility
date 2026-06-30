@@ -1,7 +1,7 @@
 #!/bin/bash
+cd "$(dirname "$0")/../.."
 set -e
 
-# Redirect stdout and stderr to setup.log while outputting to terminal
 mkdir -p log
 exec > >(tee -a log/setup.log) 2>&1
 
@@ -14,8 +14,10 @@ PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).g
 LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
 SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
-SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+BASE_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
+SCHEDULER_JOB_NAME="${BASE_JOB_NAME}-gcs-dynamic"
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
   echo "❌ Error: Missing required scheduler configuration parameters in parameters.json!"
@@ -34,7 +36,7 @@ if [ -n "$CURRENT_GCLOUD_PROJECT" ] && [ "$CURRENT_GCLOUD_PROJECT" != "$PROJECT_
   exit 1
 fi
 
-# Generate JSON payload dynamically attaching environment config from parameters.json
+# Generate JSON payload instructing Cloud Function to dynamically read gs://your-bucket/config/target_urls.txt
 MESSAGE_BODY=$(python3 -c "
 import json
 params = json.load(open('parameters.json'))
@@ -45,7 +47,8 @@ payload = {
     'trigger_integration': True,
     'integration_name': params.get('CONFIG_Parent_Integration_Name', ''),
     'location': params.get('CONFIG_Location', ''),
-    'project_id': params.get('CONFIG_ProjectId', '')
+    'project_id': params.get('CONFIG_ProjectId', ''),
+    'check_gcs_config': True
 }
 print(json.dumps(payload))
 ")
@@ -58,9 +61,9 @@ if [ -z "$FUNCTION_URL" ]; then
   exit 1
 fi
 
-echo "⏰ Creating or updating Cloud Scheduler job '${SCHEDULER_JOB_NAME}'..."
+echo "⏰ Creating or updating dynamic GCS Cloud Scheduler job '${SCHEDULER_JOB_NAME}'..."
 if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
-  echo "🗑️ Deleting existing scheduler job..."
+  echo "🗑️ Deleting existing dynamic scheduler job..."
   gcloud scheduler jobs delete "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" --quiet
 fi
 
@@ -77,4 +80,9 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 
-echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active (Schedule: ${CRON_SCHEDULE})!"
+echo "================================================================"
+echo "🎉 DYNAMIC GCS CLOUD SCHEDULER JOB CREATED SUCCESSFULLY!"
+echo "================================================================"
+echo "👉 Job Name: ${SCHEDULER_JOB_NAME} (Schedule: ${CRON_SCHEDULE})"
+echo "👉 Whenever your customer edits gs://${BUCKET_NAME}/config/target_urls.txt in GCP Web UI, this cron syncs them live!"
+echo "================================================================"

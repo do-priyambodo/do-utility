@@ -1,3 +1,10 @@
+import os, sys
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path: sys.path.insert(0, ROOT_DIR)
+if os.path.join(ROOT_DIR, "util") not in sys.path: sys.path.insert(0, os.path.join(ROOT_DIR, "util"))
+try: os.chdir(ROOT_DIR)
+except Exception: pass
+
 #!/usr/bin/env python3
 """
 Diagnostic script to test SharePoint page image fetching and Base64 embedding in PDF HTML rendering.
@@ -8,7 +15,7 @@ import sys
 import urllib.parse
 
 # Add cf-source to path so we can import modules directly
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "cf-source"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "cf-source"))
 
 from graph_client import get_secret, get_graph_token, http
 from sharepoint_traversal import render_page_to_html, fetch_image_as_data_uri
