@@ -327,16 +327,29 @@ Before creating the scheduler or running manual tests, open `parameters.json` an
 *   `CONFIG_Datastore_Id`: The ID of your Vertex AI Search / Agent Assist Datastore (e.g. `doddi-sharepoint-gcs-datastore_1782668342491_gcs_store`).
 *   `CONFIG_Datastore_Location`: The location of your Datastore (e.g. `global` or `us`, `eu`, `asia-southeast1`).
 *   `CONFIG_GCS_Bucket`: Your sync bucket where `config/metadata.jsonl` is written.
-*   `CONFIG_Scheduler_Cron_Schedule`: The recurrence interval (default: `0 */12 * * *` for every 12 hours).
+*   `CONFIG_Scheduler_Cron_Schedule`: The recurrence interval (default: `0 */12 * * *` for every 12 hours; or use `0 3,9,15,21 * * *` for 4x daily runs).
 
-### Step 2: Test Datastore Indexing Manually (Terminal)
+### Step 2: Ensure Service Account IAM Role (`roles/discoveryengine.editor`)
+Before running any Datastore sync commands or cron schedulers, verify that your sync Service Account (`CONFIG_Service_Account`) is granted the **Discovery Engine Editor** (`roles/discoveryengine.editor`) role on your Google Cloud project. Otherwise, Cloud Scheduler will fail with a `PERMISSION_DENIED` HTTP error:
+```bash
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
+
+# Grant Discovery Engine Editor role to your Service Account
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/discoveryengine.editor"
+```
+*(If your security governance team prefers zero new IAM roles, you can rely on Google Cloud's built-in automated background pull instead!)*
+
+### Step 3: Test Datastore Indexing Manually (Terminal)
 We provide a standalone helper script (`sync_datastore.py`) that triggers an immediate `importDocuments` call in `INCREMENTAL` reconciliation mode pointing to `gs://YOUR_BUCKET/config/metadata.jsonl`:
 ```bash
 python3 sync_datastore.py
 ```
-*(This verifies that your Service Account has `roles/discoveryengine.editor` permissions and that the Datastore accepts your metadata manifest!)*
+*(This confirms your Service Account IAM role is active and that your Datastore accepts the metadata manifest!)*
 
-### Step 3: Deploy Automated 12-Hour Cron Scheduler
+### Step 4: Deploy Automated 12-Hour Cron Scheduler
 Deploy the automated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-12h`) to run every 12 hours in the background:
 ```bash
 ./deploy_scheduler_datastore_sync.sh
