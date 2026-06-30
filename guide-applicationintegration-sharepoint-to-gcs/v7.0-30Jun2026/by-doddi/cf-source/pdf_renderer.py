@@ -63,7 +63,7 @@ def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
     <meta charset="utf-8">
     <title>{safe_title}</title>
     <style>
-        @page {{ size: A4 portrait; margin: 0.8cm; }}
+        @page {{ size: A4 portrait; margin: 1.5cm; }}
         body {{ font-family: sans-serif; font-size: 10pt; line-height: 1.6; color: #201f1e; }}
         h1, h2, h3 {{ color: #0078d4; margin-top: 15px; margin-bottom: 8px; }}
         table {{ border-collapse: collapse; margin: 15px 0; width: 100%; }}
