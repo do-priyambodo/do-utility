@@ -1,8 +1,18 @@
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from msal import ConfidentialClientApplication
-from google.cloud import secretmanager
+import subprocess
+import json
+
+try:
+    from msal import ConfidentialClientApplication
+except ImportError:
+    ConfidentialClientApplication = None
+
+try:
+    from google.cloud import secretmanager
+except ImportError:
+    secretmanager = None
 
 # Global resilient HTTP session with automatic retry backoff for M365 throttling (429) & Gateway timeouts (504)
 def get_resilient_session():
@@ -21,25 +31,51 @@ http = get_resilient_session()
 
 # Helper to retrieve secret from Secret Manager
 def get_secret(secret_name):
-    client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(request={"name": secret_name})
-    return response.payload.data.decode("utf-8").strip()
+    if secretmanager:
+        try:
+            client = secretmanager.SecretManagerServiceClient()
+            response = client.access_secret_version(request={"name": secret_name})
+            return response.payload.data.decode("utf-8").strip()
+        except Exception:
+            pass
+    # Fallback to gcloud CLI for local development/testing without pip library
+    try:
+        secret_part = secret_name.split("/")[-1]
+        secret_id = secret_name.split("/")[-3] if "secrets/" in secret_name else secret_name
+        return subprocess.check_output(["gcloud", "secrets", "versions", "access", secret_part, f"--secret={secret_id}"], text=True, stderr=subprocess.DEVNULL).strip()
+    except Exception:
+        return subprocess.check_output(["gcloud", "secrets", "versions", "access", "latest", f"--secret={secret_name}"], text=True, stderr=subprocess.DEVNULL).strip()
 
 # Get OAuth token for Graph API
 def get_graph_token(tenant_id, client_id, client_secret):
-    authority = f"https://login.microsoftonline.com/{tenant_id}"
-    app = ConfidentialClientApplication(
-        client_id,
-        client_credential=client_secret,
-        authority=authority
-    )
-    scopes = ["https://graph.microsoft.com/.default"]
-    result = app.acquire_token_for_client(scopes=scopes)
-    if "access_token" in result:
-        return result["access_token"]
+    if ConfidentialClientApplication:
+        authority = f"https://login.microsoftonline.com/{tenant_id}"
+        app = ConfidentialClientApplication(
+            client_id,
+            client_credential=client_secret,
+            authority=authority
+        )
+        scopes = ["https://graph.microsoft.com/.default"]
+        result = app.acquire_token_for_client(scopes=scopes)
+        if "access_token" in result:
+            return result["access_token"]
+        else:
+            error_desc = result.get("error_description", "Unknown error")
+            raise Exception(f"Failed to get access token: {error_desc}")
     else:
-        error_desc = result.get("error_description", "Unknown error")
-        raise Exception(f"Failed to get access token: {error_desc}")
+        # Fallback to requests for local development/testing without msal library
+        token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        payload = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": "https://graph.microsoft.com/.default",
+            "grant_type": "client_credentials"
+        }
+        resp = http.post(token_url, data=payload, timeout=15)
+        if resp.status_code == 200:
+            return resp.json().get("access_token")
+        else:
+            raise Exception(f"Failed to get access token via REST: {resp.text}")
 
 # Helper to handle OData paginated Microsoft Graph API requests
 def graph_get_paginated(url, headers):
