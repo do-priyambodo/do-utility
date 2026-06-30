@@ -25,6 +25,63 @@ def main(request):
         except Exception as e:
             print(f"Warning: Failed to load parameters.json: {e}")
 
+    # Handle standalone Datastore incremental sync (triggered by Cloud Scheduler via OIDC)
+    if req_data.get("action") == "sync_datastore" or req_data.get("sync_datastore_only", False):
+        try:
+            import google.auth
+            from google.auth.transport.requests import Request as AuthRequest
+            
+            project_id = req_data.get("project_id") or params.get("CONFIG_ProjectId")
+            location = req_data.get("location") or params.get("CONFIG_Datastore_Location", "global")
+            datastore_id = req_data.get("datastore_id") or params.get("CONFIG_Datastore_Id")
+            bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
+            
+            if not all([project_id, datastore_id, bucket_name]):
+                return ("Missing required Datastore configuration parameters in parameters.json or payload.", 400)
+                
+            print("================================================================")
+            print("🚀 STARTING VERTEX AI DATASTORE INCREMENTAL IMPORT VIA CLOUD FUNCTION")
+            print("================================================================")
+            print(f"📌 Project ID:        {project_id}")
+            print(f"📌 Datastore ID:      {datastore_id}")
+            print(f"📌 Datastore Region:  {location}")
+            print(f"📂 Source Manifest:   gs://{bucket_name}/config/metadata.jsonl")
+            print("================================================================")
+            
+            credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+            credentials.refresh(AuthRequest())
+            token = credentials.token
+            
+            url = f"https://discoveryengine.googleapis.com/v1beta/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{datastore_id}/branches/0/documents:import"
+            payload = {
+                "gcsSource": {
+                    "inputUris": [
+                        f"gs://{bucket_name}/config/metadata.jsonl"
+                    ]
+                },
+                "reconciliationMode": "INCREMENTAL"
+            }
+            headers_ds = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-Goog-User-Project": project_id
+            }
+            
+            ds_resp = http.post(url, json=payload, headers=headers_ds, timeout=60)
+            if ds_resp.status_code == 200:
+                res_data = ds_resp.json()
+                print(f"✅ Datastore import submitted successfully! Operation: {res_data.get('name')}")
+                return (json.dumps({"status": "success", "operation": res_data}), 200, {"Content-Type": "application/json"})
+            else:
+                err_msg = f"❌ Datastore import failed (Code {ds_resp.status_code}): {ds_resp.text}"
+                print(err_msg)
+                return (err_msg, ds_resp.status_code)
+        except Exception as e:
+            import traceback
+            err_msg = f"Error executing Datastore sync via Cloud Function: {e}\n{traceback.format_exc()}"
+            print(err_msg)
+            return (err_msg, 500)
+
     # Default configuration fallback
     site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
     library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
