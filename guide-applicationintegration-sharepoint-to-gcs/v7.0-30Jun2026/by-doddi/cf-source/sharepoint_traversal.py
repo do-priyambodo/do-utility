@@ -108,37 +108,72 @@ def fetch_image_as_data_uri(raw_src, source_url="", headers=None):
         
         full_img_url = raw_src if (raw_src.startswith("http://") or raw_src.startswith("https://")) else (f"{host_scheme}{raw_src}" if raw_src.startswith("/") else f"{host_scheme}/{raw_src}")
         
-        # Strip query parameters for canonical Graph API and Shares resolution
+        # Strategy 1: Translate SharePoint OData/OneDrive APIs (_api/v2.x/drives/...) directly to Microsoft Graph
+        if "/_api/v2.0/drives/" in full_img_url or "/_api/v2.1/drives/" in full_img_url:
+            try:
+                graph_odata_url = full_img_url.replace(f"https://{host_name}/_api/v2.0/drives/", "https://graph.microsoft.com/v1.0/drives/") \
+                                              .replace(f"https://{host_name}/_api/v2.1/drives/", "https://graph.microsoft.com/v1.0/drives/") \
+                                              .replace("/_api/v2.0/drives/", "https://graph.microsoft.com/v1.0/drives/") \
+                                              .replace("/_api/v2.1/drives/", "https://graph.microsoft.com/v1.0/drives/")
+                odata_resp = http.get(graph_odata_url, headers=headers, timeout=15)
+                if odata_resp.status_code == 200 and odata_resp.content:
+                    ct = odata_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                    b64_str = base64.b64encode(odata_resp.content).decode("utf-8")
+                    return f"data:{ct};base64,{b64_str}"
+            except Exception:
+                pass
+
+        # Parse canonical clean URL and inspect query parameters for dynamic handlers
+        parsed_full = urllib.parse.urlparse(full_img_url)
         clean_img_url = full_img_url.split("?")[0].strip()
         parsed_img = urllib.parse.urlparse(clean_img_url)
         img_host = parsed_img.netloc or host_name
         img_path = parsed_img.path
         
-        # Method 1: Native Graph API Site-Path Content Endpoint (Reliable with Graph OAuth token)
-        if img_path and img_path.startswith("/"):
+        # Strategy 2: Extract real file path from dynamic handlers (getpreview.ashx, download.aspx, thumbnail APIs)
+        extracted_path = None
+        if parsed_full.query:
+            qs_params = urllib.parse.parse_qs(parsed_full.query)
+            for param_key in ["path", "SourceUrl", "file", "url", "serverRelativeUrl", "fileAbsoluteUrl"]:
+                if param_key in qs_params and qs_params[param_key]:
+                    val = qs_params[param_key][0].strip()
+                    if val and (val.startswith("/") or val.startswith("http")):
+                        val_parsed = urllib.parse.urlparse(val)
+                        extracted_path = val_parsed.path
+                        img_host = val_parsed.netloc or img_host
+                        break
+        
+        target_paths = [extracted_path] if extracted_path else []
+        if img_path and img_path not in target_paths and not img_path.lower().endswith(".ashx") and not img_path.lower().endswith(".aspx"):
+            target_paths.append(img_path)
+
+        # Strategy 3: Native Graph API Site-Path Content Endpoint (Reliable with Graph OAuth token)
+        for t_path in target_paths:
+            if t_path and t_path.startswith("/"):
+                try:
+                    graph_site_path_url = f"https://graph.microsoft.com/v1.0/sites/{img_host}:{t_path}:/content"
+                    g_resp = http.get(graph_site_path_url, headers=headers, timeout=15)
+                    if g_resp.status_code == 200 and g_resp.content:
+                        ct = g_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                        b64_str = base64.b64encode(g_resp.content).decode("utf-8")
+                        return f"data:{ct};base64,{b64_str}"
+                except Exception:
+                    pass
+
+        # Strategy 4: Graph Shares Endpoint with cleaned canonical URL without query string
+        if clean_img_url and not clean_img_url.lower().endswith(".ashx") and not clean_img_url.lower().endswith(".aspx"):
             try:
-                graph_site_path_url = f"https://graph.microsoft.com/v1.0/sites/{img_host}:{img_path}:/content"
-                g_resp = http.get(graph_site_path_url, headers=headers, timeout=15)
-                if g_resp.status_code == 200 and g_resp.content:
-                    ct = g_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                    b64_str = base64.b64encode(g_resp.content).decode("utf-8")
+                encoded_share = "u!" + base64.urlsafe_b64encode(clean_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
+                share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
+                share_resp = http.get(share_api_url, headers=headers, timeout=15)
+                if share_resp.status_code == 200 and share_resp.content:
+                    ct = share_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+                    b64_str = base64.b64encode(share_resp.content).decode("utf-8")
                     return f"data:{ct};base64,{b64_str}"
             except Exception:
                 pass
                 
-        # Method 2: Graph Shares Endpoint with cleaned canonical URL without query string
-        try:
-            encoded_share = "u!" + base64.urlsafe_b64encode(clean_img_url.encode("utf-8")).decode("utf-8").rstrip("=")
-            share_api_url = f"https://graph.microsoft.com/v1.0/shares/{encoded_share}/driveItem/content"
-            share_resp = http.get(share_api_url, headers=headers, timeout=15)
-            if share_resp.status_code == 200 and share_resp.content:
-                ct = share_resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-                b64_str = base64.b64encode(share_resp.content).decode("utf-8")
-                return f"data:{ct};base64,{b64_str}"
-        except Exception:
-            pass
-            
-        # Method 3: Direct HTTP GET fallback
+        # Strategy 5: Direct HTTP GET fallback preserving full query string
         try:
             direct_resp = http.get(full_img_url, headers=headers, timeout=15)
             if direct_resp.status_code == 200 and direct_resp.content:
