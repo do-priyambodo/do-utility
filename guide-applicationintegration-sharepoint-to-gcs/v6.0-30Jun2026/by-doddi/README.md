@@ -266,9 +266,14 @@ Allow business users or administrators to maintain a dynamic list of synchronize
    ./upload_gcs_targets.sh
    ```
 2. Run the dynamic standalone runner (displays real-time console progress per batch and file):
-   ```bash
-   python3 sync_gcs_dynamic.py
-   ```
+   * **Default Mode (Incremental Delta Caching):** Automatically compares timestamps against existing files in your GCS bucket (`gcs_cache`). If an identical file already exists with an unchanged timestamp, it is **instantly skipped** to drop transfer volume by 99.9% and eliminate Microsoft Graph API throttling:
+     ```bash
+     python3 sync_gcs_dynamic.py
+     ```
+   * **Force Full Sync Mode (`--force`):** Completely bypasses the GCS Delta Cache and forces a fresh re-download, re-render (via headless Playwright Chromium), and re-upload of **every single URL** in `target_urls.txt` regardless of timestamp. Use this during live customer demos or to force-refresh PDF layout styles:
+     ```bash
+     python3 sync_gcs_dynamic.py --force
+     ```
 
 #### B. Automated Recurring Cron (Cloud Scheduler)
 To deploy an automated hourly background trigger that reads `target_urls.txt` from GCS on every run:
