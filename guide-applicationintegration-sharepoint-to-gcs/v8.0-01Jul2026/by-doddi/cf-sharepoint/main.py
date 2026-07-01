@@ -386,7 +386,6 @@ def main(request):
                         mime_val = mime_map.get(ext, 'application/octet-stream')
                     gcs_uri = f"gs://{bucket_name}/{rel_path}"
                     meta_record = {
-                        "_id": doc_id,
                         "id": doc_id,
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),

@@ -179,7 +179,6 @@ def run_dynamic_gcs_sync():
                         }
                         mime_val = mime_map.get(ext, 'application/octet-stream')
                     record = {
-                        "_id": doc_id,
                         "id": doc_id,
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),
