@@ -367,6 +367,23 @@ def main(request):
                     # Sanitize doc_id strictly to [a-zA-Z0-9_-]
                     base_name = raw_name.rsplit('.', 1)[0]
                     doc_id = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
+                    ext = raw_name.rsplit('.', 1)[-1].lower() if '.' in raw_name else ''
+                    if item.get("IsPage") or rel_path.startswith("pages/") or ext == 'pdf':
+                        mime_val = "application/pdf"
+                    else:
+                        mime_map = {
+                            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'doc': 'application/msword',
+                            'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                            'ppt': 'application/vnd.ms-powerpoint',
+                            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'xls': 'application/vnd.ms-excel',
+                            'txt': 'text/plain',
+                            'html': 'text/html',
+                            'htm': 'text/html',
+                            'aspx': 'text/html'
+                        }
+                        mime_val = mime_map.get(ext, 'application/octet-stream')
                     gcs_uri = f"gs://{bucket_name}/{rel_path}"
                     meta_record = {
                         "_id": doc_id,
@@ -377,7 +394,7 @@ def main(request):
                             "relative_path": rel_path
                         },
                         "content": {
-                            "mimeType": "application/pdf",
+                            "mimeType": mime_val,
                             "uri": gcs_uri
                         }
                     }
