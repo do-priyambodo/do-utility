@@ -311,6 +311,82 @@ To deploy an automated periodic full-crawl schedule:
 ./deploy/deploy_scheduler_full_sharepoint_sync.sh
 ```
 
+#### C. Step-by-Step Playbook: Start Sync for Whole Contents (~Thousands of Pages)
+When initiating a fresh enterprise synchronization across thousands of documents and site pages, follow this 4-step execution and verification playbook:
+
+##### Step 1: Empty the Storage Bucket (Clean Reset)
+Run this block in Cloud Shell to wipe existing files, site pages, and delta cache manifests so the sync starts from a clean baseline:
+```bash
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+echo "🧹 1. Wiping Document Library files (files/**)..."
+gcloud storage rm -r gs://${BUCKET_NAME}/files/** 2>/dev/null || echo "No files to delete."
+
+echo "🧹 2. Wiping rendered Modern Site Pages (pages/**)..."
+gcloud storage rm -r gs://${BUCKET_NAME}/pages/** 2>/dev/null || echo "No pages to delete."
+
+echo "🧹 3. Wiping Delta Cache manifest (config/metadata.jsonl)..."
+gcloud storage rm gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null || echo "No manifest to delete."
+
+echo "✨ 100% Clean state established! You can now click 'Force run' in Cloud Scheduler."
+```
+
+##### Step 2: Trigger the Sync in Cloud Scheduler
+Navigate to **Google Cloud Console ➔ Cloud Scheduler**, locate your full SharePoint synchronization job (e.g., `yourorg-sharepoint-sync-hourly`), and click **Force run**.
+
+##### Step 3: Live Progress Monitoring Command
+Run this command repeatedly (every 2–3 minutes) to monitor real-time worker batch executions and watch GCS file/page counts grow:
+```bash
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+echo "========================================================"
+echo "📂 1a. Documents currently in GCS (files/**):"
+gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l
+echo "📄 1b. Site Pages currently in GCS (pages/**):"
+gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l
+echo "========================================================"
+echo "⚙️ 2. Checking Application Integration Executions..."
+python3 -c "
+import json, urllib.request, subprocess
+params = json.load(open('parameters.json'))
+proj, loc = params['CONFIG_ProjectId'], params['CONFIG_Location']
+parent, child = params['CONFIG_Parent_Integration_Name'], params['CONFIG_Child_Integration_Name']
+token = subprocess.check_output(['gcloud', 'auth', 'print-access-token']).decode().strip()
+
+for name, label in [(parent, 'PARENT (Orchestrator)'), (child, 'CHILD (Workers)')]:
+    url = f'https://{loc}-integrations.googleapis.com/v1/projects/{proj}/locations/{loc}/integrations/{name}/executions?pageSize=3'
+    req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
+    try:
+        data = json.loads(urllib.request.urlopen(req).read().decode())
+        print(f'--- Latest Executions for {label} ({name}) ---')
+        execs = data.get('executions', [])
+        if not execs:
+            print('   (No executions found yet)')
+        for i, ex in enumerate(execs):
+            state = ex.get('eventExecutionDetails', {}).get('eventExecutionState', 'UNKNOWN')
+            print(f'   Batch {i+1}: {state}')
+    except Exception as e:
+        print(f'   Could not check {label}: {e}')
+"
+echo "========================================================"
+```
+
+##### Step 4: Final Count & Inventory Verification
+Once all worker batches transition to `SUCCEEDED`, execute this final audit block to confirm total ingestion:
+```bash
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+echo "========================================================"
+echo "🎉 FINAL SYNCHRONIZATION RESULTS:"
+echo "========================================================"
+echo -n "📂 Total Documents Downloaded: "
+gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l
+
+echo -n "📄 Total Site Pages Rendered to PDF: "
+gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l
+
+echo -n "🧠 Total Items Indexed in Metadata Manifest: "
+gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | wc -l
+echo "========================================================"
+```
+
 ---
 
 ### Additional Diagnostic Helpers
