@@ -352,17 +352,20 @@ parent, child = params['CONFIG_Parent_Integration_Name'], params['CONFIG_Child_I
 token = subprocess.check_output(['gcloud', 'auth', 'print-access-token']).decode().strip()
 
 for name, label in [(parent, 'PARENT (Orchestrator)'), (child, 'CHILD (Workers)')]:
-    url = f'https://{loc}-integrations.googleapis.com/v1/projects/{proj}/locations/{loc}/integrations/{name}/executions?pageSize=3'
+    url = f'https://{loc}-integrations.googleapis.com/v1/projects/{proj}/locations/{loc}/integrations/{name}/executions?pageSize=5'
     req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
     try:
         data = json.loads(urllib.request.urlopen(req).read().decode())
-        print(f'--- Latest Executions for {label} ({name}) ---')
+        print(f'=== {label} ({name}) ===')
         execs = data.get('executions', [])
         if not execs:
             print('   (No executions found yet)')
         for i, ex in enumerate(execs):
-            state = ex.get('eventExecutionDetails', {}).get('eventExecutionState', 'UNKNOWN')
-            print(f'   Batch {i+1}: {state}')
+            state = ex.get('state') or ex.get('executionDetails', {}).get('state') or ex.get('eventExecutionDetails', {}).get('eventExecutionState', 'UNKNOWN')
+            id_str = ex.get('name', '').split('/')[-1]
+            print(f'   Batch {i+1} [ID: {id_str}]: {state}')
+            err = ex.get('executionDetails', {}).get('failureReason') or ex.get('error')
+            if err: print(f'      ❌ Error: {err}')
     except Exception as e:
         print(f'   Could not check {label}: {e}')
 "
