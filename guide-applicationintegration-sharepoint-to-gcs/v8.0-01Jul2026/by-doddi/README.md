@@ -387,6 +387,54 @@ gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | wc -l
 echo "========================================================"
 ```
 
+#### D. How to Abort Running Executions & Cleanly Redo a Massive Sync (~Thousands of Pages)
+When synchronizing thousands of items (~9,000+ pages and documents), deleting or redeploying Cloud Scheduler does **not** terminate worker tasks that are already executing in the background, because Cloud Scheduler only acts as the trigger alarm.
+
+If you need to instantly abort an ongoing enterprise synchronization and redo everything from scratch, use one of the two bulk abort methods below before running Step 1 of the clean reset playbook above:
+
+##### Method 1: The UI Kill Switch (Fastest — 10 Seconds)
+1. In Google Cloud Console, navigate to **Application Integration ➔ Integrations**.
+2. Locate your child worker integration (e.g., `yourorg-sharepoint-gcs-child`).
+3. Click the **three dots (⋮)** on the right side of the integration row ➔ click **Unpublish** (or **Archive / Disable**). This instantly drops all queued batches and halts running workers.
+4. Wait 10 seconds, then click the **three dots (⋮)** again ➔ click **Publish** (or **Restore**) to re-enable the engine for a clean reset.
+
+##### Method 2: Automated Bulk Cancel Script (via Cloud Shell)
+If you prefer not to touch the UI and want to programmatically find every single active or queued batch among the thousands of items and abort them via the Google Cloud API, copy and paste this command block into Cloud Shell:
+```bash
+python3 -c "
+import json, urllib.request, subprocess
+params = json.load(open('parameters.json'))
+proj, loc = params['CONFIG_ProjectId'], params['CONFIG_Location']
+parent, child = params['CONFIG_Parent_Integration_Name'], params['CONFIG_Child_Integration_Name']
+token = subprocess.check_output(['gcloud', 'auth', 'print-access-token']).decode().strip()
+
+for name, label in [(parent, 'PARENT (Orchestrator)'), (child, 'CHILD (Workers)')]:
+    print(f'🛑 Scanning for active executions in {label} ({name})...')
+    url = f'https://{loc}-integrations.googleapis.com/v1/projects/{proj}/locations/{loc}/integrations/{name}/executions?pageSize=200'
+    req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
+    try:
+        data = json.loads(urllib.request.urlopen(req).read().decode())
+        execs = data.get('executions', [])
+        cancelled_count = 0
+        for ex in execs:
+            state = ex.get('eventExecutionDetails', {}).get('eventExecutionState', '')
+            if state in ['IN_PROGRESS', 'QUEUED', 'ON_HOLD', 'PENDING']:
+                exec_name = ex['name']
+                cancel_url = f'https://{loc}-integrations.googleapis.com/v1/{exec_name}:cancel'
+                c_req = urllib.request.Request(cancel_url, data=b'{}', headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}, method='POST')
+                try:
+                    urllib.request.urlopen(c_req)
+                    cancelled_count += 1
+                except Exception:
+                    pass
+        print(f'   ✅ Successfully aborted {cancelled_count} active/queued batch(es) in {label}!')
+    except Exception as e:
+        print(f'   ❌ Could not query {label}: {e}')
+"
+```
+
+Once aborted via Method 1 or Method 2, proceed to **Step 1 (Empty the Storage Bucket)** and **Step 2 (Trigger the Sync)** in Section C above!
+
 ---
 
 ### Additional Diagnostic Helpers
