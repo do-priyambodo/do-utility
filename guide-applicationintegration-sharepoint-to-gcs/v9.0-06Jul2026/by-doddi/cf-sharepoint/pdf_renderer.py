@@ -99,7 +99,7 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
                     browser.close()
                 return base64.b64encode(pdf_bytes).decode("utf-8")
         except Exception as pw_e:
-            print(f"Warning: Playwright engine failed ({pw_e}). Falling back to WeasyPrint engine...")
+            print(f"Warning: Playwright engine failed on '{fallback_title}' ({pw_e}). Falling back to WeasyPrint engine...")
 
     # Engine 2: WeasyPrint (Modern HTML5 Vector Engine)
     if engine and str(engine).lower() == "weasyprint":
@@ -108,7 +108,7 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
             pdf_bytes = weasyprint.HTML(string=cleaned_html).write_pdf()
             return base64.b64encode(pdf_bytes).decode("utf-8")
         except Exception as wp_e:
-            print(f"Warning: WeasyPrint engine failed ({wp_e}). Falling back to xhtml2pdf engine...")
+            print(f"Warning: WeasyPrint engine failed on '{fallback_title}' ({wp_e}). Falling back to xhtml2pdf engine...")
 
     # Fallback Engine: xhtml2pdf with Simplified Layout Protection
     if not pisa:
@@ -121,12 +121,12 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
             raise RuntimeError(f"xhtml2pdf reported error: {pisa_status.err}")
         return base64.b64encode(pdf_buffer.getvalue()).decode("utf-8")
     except Exception as e:
-        print(f"Warning: High-fidelity PDF rendering failed ({e}). Generating simplified Document Reader layout...")
+        print(f"Warning: High-fidelity PDF rendering failed on '{fallback_title}' ({e}). Generating simplified Document Reader layout...")
         try:
             simplified_html = strip_complex_css_for_pdf(html_string, fallback_title)
             fb_buffer = io.BytesIO()
             pisa.CreatePDF(io.StringIO(simplified_html), dest=fb_buffer)
             return base64.b64encode(fb_buffer.getvalue()).decode("utf-8")
         except Exception as fb_e:
-            print(f"Warning: Simplified layout PDF creation failed ({fb_e}). Returning raw HTML payload.")
+            print(f"Warning: Simplified layout PDF creation failed on '{fallback_title}' ({fb_e}). Returning raw HTML payload.")
             return base64.b64encode(html_string.encode("utf-8")).decode("utf-8")
