@@ -993,6 +993,13 @@ def main(request):
                 }
                 
                 int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
+                if int_resp.status_code == 401:
+                    print("🔄 OAuth Access Token expired during batch scheduling. Refreshing token and retrying...")
+                    credentials.refresh(Request())
+                    access_token = credentials.token
+                    headers_int["Authorization"] = f"Bearer {access_token}"
+                    int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
+
                 if int_resp.status_code == 200:
                     exec_data = int_resp.json()
                     eid = exec_data.get("executionId")
