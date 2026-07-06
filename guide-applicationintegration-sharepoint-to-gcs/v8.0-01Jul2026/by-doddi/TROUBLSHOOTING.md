@@ -313,17 +313,52 @@ severity>=WARNING
 
 ---
 
-## 4. Root Cause Analysis Checklist (Why Friday's Sync May Have Failed)
+## 4. Deep-Dive: SharePoint Throttling & DDoS Protection (Rate Limits, Timeouts & Error Codes)
 
-Use this structured checklist to evaluate the top 5 most common enterprise root causes for synchronization failures in customer environments:
+When synchronizing thousands of SharePoint files or harvesting modern site pages (`.aspx`), Microsoft 365 monitors API request concurrency and volume. If a client application sends too many simultaneous requests within a short timeframe, **SharePoint's automated security defenses flag the traffic as an automated Denial-of-Service (DDoS) attack or abusive bot scraping**.
+
+### ⚠️ How SharePoint Rejects Traffic (Symptoms & Error Codes)
+When anti-DDoS or Service Throttling defenses are triggered, Microsoft Graph API and SharePoint Online respond with specific failure signatures:
+1. **HTTP `429 Too Many Requests`**: Standard Microsoft throttling rejection indicating your tenant/client API rate limit has been exceeded.
+2. **HTTP `503 Service Unavailable` / `Server Busy`**: The SharePoint server is actively rejecting connections to safeguard backend capacity under heavy load or suspected flood attacks.
+3. **HTTP `504 Gateway Timeout` / Connection Reset (`ECONNRESET` / `ETIMEDOUT`)**: Microsoft's edge firewalls (Azure Front Door or cloud DDoS protection) forcibly terminate TCP sessions without returning an HTTP response when an IP or App Registration exceeds burst concurrency thresholds.
+
+### ⏱️ The Critical `Retry-After` HTTP Header
+When returning a `429` or `503` error, Microsoft includes an HTTP `Retry-After` header specifying the exact number of seconds (typically between **30s and 300s+**) the client **MUST** pause before sending another request.
+> [!CAUTION]
+> **Do Not Hammer the API During a Throttling Block!**
+> If your pipeline ignores the `Retry-After` header and immediately re-attempts requests during an active block, Microsoft's security layer will escalate the throttling severity. This can lead to **multi-hour tenant API blackouts or temporary IP / Service Principal bans**!
+
+### 🔍 Diagnostic Command: Check for SharePoint Throttling & DDoS Blocks
+Run this CLI command to search your Cloud Function / Cloud Run logs specifically for throttling rejections, rate limits, and `Retry-After` headers:
+
+```bash
+gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\" AND (textPayload=~\"429\" OR textPayload=~\"503\" OR textPayload=~\"504\" OR textPayload=~\"Too Many Requests\" OR textPayload=~\"Retry-After\" OR textPayload=~\"Server Busy\" OR textPayload=~\"ECONNRESET\")" \
+    --project="${PROJECT_ID}" \
+    --limit=25 \
+    --order=desc \
+    --format="table(timestamp, severity, textPayload)"
+```
+
+### 🛡️ How to Resolve & Prevent Throttling in V8.0
+1. **Tune Down Concurrency & Batch Size**: In your local [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json), lower `CONFIG_Max_Parallel_Workers` (e.g., to `5` or `8`) and `CONFIG_Batch_Size` (e.g., to `5` or `10`). This spreads the request footprint over time and avoids triggering Microsoft's DDoS heuristics.
+2. **Exponential Backoff with Randomized Jitter**: The V8.0 Microsoft Graph API client (`graph_client.py`) is engineered to automatically intercept `429`/`503` responses, read the `Retry-After` header, and apply exponential backoff with randomized jitter. Verify in your logs that these retry pauses are executing rather than failing immediately.
+3. **Enterprise M365 `User-Agent` Header**: Ensure your Microsoft Graph API requests include an enterprise-compliant, descriptive `User-Agent` header (e.g., `ISV|Maxis|SharePointToGCSSync/8.0`). Microsoft strictly throttles or rejects traffic from generic or default scripting user-agents (such as `python-requests` or empty headers).
+
+---
+
+## 5. Root Cause Analysis Checklist (Why Sync May Have Failed)
+
+Use this structured checklist to evaluate the top 6 most common enterprise root causes for synchronization failures in customer environments:
 
 | Check | Potential Root Cause | Component to Inspect | How to Diagnose & Resolve |
 | :---: | :--- | :--- | :--- |
-| 🔲 1 | **Entra ID Conditional Access Block / Expired Secret** | Azure AD / M365 Graph API | **Diagnose**: Check **Section 3.2** logs for HTTP `401`/`403`.<br>**Resolve**: Verify in Azure Portal that `CONFIG_M365_Secret_Name` has not expired and that no Conditional Access policy requires interactive MFA for headless client-credentials flows. |
-| 🔲 2 | **Playwright Chromium Out-of-Memory (OOM)** | Traversal Cloud Function (Gen2) | **Diagnose**: Check **Section 3.2** logs for `Memory limit exceeded` or container crash code `500` during `.aspx` page conversion.<br>**Resolve**: In GCP Console > Cloud Run > Revisions, increase memory allocation from 1GB to **2GB or 4GB**. |
-| 🔲 3 | **VPC Service Controls (VPC-SC) Egress Block** | Network Security / Connectors | **Diagnose**: Check **Section 3.7** logs for `VpcServiceControlAuditMetadata` violation.<br>**Resolve**: Add an egress rule in perimeter settings allowing traffic to `connectors.googleapis.com` and `*.sharepoint.com`. |
-| 🔲 4 | **Missing IAM Invoker or Storage Creator Roles** | IAM & Admin | **Diagnose**: Check **Section 3.4** and **Section 3.5** for `PERMISSION_DENIED`.<br>**Resolve**: Ensure service account `CONFIG_Service_Account` has `roles/integrations.integrationInvoker`, `roles/storage.objectAdmin`, and `roles/secretmanager.secretAccessor`. |
-| 🔲 5 | **Micro-Batch Timeout / Throttling (`429`)** | Application Integration / Graph API | **Diagnose**: Check **Section 3.4** for workflow timeout errors or Graph API `429 Too Many Requests`.<br>**Resolve**: Reduce `CONFIG_Batch_Size` to `5` or `10` in [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json) to ensure smoother streaming without hitting Graph API concurrency caps. |
+| 🔲 1 | **SharePoint Throttling / Anti-DDoS Rejection** | Microsoft Graph API / SharePoint | **Diagnose**: Check **Section 4** logs for HTTP `429 Too Many Requests`, `503 Server Busy`, or `504 Gateway Timeout`.<br>**Resolve**: Reduce `CONFIG_Max_Parallel_Workers` to `5` or `8` in [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json), ensure backoff jitter is enabled in `graph_client.py`, and obey `Retry-After` headers. |
+| 🔲 2 | **Entra ID Conditional Access Block / Expired Secret** | Azure AD / M365 Graph API | **Diagnose**: Check **Section 3.2** logs for HTTP `401`/`403`.<br>**Resolve**: Verify in Azure Portal that `CONFIG_M365_Secret_Name` has not expired and that no Conditional Access policy requires interactive MFA for headless client-credentials flows. |
+| 🔲 3 | **Playwright Chromium Out-of-Memory (OOM)** | Traversal Cloud Function (Gen2) | **Diagnose**: Check **Section 3.2** logs for `Memory limit exceeded` or container crash code `500` during `.aspx` page conversion.<br>**Resolve**: In GCP Console > Cloud Run > Revisions, increase memory allocation from 1GB to **2GB or 4GB**. |
+| 🔲 4 | **VPC Service Controls (VPC-SC) Egress Block** | Network Security / Connectors | **Diagnose**: Check **Section 3.7** logs for `VpcServiceControlAuditMetadata` violation.<br>**Resolve**: Add an egress rule in perimeter settings allowing traffic to `connectors.googleapis.com` and `*.sharepoint.com`. |
+| 🔲 5 | **Missing IAM Invoker or Storage Creator Roles** | IAM & Admin | **Diagnose**: Check **Section 3.4** and **Section 3.5** for `PERMISSION_DENIED`.<br>**Resolve**: Ensure service account `CONFIG_Service_Account` has `roles/integrations.integrationInvoker`, `roles/storage.objectAdmin`, and `roles/secretmanager.secretAccessor`. |
+| 🔲 6 | **Micro-Batch Payload Serialization Timeout** | Application Integration | **Diagnose**: Check **Section 3.4** for workflow execution timeouts or payload size errors.<br>**Resolve**: Reduce `CONFIG_Batch_Size` to `5` or `10` in [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json) to ensure smooth streaming without exceeding integration message limits. |
 
 ---
 *Generated for Maxis Enterprise Support — Application Integration V8.0 Pipeline.*
