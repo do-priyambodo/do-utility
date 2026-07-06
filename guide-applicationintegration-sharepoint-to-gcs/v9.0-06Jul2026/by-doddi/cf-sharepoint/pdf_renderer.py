@@ -93,7 +93,7 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
                 browser = p.chromium.launch(headless=True)
                 try:
                     page = browser.new_page()
-                    page.set_content(cleaned_html, wait_until="networkidle")
+                    page.set_content(cleaned_html, wait_until="load")
                     pdf_bytes = page.pdf(format="A4", print_background=True)
                 finally:
                     browser.close()

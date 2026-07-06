@@ -337,7 +337,8 @@ def main(request):
                 print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
                 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
-        if bucket_obj and gcs_cache and not target_urls:
+        # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages
+        if bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None:
             print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
             active_gcs_paths = set(item.get("RelativePath") for item in all_list if item.get("RelativePath"))
             deleted_count = 0
@@ -355,6 +356,8 @@ def main(request):
                 print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
             else:
                 print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
+        else:
+            print("⏭️ Status Log: Skipping orphaned GCS file cleanup (Partial/Scoped Sync detected).")
 
         # Phase 4a.1: Generate config/metadata.jsonl Manifest for Vertex AI Discovery Engine / CCAI GKA
         if bucket_obj and len(all_list) > 0:
