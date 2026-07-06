@@ -3,7 +3,7 @@
 
 > [!IMPORTANT]
 > **Customer Reference Document — Maxis Environment Deployment**
-> This guide provides comprehensive diagnostic commands, real-time sync progress monitoring mechanisms, and root-cause analysis checklists to investigate and resolve synchronization failures (such as the sync attempt on last Friday) and verify ongoing production health.
+> This guide provides comprehensive diagnostic commands, real-time sync progress monitoring mechanisms, and root-cause analysis checklists to investigate and resolve synchronization failures (such as the sync attempt on last Friday) and verify ongoing production health. All CLI commands automatically export and utilize configuration variables from your local [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json).
 
 ---
 
@@ -35,13 +35,13 @@ Based on baseline benchmark performance where **13 files/pages completed in 5 mi
 The ~25.6-hour duration applies **ONLY to the Initial Full Baseline Synchronization**.
 
 In pipeline version V8.0, the Traversal Cloud Function implements **O(1) GCS Delta Caching**:
-* Before downloading or rendering, the Cloud Function pre-fetches the modification timestamps of all existing objects in destination bucket `gs://doddi-bucket-sharepoint-sync/`.
+* Before downloading or rendering, the Cloud Function pre-fetches the modification timestamps of all existing objects in your destination GCS bucket.
 * It compares these against live Microsoft Graph API timestamps.
 * **Unchanged files and previously rendered `.pdf` reports are instantly skipped!**
 * **Subsequent hourly or daily syncs of 4,000+ items will complete in under 2 to 3 minutes**, as only newly created or modified documents are processed.
 
 ### ⚡ Performance Tuning (Speeding Up the Initial Sync)
-To accelerate the initial 25.6-hour sync on customer environments, increase concurrency limits inside [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json):
+To accelerate the initial 25.6-hour sync in your customer environment, increase concurrency limits inside [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json):
 ```json
 {
   "CONFIG_Batch_Size": 20,
@@ -54,7 +54,12 @@ To accelerate the initial 25.6-hour sync on customer environments, increase conc
 
 ## 2. Active Monitoring & Real-Time Sync Progress Mechanism
 
-Because a full enterprise sync spans multiple hours, engineers must actively monitor progress without waiting for completion or guessing if the pipeline is frozen. Use the following three monitoring mechanisms:
+Because a full enterprise sync spans multiple hours, engineers must actively monitor progress without waiting for completion or guessing if the pipeline is frozen. Before running monitoring checks, export your destination bucket from your local configuration:
+
+```bash
+# Export the target bucket name from parameters.json into your current shell:
+export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' parameters.json)
+```
 
 ### Method A: Live GCS Bucket Object Counter (Real-Time Storage Tracking)
 The most reliable way to confirm active synchronization is to track the live accumulation of PDF reports and document files landing in Google Cloud Storage.
@@ -63,22 +68,24 @@ Run these commands in Google Cloud Shell or a terminal authenticated to GCP:
 
 ```bash
 # 1. Check current total count of synced files and rendered PDF pages in GCS
-gcloud storage ls --recursive "gs://doddi-bucket-sharepoint-sync/**" | wc -l
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" | wc -l
 
 # 2. Check total storage size footprint consumed in the bucket
-gcloud storage du -s "gs://doddi-bucket-sharepoint-sync/" --readable-sizes
+gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes
 ```
 
 #### 🔄 Automated Real-Time Watch Loop (Live Dashboard in Terminal)
 Execute this command to monitor sync speed in real time (refreshing automatically every 30 seconds):
 ```bash
-watch -n 30 'echo "=== 📊 LIVE SHAREPOINT -> GCS SYNC MONITOR ===" && \
-echo "Timestamp: $(date)" && \
+watch -n 30 'export GCS_BUCKET=$(jq -r ".CONFIG_GCS_Bucket" parameters.json) && \
+echo "=== 📊 LIVE SHAREPOINT -> GCS SYNC MONITOR ===" && \
+echo "Timestamp    : $(date)" && \
+echo "Target Bucket: gs://${GCS_BUCKET}" && \
 echo "------------------------------------------------------------" && \
 echo -n "Total Synced Files/Pages Landed in GCS : " && \
-gcloud storage ls --recursive "gs://doddi-bucket-sharepoint-sync/**" 2>/dev/null | wc -l && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" 2>/dev/null | wc -l && \
 echo -n "Total Bucket Storage Footprint         : " && \
-gcloud storage du -s "gs://doddi-bucket-sharepoint-sync/" --readable-sizes 2>/dev/null | cut -f1 && \
+gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes 2>/dev/null | cut -f1 && \
 echo "------------------------------------------------------------"'
 ```
 *(If the object count increments steadily every minute, the synchronization is healthy and progressing normally).*
@@ -101,12 +108,16 @@ python3 check/check_sync_sharepoint_to_gcs.py
 ---
 
 ### Method C: Application Integration Execution Loop Tracking
-When the Traversal Cloud Function submits batches, the Parent Integration (`doddi-sharepoint-gcs-parent`) iterates through the manifest. You can inspect the live loop execution status using the built-in checker:
+When the Traversal Cloud Function submits batches, the Parent Integration iterates through the manifest. You can inspect the live loop execution status using the built-in checker by exporting your environment variables first:
 
 ```bash
-# Usage: python3 check/check_application_integration_execution.py <project_id> <location> <integration_name> <execution_id>
+# Export required project parameters:
+export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
+export LOCATION=$(jq -r '.CONFIG_Location' parameters.json)
+export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' parameters.json)
 
-python3 check/check_application_integration_execution.py work-mylab-machinelearning asia-southeast1 doddi-sharepoint-gcs-parent <INSERT_EXECUTION_ID>
+# Usage: python3 check/check_application_integration_execution.py <project_id> <location> <integration_name> <execution_id>
+python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <INSERT_EXECUTION_ID>
 ```
 *(Retrieve the `<INSERT_EXECUTION_ID>` from Cloud Function logs or the GCP Console under **Application Integration > Executions**).*
 
@@ -116,9 +127,22 @@ python3 check/check_application_integration_execution.py work-mylab-machinelearn
 
 To identify the root cause of sync failures (such as last Friday's incident), execute the following targeted `gcloud logging read` CLI commands or use the corresponding query strings in the GCP Console **Log Explorer**.
 
-> [!TIP]
-> **Parameter Customization Note**
-> The commands below use the default parameters defined in [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json) (`work-mylab-machinelearning`, `doddi-sharepoint-list-files`, etc.). If running in Maxis's production GCP project, replace `--project="work-mylab-machinelearning"` and resource names with Maxis's specific identifiers.
+### 🛠️ Step 0: Load Your Customer Environment Parameters
+Run this block in your Cloud Shell or terminal first. It reads your local [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json) and exports all relevant names as shell environment variables:
+
+```bash
+export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
+export SCHEDULER_JOB=$(jq -r '.CONFIG_Scheduler_Job_Name' parameters.json)
+export FUNCTION_NAME=$(jq -r '.CONFIG_CloudFunction_Name' parameters.json)
+export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' parameters.json)
+export CHILD_INTEGRATION=$(jq -r '.CONFIG_Child_Integration_Name' parameters.json)
+export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' parameters.json)
+export SHAREPOINT_CONN=$(jq -r '.CONFIG_SharePoint_Connection' parameters.json | awk -F/ '{print $NF}')
+export GCS_CONN=$(jq -r '.CONFIG_GCS_Connection' parameters.json | awk -F/ '{print $NF}')
+
+# Verify parameters are loaded:
+echo "✅ Loaded Config for Project: ${PROJECT_ID} | Bucket: gs://${GCS_BUCKET} | Function: ${FUNCTION_NAME}"
+```
 
 ---
 
@@ -127,8 +151,8 @@ To identify the root cause of sync failures (such as last Friday's incident), ex
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read 'resource.type="cloud_scheduler_job" AND resource.labels.job_id:"doddi-sharepoint-sync-hourly"' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "resource.type=\"cloud_scheduler_job\" AND resource.labels.job_id:\"${SCHEDULER_JOB}\"" \
+    --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
     --format="table(timestamp, severity, jsonPayload.status.message, textPayload)"
@@ -137,8 +161,9 @@ gcloud logging read 'resource.type="cloud_scheduler_job" AND resource.labels.job
 #### 🔍 GCP Console Log Explorer Query
 ```query
 resource.type="cloud_scheduler_job"
-resource.labels.job_id:"doddi-sharepoint-sync-hourly"
+resource.labels.job_id="${SCHEDULER_JOB}"
 ```
+*(Note: When pasting into Log Explorer in GCP Console, substitute `${SCHEDULER_JOB}` with your actual job name from parameters.json).*
 
 * **What to look for**: 
   * HTTP `403 Forbidden`: The Cloud Scheduler service account (`CONFIG_Service_Account`) lacks the `roles/run.invoker` or `roles/cloudfunctions.invoker` IAM permission.
@@ -151,8 +176,8 @@ resource.labels.job_id:"doddi-sharepoint-sync-hourly"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read '(resource.type="cloud_function" OR resource.type="cloud_run_revision") AND resource.labels.service_name:"doddi-sharepoint-list-files" AND severity>=WARNING' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\" AND severity>=WARNING" \
+    --project="${PROJECT_ID}" \
     --limit=30 \
     --order=desc \
     --format="table(timestamp, severity, textPayload, jsonPayload.message)"
@@ -161,7 +186,7 @@ gcloud logging read '(resource.type="cloud_function" OR resource.type="cloud_run
 #### 🔍 GCP Console Log Explorer Query
 ```query
 (resource.type="cloud_function" OR resource.type="cloud_run_revision")
-resource.labels.service_name:"doddi-sharepoint-list-files"
+resource.labels.service_name="${FUNCTION_NAME}"
 severity>=INFO
 ```
 
@@ -177,8 +202,8 @@ severity>=INFO
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read 'resource.type="connectors.googleapis.com/Connection" AND severity>=WARNING' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "resource.type=\"connectors.googleapis.com/Connection\" AND (resource.labels.connection_id:\"${SHAREPOINT_CONN}\" OR resource.labels.connection_id:\"${GCS_CONN}\") AND severity>=WARNING" \
+    --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
     --format="table(timestamp, severity, jsonPayload.status.message, jsonPayload.message)"
@@ -187,7 +212,7 @@ gcloud logging read 'resource.type="connectors.googleapis.com/Connection" AND se
 #### 🔍 GCP Console Log Explorer Query
 ```query
 resource.type="connectors.googleapis.com/Connection"
-(resource.labels.connection_id:"doddi-connection-sharepoint-sync" OR resource.labels.connection_id:"doddi-connection-gcs-sync")
+(resource.labels.connection_id="${SHAREPOINT_CONN}" OR resource.labels.connection_id="${GCS_CONN}")
 ```
 
 * **What to look for**:
@@ -197,12 +222,12 @@ resource.type="connectors.googleapis.com/Connection"
 ---
 
 ### 3.4 Application Integration Logs (Parent Orchestrator & Child Worker)
-**Purpose**: Track batch orchestration loops (`doddi-sharepoint-gcs-parent`) and isolate document binary download/upload streaming failures (`doddi-sharepoint-gcs-child`).
+**Purpose**: Track batch orchestration loops (`${PARENT_INTEGRATION}`) and isolate document binary download/upload streaming failures (`${CHILD_INTEGRATION}`).
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read 'resource.type="integrations.googleapis.com/IntegrationVersion" AND (resource.labels.integration_name:"doddi-sharepoint-gcs-parent" OR resource.labels.integration_name:"doddi-sharepoint-gcs-child") AND severity>=WARNING' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "resource.type=\"integrations.googleapis.com/IntegrationVersion\" AND (resource.labels.integration_name:\"${PARENT_INTEGRATION}\" OR resource.labels.integration_name:\"${CHILD_INTEGRATION}\") AND severity>=WARNING" \
+    --project="${PROJECT_ID}" \
     --limit=25 \
     --order=desc \
     --format="table(timestamp, severity, jsonPayload.errorMessage, jsonPayload.integrationVersionId)"
@@ -211,7 +236,7 @@ gcloud logging read 'resource.type="integrations.googleapis.com/IntegrationVersi
 #### 🔍 GCP Console Log Explorer Query
 ```query
 resource.type="integrations.googleapis.com/IntegrationVersion"
-(resource.labels.integration_name="doddi-sharepoint-gcs-parent" OR resource.labels.integration_name="doddi-sharepoint-gcs-child")
+(resource.labels.integration_name="${PARENT_INTEGRATION}" OR resource.labels.integration_name="${CHILD_INTEGRATION}")
 ```
 
 * **What to look for**:
@@ -226,8 +251,8 @@ resource.type="integrations.googleapis.com/IntegrationVersion"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read 'resource.type="gcs_bucket" AND resource.labels.bucket_name:"doddi-bucket-sharepoint-sync" AND severity>=WARNING' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "resource.type=\"gcs_bucket\" AND resource.labels.bucket_name:\"${GCS_BUCKET}\" AND severity>=WARNING" \
+    --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
     --format="table(timestamp, severity, protoPayload.status.message, protoPayload.authenticationInfo.principalEmail)"
@@ -236,11 +261,11 @@ gcloud logging read 'resource.type="gcs_bucket" AND resource.labels.bucket_name:
 #### 🔍 GCP Console Log Explorer Query
 ```query
 resource.type="gcs_bucket"
-resource.labels.bucket_name="doddi-bucket-sharepoint-sync"
+resource.labels.bucket_name="${GCS_BUCKET}"
 ```
 
 * **What to look for**:
-  * `403 Permission Denied`: The child integration service account (`doddi-sa-sharepoint-gcs@...`) lacks the `roles/storage.objectAdmin` or `roles/storage.objectCreator` role on target bucket `doddi-bucket-sharepoint-sync`.
+  * `403 Permission Denied`: The child integration service account lacks the `roles/storage.objectAdmin` or `roles/storage.objectCreator` role on target bucket `${GCS_BUCKET}`.
   * VPC-SC Ingress Rejection: Bucket protected by perimeter rules preventing external integration connector writes.
 
 ---
@@ -250,8 +275,8 @@ resource.labels.bucket_name="doddi-bucket-sharepoint-sync"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read 'protoPayload.serviceName="secretmanager.googleapis.com" AND (protoPayload.status.code!=0 OR severity>=WARNING)' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "protoPayload.serviceName=\"secretmanager.googleapis.com\" AND (protoPayload.status.code!=0 OR severity>=WARNING)" \
+    --project="${PROJECT_ID}" \
     --limit=15 \
     --order=desc \
     --format="table(timestamp, protoPayload.authenticationInfo.principalEmail, protoPayload.status.message)"
@@ -273,8 +298,8 @@ protoPayload.status.code!=0
 
 #### 🖥️ CLI Command (VPC Service Control Denials)
 ```bash
-gcloud logging read 'protoPayload.metadata.@type="type.googleapis.com/google.cloud.audit.VpcServiceControlAuditMetadata" AND protoPayload.metadata.violationReason!="REASON_UNSPECIFIED"' \
-    --project="work-mylab-machinelearning" \
+gcloud logging read "protoPayload.metadata.@type=\"type.googleapis.com/google.cloud.audit.VpcServiceControlAuditMetadata\" AND protoPayload.metadata.violationReason!=\"REASON_UNSPECIFIED\"" \
+    --project="${PROJECT_ID}" \
     --limit=15 \
     --order=desc \
     --format="table(timestamp, protoPayload.metadata.violationReason, protoPayload.authenticationInfo.principalEmail)"
