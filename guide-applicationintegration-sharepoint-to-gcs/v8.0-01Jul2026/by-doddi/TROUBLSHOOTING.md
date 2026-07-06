@@ -74,6 +74,15 @@ gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" | wc -l
 gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes
 ```
 
+> [!WARNING]
+> **Getting an `ERROR: 404 not found`?**
+> If you receive an error like `ERROR: (gcloud.storage.ls) gs://doddi-bucket-sharepoint-sync not found: 404`, it means either:
+> 1. **You have not updated `parameters.json` yet**: The configuration file currently contains a default sample bucket name (`doddi-bucket-sharepoint-sync`). Open [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json) and update `"CONFIG_GCS_Bucket"` to your actual production bucket name.
+> 2. **The bucket has not been created yet in GCP**: If this is a new environment deployment and the bucket does not exist yet, create it first by running:
+>    ```bash
+>    gcloud storage buckets create "gs://${GCS_BUCKET}" --location=$(jq -r '.CONFIG_Location' parameters.json)
+>    ```
+
 #### 🔄 Automated Real-Time Watch Loop (Live Dashboard in Terminal)
 Execute this command to monitor sync speed in real time (refreshing automatically every 30 seconds):
 ```bash
