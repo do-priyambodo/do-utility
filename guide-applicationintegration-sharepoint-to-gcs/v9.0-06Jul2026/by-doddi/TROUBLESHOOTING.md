@@ -78,6 +78,14 @@ gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes
 > **Getting an `ERROR: 404 not found`?**
 > If you receive an error like `ERROR: (gcloud.storage.ls) gs://yourorg-bucket-sharepoint-sync not found: 404`, it means either:
 > 1. **You have not updated `parameters.json` yet**: The configuration file currently contains a default sample bucket name (`yourorg-bucket-sharepoint-sync`). Open [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/parameters.json) and update `"CONFIG_GCS_Bucket"` to your actual production bucket name.
+
+> [!WARNING]
+> **Getting an `ERROR: PERMISSION_DENIED: Failed to impersonate service account`?**
+> If your `gcloud` commands fail with `WARNING: This command is using service account impersonation` and `PERMISSION_DENIED: Failed to impersonate [sa@project.iam.gserviceaccount.com]`, it means your gcloud SDK has service account impersonation enabled in its config. Run this command to disable impersonation so commands authenticate directly as your user account:
+> ```bash
+> gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+> unset CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT 2>/dev/null || true
+> ```
 > 2. **The bucket has not been created yet in GCP**: If this is a new environment deployment and the bucket does not exist yet, create it first by running:
 >    ```bash
 >    gcloud storage buckets create "gs://${GCS_BUCKET}" --location=$(jq -r '.CONFIG_Location' parameters.json)

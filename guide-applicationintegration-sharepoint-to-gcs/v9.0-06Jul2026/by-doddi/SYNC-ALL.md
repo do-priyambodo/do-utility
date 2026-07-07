@@ -66,14 +66,17 @@ Your Virtual Machine or terminal must be authenticated with a Google Cloud user 
 #### Method A: Authenticate as an Admin User / Developer (Interactive Login)
 If you are logged into a Linux VM or Cloud Shell as an administrative engineer:
 ```bash
-# 1. Login to Google Cloud SDK with your user account:
+# 1. Ensure service account impersonation is disabled so commands run directly as your user:
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+
+# 2. Login to Google Cloud SDK with your user account:
 gcloud auth login --update-adc
 
-# 2. Set your active target GCP Project ID from parameters.json:
-export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
+# 3. Set your active target GCP Project ID from parameters.json:
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 gcloud config set project "${PROJECT_ID}"
 
-# 3. Verify your authentication status and active project:
+# 4. Verify your authentication status and active project:
 gcloud auth list
 echo "✅ Active Project: $(gcloud config get-value project)"
 ```
