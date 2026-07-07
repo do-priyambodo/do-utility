@@ -191,7 +191,26 @@ def run_fast_direct_check(params):
                 if b.updated:
                     gcs_cache[b.name] = b.updated
         except Exception:
-            pass
+            try:
+                ls_out = subprocess.check_output(
+                    ["gcloud", "storage", "ls", "--long", "--recursive", f"gs://{bucket_name}/**"],
+                    stderr=subprocess.DEVNULL
+                ).decode("utf-8")
+                for line in ls_out.splitlines():
+                    parts = line.strip().split(maxsplit=2)
+                    if len(parts) >= 3 and parts[0].isdigit():
+                        ts_str = parts[1]
+                        uri = parts[2]
+                        prefix = f"gs://{bucket_name}/"
+                        if uri.startswith(prefix):
+                            rel_name = uri[len(prefix):]
+                            try:
+                                dt = datetime.datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                                gcs_cache[rel_name] = dt
+                            except Exception:
+                                pass
+            except Exception:
+                pass
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as init_pool:
         f1 = init_pool.submit(load_graph_token)
