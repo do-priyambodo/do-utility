@@ -22,10 +22,36 @@ Before initiating either synchronization method, ensure your local environment c
    ```bash
    cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg
    ```
-2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
+2. **Verify `parameters.json`**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
 3. **Verify Python Environment**: Ensure Python 3.9+ and required libraries (`google-cloud-storage`, `msal`, `requests`) are installed:
    ```bash
    python3 -m pip install -r cf-sharepoint/requirements.txt --quiet
+   ```
+4. **Export Configuration Variables from `parameters.json`**: Run the following commands in your terminal shell to ensure all environment variables are properly exported before executing scripts:
+   ```bash
+   # 1. Export configuration variables from parameters.json
+   export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+   export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
+   export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
+   export DEVELOPER_PRINCIPAL=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
+   export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
+   export PARENT_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Parent_Integration_Name', 'yourorg-sharepoint-gcs-parent'))")
+   export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+
+   # 2. Extract SharePoint subsite path dynamically
+   export SITE_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Sharepoint_Sites', 'sites/yourorg-sharepoint-to-gcs'))")
+   if [[ "$SITE_PATH" == "sites/"* ]]; then
+     export SITE_NAME="${SITE_PATH#sites/}"
+   else
+     export SITE_NAME="$SITE_PATH"
+   fi
+
+   # 3. Extract Secret Name dynamically from parameters.json
+   export SECRET_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_M365_Secret_Name', ''))")
+   export SECRET_NAME=$(echo "$SECRET_PATH" | cut -d'/' -f4)
+
+   # 4. Extract Scheduler Job Name dynamically from parameters.json
+   export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
    ```
 
 ---
