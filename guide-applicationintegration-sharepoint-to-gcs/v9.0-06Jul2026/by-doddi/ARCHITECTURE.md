@@ -44,10 +44,12 @@ The Traversal Cloud Run service (`yourorg-sharepoint-list-files`) is the intelli
 │                                                      │                                                      │
 │                                                      ▼                                                      │
 │  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                   5. Dynamic Micro-Batch Slicer (CONFIG_Batch_Size: 10)                               │  │
+│  │               5. Streaming Parallel Pipelined Chunk Execution & Micro-Batching                        │  │
+│  │                          (CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers)                            │  │
 │  │                                                                                                       │  │
-│  │ • Chunks candidate files into resilient micro-batches of 10 items                                     │  │
-│  │ • Protects downstream integrations from HTTP request timeouts and memory bloat                        │  │
+│  │ • Pre-Render Delta Cache Filter: Skips unchanged pages instantly before any browser rendering         │  │
+│  │ • Processes items in chunks (e.g. 5x5=25) with parallel Playwright rendering across thread pool       │  │
+│  │ • Immediately dispatches micro-batches per chunk & flushes RAM for continuous incremental progress    │  │
 │  └───────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -73,9 +75,11 @@ The Traversal Cloud Run service (`yourorg-sharepoint-list-files`) is the intelli
    * **Intelligent Image URL Resolver**: Automatically resolves enterprise OData endpoints, SharePoint CDN thumbnail tokens, and authenticated inline images before rendering.
    * **WeasyPrint (Fallback)**: Lightweight HTML5 vector compile engine that executes in <2 seconds per page if headless Chromium binaries are not present in the runtime container.
 
-5. **Dynamic Micro-Batching**:
-   * Slices candidate payloads into deterministic chunks defined by `CONFIG_Batch_Size` (default: `10`).
-   * Dispatches chunks to parallel worker threads (`CONFIG_Max_Parallel_Workers: 10`) to maximize throughput without exceeding serverless request timeout ceilings.
+5. **Streaming Parallel Pipelined Chunk Execution & Micro-Batching (`CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers`)**:
+   * **Pre-Render Delta Cache Filter**: Modern Site Pages (`.aspx`) are checked against `gcs_cache` during discovery *before* any browser rendering occurs. Unchanged pages bypass rendering instantly (<1ms).
+   * **Pipelined Chunk Processing**: Candidate items are processed in self-contained chunks of size `CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers` (e.g., `5 × 5 = 25 items`).
+   * **Parallel Playwright Rendering**: Within each chunk, up to `CONFIG_Max_Parallel_Workers` threads concurrently render modern `.aspx` site pages into high-fidelity PDF base64 payloads, achieving up to a 5x speedup over sequential rendering.
+   * **Immediate Micro-Batch Orchestration**: As soon as a chunk finishes parallel rendering, its items are sliced into micro-batches (`CONFIG_Batch_Size`) and dispatched immediately to Application Integration (`yourorg-sharepoint-gcs-parent`). Memory is flushed after each chunk, ensuring continuous incremental progress and preventing serverless memory bloat or timeouts.
 
 ---
 

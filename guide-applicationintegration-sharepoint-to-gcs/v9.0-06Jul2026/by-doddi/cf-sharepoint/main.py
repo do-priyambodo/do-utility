@@ -211,21 +211,11 @@ def main(request):
                         continue
 
                     page_id = page_info["id"] if page_info else None
-                    html_rendered = ""
-                    trigger_integ = req_data.get("trigger_integration", True)
-                    if page_id and trigger_integ:
-                        try:
-                            d_url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
-                            d_resp = http.get(d_url, headers=headers, timeout=60)
-                            if d_resp.status_code == 200:
-                                html_rendered = render_page_to_html(d_resp.json(), raw_url, headers)
-                        except Exception as ex:
-                            print(f"Warning: Failed to render {aspx_name}: {ex}")
-
-                    if trigger_integ:
-                        if not html_rendered:
-                            html_rendered = f"<!DOCTYPE html><html><head><title>{filename}</title></head><body><h1>{filename}</h1><p>Source URL: <a href='{raw_url}'>{raw_url}</a></p></body></html>"
-                        item_obj["VirtualContent"] = render_html_to_pdf_base64(html_rendered, fallback_title=filename, engine=conv_engine)
+                    if page_id:
+                        item_obj["_page_id"] = page_id
+                        item_obj["_site_id"] = root_site_id
+                        item_obj["_raw_url"] = raw_url
+                        item_obj["_filename"] = filename
 
                 all_list.append(item_obj)
                 sync_list.append(item_obj)
@@ -295,19 +285,6 @@ def main(request):
                             "IsPage": True
                         }
                         
-                        trigger_integ = req_data.get("trigger_integration", True)
-                        if trigger_integ:
-                            detail_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
-                            detail_resp = http.get(detail_url, headers=headers, timeout=60)
-                            if detail_resp.status_code == 200:
-                                page_detail = detail_resp.json()
-                                html_content = render_page_to_html(page_detail, p.get("webUrl", ""), headers)
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(html_content, fallback_title=pdf_name, engine=conv_engine)
-                            if not page_obj.get("VirtualContent"):
-                                page_obj["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{pdf_name}</title></head><body><h1>{pdf_name}</h1></body></html>", fallback_title=pdf_name, engine=conv_engine)
-
-                        all_list.append(page_obj)
-                        
                         needs_sync = True
                         if gcs_cache is not None and rel_page_path in gcs_cache:
                             p_mod = p.get("lastModifiedDateTime")
@@ -328,9 +305,19 @@ def main(request):
                                         needs_sync = False
                             except Exception:
                                 pass
-                        
-                        if needs_sync:
-                            sync_list.append(page_obj)
+
+                        if not needs_sync:
+                            print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
+                            all_list.append(page_obj)
+                            continue
+
+                        # Mark for parallel pipelined chunk rendering
+                        page_obj["_page_id"] = page_id
+                        page_obj["_site_id"] = curr_site_id
+                        page_obj["_raw_url"] = p.get("webUrl", "")
+                        page_obj["_filename"] = pdf_name
+                        all_list.append(page_obj)
+                        sync_list.append(page_obj)
                 except Exception as e:
                     print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
             elif not sync_pages_flag:
@@ -408,71 +395,107 @@ def main(request):
             except Exception as ex_meta:
                 print(f"Warning: Failed to generate or upload config/metadata.jsonl: {ex_meta}")
 
-        # 8. Optionally trigger Application Integration directly (Serverless Orchestration)
+        # 8. Parallel Pipelined Chunk Rendering & Micro-Batch Orchestration
+        import concurrent.futures
         integration_triggered = False
         execution_ids = []
+        batch_size = params.get("CONFIG_Batch_Size", 10)
+        max_workers = params.get("CONFIG_Max_Parallel_Workers", 10)
+        chunk_size = max(1, batch_size * max_workers)
+
+        def _render_lazy_page(item):
+            if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):
+                return item
+            page_id = item.get("_page_id")
+            site_id = item.get("_site_id")
+            raw_url = item.get("_raw_url", item.get("Url", ""))
+            fn = item.get("_filename", item.get("Name", "Page.pdf"))
+            try:
+                d_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/pages/{page_id}/microsoft.graph.sitePage?$expand=canvasLayout"
+                d_resp = http.get(d_url, headers=headers, timeout=60)
+                if d_resp.status_code == 200:
+                    html_rendered = render_page_to_html(d_resp.json(), raw_url, headers)
+                    item["VirtualContent"] = render_html_to_pdf_base64(html_rendered, fallback_title=fn, engine=conv_engine)
+            except Exception as ex:
+                print(f"Warning: Parallel rendering failed for {fn}: {ex}")
+            if not item.get("VirtualContent"):
+                item["VirtualContent"] = render_html_to_pdf_base64(f"<!DOCTYPE html><html><head><title>{fn}</title></head><body><h1>{fn}</h1></body></html>", fallback_title=fn, engine=conv_engine)
+            return item
+
         if trigger_integration and len(sync_list) > 0:
             import google.auth
             from google.auth.transport.requests import Request
-            
-            print(f"🤖 Auto-triggering Application Integration asynchronously: {integration_name} in {location}...")
+            print(f"⚡ Pipelined Chunk Execution: Processing {len(sync_list)} items in chunks of {chunk_size} ({batch_size} batch x {max_workers} workers)...")
             credentials, credentials_project_id = google.auth.default()
             project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
             if not project_id:
                 raise ValueError("Project ID not specified in parameters.json or GCP credentials.")
-            
             credentials.refresh(Request())
             access_token = credentials.token
-            
             integration_url = f"https://{location}-integrations.googleapis.com/v1/projects/{project_id}/locations/{location}/integrations/{integration_name}:schedule"
-            
             headers_int = {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
             }
-            
-            batch_size = params.get("CONFIG_Batch_Size", 100)
-            for i in range(0, len(sync_list), batch_size):
-                batch = sync_list[i:i + batch_size]
-                payload_int = {
-                    "triggerId": f"api_trigger/{integration_name}-trigger",
-                    "inputParameters": {
-                        "`Parent_Files_List`": {
-                            "jsonValue": json.dumps(batch)
+
+            for c_start in range(0, len(sync_list), chunk_size):
+                chunk = sync_list[c_start : c_start + chunk_size]
+                print(f"🚀 Processing Pipelined Chunk {c_start + 1} to {min(c_start + chunk_size, len(sync_list))} of {len(sync_list)}...")
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    list(executor.map(_render_lazy_page, chunk))
+
+                for b_start in range(0, len(chunk), batch_size):
+                    batch = chunk[b_start : b_start + batch_size]
+                    clean_batch = [{k: v for k, v in item.items() if not k.startswith("_")} for item in batch]
+                    payload_int = {
+                        "triggerId": f"api_trigger/{integration_name}-trigger",
+                        "inputParameters": {
+                            "`Parent_Files_List`": {
+                                "jsonValue": json.dumps(clean_batch)
+                            }
                         }
                     }
-                }
-                
-                int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
-                if int_resp.status_code == 401:
-                    print("🔄 OAuth Access Token expired during batch scheduling. Refreshing token and retrying...")
-                    credentials.refresh(Request())
-                    access_token = credentials.token
-                    headers_int["Authorization"] = f"Bearer {access_token}"
                     int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
+                    if int_resp.status_code == 401:
+                        print("🔄 OAuth Access Token expired during batch scheduling. Refreshing token and retrying...")
+                        credentials.refresh(Request())
+                        access_token = credentials.token
+                        headers_int["Authorization"] = f"Bearer {access_token}"
+                        int_resp = http.post(integration_url, json=payload_int, headers=headers_int, timeout=60)
 
-                if int_resp.status_code == 200:
-                    exec_data = int_resp.json()
-                    eid = exec_data.get("executionId")
-                    if eid:
-                        execution_ids.append(eid)
-                    integration_triggered = True
-                    print(f"🟢 Batch ({len(batch)} items) scheduled -> Execution ID: {eid}")
-                else:
-                    print(f"❌ Integration trigger failed (Code {int_resp.status_code}): {int_resp.text}")
-                    raise Exception(f"Failed to trigger Application Integration batch: {int_resp.text}")
-                
-        # Return sync list and execution status cleanly as JSON
+                    if int_resp.status_code == 200:
+                        exec_data = int_resp.json()
+                        eid = exec_data.get("executionId")
+                        if eid:
+                            execution_ids.append(eid)
+                        integration_triggered = True
+                        print(f"🟢 Batch ({len(clean_batch)} items) scheduled -> Execution ID: {eid}")
+                    else:
+                        print(f"❌ Integration trigger failed (Code {int_resp.status_code}): {int_resp.text}")
+                        raise Exception(f"Failed to trigger Application Integration batch: {int_resp.text}")
+
+                # Flush memory for VirtualContent in chunk after dispatching
+                for item in chunk:
+                    item.pop("VirtualContent", None)
+        elif len(sync_list) > 0:
+            print(f"⚡ Rendering pages in parallel without Integration trigger ({len(sync_list)} items)...")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                list(executor.map(_render_lazy_page, sync_list))
+
+        # Clean helper keys from output lists
+        clean_all_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in all_list]
+        clean_sync_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in sync_list]
+
         response_payload = {
-            "all_resources_count": len(all_list),
-            "sync_resources_count": len(sync_list),
-            "item_count": len(sync_list),
+            "all_resources_count": len(clean_all_list),
+            "sync_resources_count": len(clean_sync_list),
+            "item_count": len(clean_sync_list),
             "integration_triggered": integration_triggered,
             "execution_id": execution_ids[0] if execution_ids else None,
             "execution_ids": execution_ids,
-            "all_resources": all_list,
-            "sync_resources": sync_list,
-            "items": sync_list
+            "all_resources": clean_all_list,
+            "sync_resources": clean_sync_list,
+            "items": clean_sync_list
         }
         return (json.dumps(response_payload, indent=2), 200, {"Content-Type": "application/json"})
         
