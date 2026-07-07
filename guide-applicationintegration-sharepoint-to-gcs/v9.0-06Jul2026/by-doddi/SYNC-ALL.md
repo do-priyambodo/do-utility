@@ -185,13 +185,18 @@ gcloud scheduler jobs describe "${SCHEDULER_JOB}" --location="${LOCATION}" --pro
 
 ---
 
-### Step 2: Trigger an Immediate Unattended Sync (Force Run)
-You do not need to wait for the next scheduled cron interval to execute an automated sync. You can manually force Cloud Scheduler to trigger an immediate run from your terminal:
+### Step 2: Perform Pre-Flight Verification & Trigger Immediate Sync (Force Run)
+Before triggering an unattended production sync, run our standalone diagnostic verification script to test authentication and inspect discovered inventory:
+```bash
+python3 check/check_sync_sharepoint_to_gcs.py --dry-run
+```
+
+Once verified, you do not need to wait for the next scheduled cron interval to execute an automated sync. You can manually force Cloud Scheduler to trigger an immediate run from your terminal:
 
 ```bash
-export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
-export SCHEDULER_JOB=$(jq -r '.CONFIG_Scheduler_Job_Name' parameters.json)
-export LOCATION=$(jq -r '.CONFIG_Location' parameters.json)
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+export SCHEDULER_JOB=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
 
 echo "⚡ Force-triggering Cloud Scheduler Job: ${SCHEDULER_JOB}..."
 gcloud scheduler jobs run "${SCHEDULER_JOB}" --location="${LOCATION}" --project="${PROJECT_ID}"
