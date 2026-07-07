@@ -221,7 +221,7 @@ resource.labels.service_name="${FUNCTION_NAME}"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read "resource.type=\"connectors.googleapis.com/Connection\" AND (resource.labels.connection_id:\"${SHAREPOINT_CONN}\" OR resource.labels.connection_id:\"${GCS_CONN}\") AND severity>=WARNING" \
+gcloud logging read "resource.type=\"connectors.googleapis.com/Connection\" AND (resource.labels.connection_id:\"${SHAREPOINT_CONN}\" OR resource.labels.connection_id:\"${GCS_CONN}\")" \
     --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
@@ -245,7 +245,7 @@ resource.type="connectors.googleapis.com/Connection"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read "resource.type=\"integrations.googleapis.com/IntegrationVersion\" AND (resource.labels.integration_name:\"${PARENT_INTEGRATION}\" OR resource.labels.integration_name:\"${CHILD_INTEGRATION}\") AND severity>=WARNING" \
+gcloud logging read "resource.type=\"integrations.googleapis.com/IntegrationVersion\" AND (resource.labels.integration_name:\"${PARENT_INTEGRATION}\" OR resource.labels.integration_name:\"${CHILD_INTEGRATION}\")" \
     --project="${PROJECT_ID}" \
     --limit=25 \
     --order=desc \
@@ -270,7 +270,7 @@ resource.type="integrations.googleapis.com/IntegrationVersion"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read "resource.type=\"gcs_bucket\" AND resource.labels.bucket_name:\"${GCS_BUCKET}\" AND severity>=WARNING" \
+gcloud logging read "resource.type=\"gcs_bucket\" AND resource.labels.bucket_name:\"${GCS_BUCKET}\"" \
     --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
@@ -294,7 +294,7 @@ resource.labels.bucket_name="${GCS_BUCKET}"
 
 #### 🖥️ CLI Command
 ```bash
-gcloud logging read "protoPayload.serviceName=\"secretmanager.googleapis.com\" AND (protoPayload.status.code!=0 OR severity>=WARNING)" \
+gcloud logging read "protoPayload.serviceName=\"secretmanager.googleapis.com\"" \
     --project="${PROJECT_ID}" \
     --limit=15 \
     --order=desc \
