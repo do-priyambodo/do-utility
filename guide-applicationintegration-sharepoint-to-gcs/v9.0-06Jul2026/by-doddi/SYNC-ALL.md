@@ -22,7 +22,7 @@ Before initiating either synchronization method, ensure your local environment c
    ```bash
    cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-doddi
    ```
-2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
+2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
 3. **Verify Python Environment**: Ensure Python 3.9+ and required libraries (`google-cloud-storage`, `msal`, `requests`) are installed:
    ```bash
    python3 -m pip install -r cf-sharepoint/requirements.txt --quiet
@@ -82,7 +82,7 @@ python3 check/check_sync_sharepoint_to_gcs.py
 ```
 **What to verify in output**:
 * Confirm the total number of files and site pages discovered in SharePoint.
-* Check how many items will be skipped due to V8.0 O(1) GCS Delta Caching.
+* Check how many items will be skipped due to V9.0 O(1) GCS Delta Caching.
 
 ---
 
@@ -96,7 +96,7 @@ python3 sync/sync_sharepoint_to_gcs.py
 #### 🖥️ What You Will See on Console (Real-Time Terminal Output):
 ```
 ================================================================================
-🚀 STARTING SHAREPOINT TO GCS FULL SYNCHRONIZATION (V8.0)
+🚀 STARTING SHAREPOINT TO GCS FULL SYNCHRONIZATION (V9.0)
 ================================================================================
 
 🔍 Resolving Cloud Function URI dynamically...
@@ -134,7 +134,7 @@ While the synchronization runs in the background across Application Integration 
 
    python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <EXECUTION_ID>
    ```
-3. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/TROUBLSHOOTING.md).
+3. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/TROUBLSHOOTING.md).
 
 ---
 
@@ -182,7 +182,7 @@ Because automated Cloud Scheduler runs execute asynchronously without an interac
 2. **Refer to the Enterprise Troubleshooting Guide**:
    For complete end-to-end monitoring, error tracing, and root-cause resolution across all serverless components (Cloud Scheduler, Cloud Run/Functions, Integration Connectors, Application Integration, Secret Manager, VPC Service Controls, and SharePoint Throttling), **consult the official diagnostic document**:
    
-   👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/TROUBLSHOOTING.md)**
+   👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/TROUBLSHOOTING.md)**
 
 ---
-*Generated for Maxis Enterprise Support — Application Integration V8.0 Pipeline.*
+*Generated for Maxis Enterprise Support — Application Integration V9.0 Pipeline.*

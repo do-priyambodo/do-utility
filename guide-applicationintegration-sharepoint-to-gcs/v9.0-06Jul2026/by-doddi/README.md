@@ -1,12 +1,12 @@
-# Serverless SharePoint-to-GCS Synchronization Pipeline (V8.0)
+# Serverless SharePoint-to-GCS Synchronization Pipeline (V9.0)
 
 A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, automated deletion of inactive SharePoint inventory, and an **Intelligent Image URL Resolver** for enterprise OData/thumbnail endpoints.
 
 ---
 
-## 📂 Modular Directory Architecture (V8.0)
+## 📂 Modular Directory Architecture (V9.0)
 
-The V8.0 codebase is organized into clean domain-specific subdirectories with automated root path resolution:
+The V9.0 codebase is organized into clean domain-specific subdirectories with automated root path resolution:
 * **`deploy/`**: Infrastructure and workflow deployment scripts (`deploy_cloud_run.sh`, `deploy_workflows.py`, cron schedulers) and workflow JSON templates.
 * **`sync/`**: Synchronization pipeline runners (`sync_sharepoint_to_gcs.py`, `sync_gcs_dynamic.py`, `sync_datastore.py`, `upload_gcs_targets.sh`).
 * **`check/`**: Read-only pre-flight inspection and diagnostic scripts (`check_entra_id_auth.py`, discovery dry-runs).
@@ -104,7 +104,7 @@ Your Azure app registration must be granted both **Delegated and Application** t
 ## II. Deployment Guide
 
 ### ⚡ Customer Quick-Start Checklist (Step-by-Step for Tomorrow)
-If you are deploying V8.0 tomorrow in a fresh customer environment or upgrading an existing setup, follow this exact 5-step order:
+If you are deploying V9.0 tomorrow in a fresh customer environment or upgrading an existing setup, follow this exact 5-step order:
 1. **Validate Environment**: Fill in `parameters.json` and run `python3 util/validate_params.py` (or run `./util/prereq/sa-roles.sh` first if IAM/Service Accounts are not yet created).
 2. **Export Shell Variables**: Copy and run the block in **Step 1** to export `PROJECT_ID`, `LOCATION`, `FUNCTION_NAME`, etc., into your terminal session.
 3. **Deploy Cloud Run Backend**: Run `./deploy/deploy_cloud_run.sh` (**Step 2 Option A**) to deploy the high-fidelity Playwright container, then copy and paste the IAM commands in **Step 3** (which include auto-retry fallback for Google Cloud Identity groups).
@@ -174,8 +174,8 @@ export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('param
      --project="${PROJECT_ID}"
    ```
 2. Choose your deployment method based on your selected PDF conversion engine:
-   * **👉 Option A: Custom Docker Container (MANDATORY & RECOMMENDED FOR V8.0 DEFAULT)**:
-     **Use this option!** We are currently using this deployment method because V8.0 defaults to Playwright (Headless Chromium) to solve customer feedback regarding missing visual images and complex page layouts. This script builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries pre-installed:
+   * **👉 Option A: Custom Docker Container (MANDATORY & RECOMMENDED FOR V9.0 DEFAULT)**:
+     **Use this option!** We are currently using this deployment method because V9.0 defaults to Playwright (Headless Chromium) to solve customer feedback regarding missing visual images and complex page layouts. This script builds and deploys a custom container on Cloud Run using Microsoft's official Playwright base image (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`) with Linux Chromium binaries pre-installed:
      ```bash
      chmod +x deploy/deploy_cloud_run.sh
      ./deploy/deploy_cloud_run.sh

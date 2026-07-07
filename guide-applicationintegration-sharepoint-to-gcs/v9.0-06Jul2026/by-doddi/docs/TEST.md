@@ -1,6 +1,6 @@
-# Comprehensive V8.0 Application Testing Guide & Playbook
+# Comprehensive V9.0 Application Testing Guide & Playbook
 
-This document explains in natural language how to conduct a complete, end-to-end system test on the **V8.0 Hybrid Serverless SharePoint-to-GCS Synchronization Pipeline**. This playbook follows our standardized verification methodology to ensure all serverless components (Cloud Run, Gen2 Cloud Functions, Application Integration, and Vertex AI Discovery Engine) operate reliably under production workloads.
+This document explains in natural language how to conduct a complete, end-to-end system test on the **V9.0 Hybrid Serverless SharePoint-to-GCS Synchronization Pipeline**. This playbook follows our standardized verification methodology to ensure all serverless components (Cloud Run, Gen2 Cloud Functions, Application Integration, and Vertex AI Discovery Engine) operate reliably under production workloads.
 
 ---
 
@@ -159,12 +159,12 @@ cat log/error.log 2>/dev/null || echo "✅ No errors recorded in log/error.log!"
 When reporting back to stakeholders or customers after a full test run, complete and submit the following structured executive summary:
 
 ```markdown
-# 📋 V8.0 SharePoint-to-GCS Synchronization: Full Test Execution Report
+# 📋 V9.0 SharePoint-to-GCS Synchronization: Full Test Execution Report
 
 **Date of Execution:** [e.g., 01 July 2026]
 **Environment / Customer:** [e.g., Customer Maxis - Production / Staging Tenant]
 **Operator / Engineer:** [e.g., Doddi Priyambodo]
-**Pipeline Version:** V8.0 (Modular Serverless Architecture)
+**Pipeline Version:** V9.0 (Modular Serverless Architecture)
 
 ---
 
