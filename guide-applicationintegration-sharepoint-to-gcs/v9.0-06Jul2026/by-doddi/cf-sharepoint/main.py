@@ -3,8 +3,6 @@ import json
 import urllib.parse
 import datetime
 import re
-import concurrent.futures
-import threading
 import functions_framework
 from google.cloud import storage
 
@@ -254,84 +252,76 @@ def main(request):
                     target_drive_id = drives[0].get("id")
                     target_drive_url = drives[0].get("webUrl")
                 
-            # 6 & 7. Execute Document Library crawl and Modern Site Pages crawl concurrently
+            # 6. Recursively list all files inside the target Document Library
             max_items = req_data.get("max_items")
-            crawl_lock = threading.Lock()
-
-            def crawl_files_task():
-                if target_drive_id and sync_files_flag:
-                    if target_drive_url:
-                        base_file_url = f"{target_drive_url.rstrip('/')}/"
-                    else:
-                        library_encoded = urllib.parse.quote(library_name)
-                        sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
-                        base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                    list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items, crawl_lock)
-                elif not sync_files_flag:
-                    print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
-
-            def crawl_pages_task():
-                if sync_pages_flag and (max_items is None or len(all_list) < max_items):
-                    pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
-                    try:
-                        pages = graph_get_paginated(pages_url, headers)
-                        for p in pages:
-                            if max_items is not None and len(all_list) >= max_items:
-                                break
-                            page_id = p.get("id")
-                            page_name = p.get("name", "Page.aspx")
-                            pdf_name = page_name.replace(".aspx", ".pdf")
-                            rel_page_path = f"pages/{site_prefix}{pdf_name}"
-                            
-                            page_obj = {
-                                "Name": pdf_name,
-                                "Url": p.get("webUrl", ""),
-                                "RelativePath": rel_page_path,
-                                "IsPage": True
-                            }
-                            
-                            needs_sync = True
-                            if gcs_cache is not None and rel_page_path in gcs_cache:
-                                p_mod = p.get("lastModifiedDateTime")
-                                if p_mod:
-                                    try:
-                                        sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                        if gcs_cache[rel_page_path] >= sp_dt_p:
-                                            needs_sync = False
-                                    except Exception:
-                                        pass
-                            elif bucket_obj and not gcs_cache:
+            if target_drive_id and sync_files_flag:
+                if target_drive_url:
+                    base_file_url = f"{target_drive_url.rstrip('/')}/"
+                else:
+                    library_encoded = urllib.parse.quote(library_name)
+                    sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
+                    base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
+                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+            elif not sync_files_flag:
+                print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
+                
+            # 7. Query modern site pages under Option B
+            if sync_pages_flag and (max_items is None or len(all_list) < max_items):
+                pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
+                try:
+                    pages = graph_get_paginated(pages_url, headers)
+                    for p in pages:
+                        if max_items is not None and len(all_list) >= max_items:
+                            break
+                        page_id = p.get("id")
+                        page_name = p.get("name", "Page.aspx")
+                        pdf_name = page_name.replace(".aspx", ".pdf")
+                        rel_page_path = f"pages/{site_prefix}{pdf_name}"
+                        
+                        page_obj = {
+                            "Name": pdf_name,
+                            "Url": p.get("webUrl", ""),
+                            "RelativePath": rel_page_path,
+                            "IsPage": True
+                        }
+                        
+                        needs_sync = True
+                        if gcs_cache is not None and rel_page_path in gcs_cache:
+                            p_mod = p.get("lastModifiedDateTime")
+                            if p_mod:
                                 try:
-                                    blob_p = bucket_obj.get_blob(rel_page_path)
-                                    p_mod = p.get("lastModifiedDateTime")
-                                    if blob_p and blob_p.updated and p_mod:
-                                        sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                        if blob_p.updated >= sp_dt_p:
-                                            needs_sync = False
+                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                    if gcs_cache[rel_page_path] >= sp_dt_p:
+                                        needs_sync = False
                                 except Exception:
                                     pass
+                        elif bucket_obj and not gcs_cache:
+                            try:
+                                blob_p = bucket_obj.get_blob(rel_page_path)
+                                p_mod = p.get("lastModifiedDateTime")
+                                if blob_p and blob_p.updated and p_mod:
+                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                    if blob_p.updated >= sp_dt_p:
+                                        needs_sync = False
+                            except Exception:
+                                pass
 
-                            with crawl_lock:
-                                if not needs_sync:
-                                    print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
-                                    all_list.append(page_obj)
-                                    continue
+                        if not needs_sync:
+                            print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
+                            all_list.append(page_obj)
+                            continue
 
-                                page_obj["_page_id"] = page_id
-                                page_obj["_site_id"] = curr_site_id
-                                page_obj["_raw_url"] = p.get("webUrl", "")
-                                page_obj["_filename"] = pdf_name
-                                all_list.append(page_obj)
-                                sync_list.append(page_obj)
-                    except Exception as e:
-                        print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
-                elif not sync_pages_flag:
-                    print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                f_files = executor.submit(crawl_files_task)
-                f_pages = executor.submit(crawl_pages_task)
-                concurrent.futures.wait([f_files, f_pages])
+                        # Mark for parallel pipelined chunk rendering
+                        page_obj["_page_id"] = page_id
+                        page_obj["_site_id"] = curr_site_id
+                        page_obj["_raw_url"] = p.get("webUrl", "")
+                        page_obj["_filename"] = pdf_name
+                        all_list.append(page_obj)
+                        sync_list.append(page_obj)
+                except Exception as e:
+                    print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
+            elif not sync_pages_flag:
+                print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
                 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
         # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages and integration is triggered

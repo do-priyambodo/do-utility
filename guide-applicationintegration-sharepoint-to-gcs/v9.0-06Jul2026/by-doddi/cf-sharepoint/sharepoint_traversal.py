@@ -2,8 +2,6 @@ import urllib.parse
 import datetime
 import base64
 import html
-import concurrent.futures
-import threading
 from graph_client import graph_get_paginated, http
 
 try:
@@ -27,14 +25,12 @@ def get_all_subsites_recursive(root_site_id, headers, current_prefix=""):
         print(f"Warning: Failed to list subsites under {root_site_id}: {e}")
     return subsites
 
-# Recursively list files in a SharePoint folder (drive item) with parallel subfolder traversal
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None, lock=None):
+# Recursively list files in a SharePoint folder (drive item)
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None):
     if all_results is None:
         all_results = []
     if sync_results is None:
         sync_results = []
-    if lock is None:
-        lock = threading.Lock()
     if max_items is not None and len(all_results) >= max_items:
         return all_results, sync_results
     
@@ -49,16 +45,15 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
         
     items = graph_get_paginated(url, headers)
     
-    folders_to_crawl = []
     for item in items:
         if max_items is not None and len(all_results) >= max_items:
             break
         item_name = item.get("name")
-        curr_item_id = item.get("id")
+        item_id = item.get("id")
         
         if "folder" in item:
             new_parent_path = f"{parent_path}{item_name}/"
-            folders_to_crawl.append((curr_item_id, new_parent_path))
+            list_drive_items_recursive(token, drive_id, item_id, new_parent_path, all_results, sync_results, base_file_url, bucket_obj, gcs_cache, max_items)
         else:
             if item_name.lower().endswith(".aspx"):
                 continue
@@ -73,6 +68,7 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                 "RelativePath": relative_path,
                 "IsPage": False
             }
+            all_results.append(file_item)
             
             needs_sync = True
             gcs_check_path = f"files/{relative_path}"
@@ -96,22 +92,9 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                 except Exception:
                     pass
 
-            with lock:
-                all_results.append(file_item)
-                if needs_sync:
-                    sync_results.append(file_item)
+            if needs_sync:
+                sync_results.append(file_item)
             
-    if folders_to_crawl:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = [
-                executor.submit(
-                    list_drive_items_recursive,
-                    token, drive_id, f_id, f_path, all_results, sync_results, base_file_url, bucket_obj, gcs_cache, max_items, lock
-                )
-                for f_id, f_path in folders_to_crawl
-            ]
-            concurrent.futures.wait(futures)
-
     return all_results, sync_results
 
 # Helper to download SharePoint image and return as Base64 data URI
