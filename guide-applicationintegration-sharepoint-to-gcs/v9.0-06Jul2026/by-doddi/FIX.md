@@ -120,3 +120,23 @@ If your customer prefers to clear out any old or experimental index entries so t
 2. **Manual Purge via Console (If customer wants to empty it manually):**
    Go to Google Cloud Console > **Vertex AI Search** > **Data Stores** > select your Datastore > **Documents** tab, and click **Purge Documents** (or delete documents) before re-running `python3 sync/sync_datastore.py`.
 
+---
+
+## 8. Troubleshooting: `content config of data store must be CONTENT_REQUIRED`
+
+**Symptom:**
+When importing documents into a newly created Data Store, you see:
+```text
+To create document with content, the content config of data store must be CONTENT_REQUIRED.
+```
+
+**Root Cause:**
+When the Data Store was created, an option for structured metadata or website indexing (`NO_CONTENT`) was selected. Because `config/metadata.jsonl` contains file pointers (`"content": {"mimeType": "...", "uri": "gs://..."}`), Vertex AI requires a Data Store configured for unstructured documents (`CONTENT_REQUIRED`).
+
+**Resolution:**
+When creating the Data Store in Google Cloud Console (**Vertex AI Search / Agent Builder > Data Stores > Create Data Store**):
+1. Select **Cloud Storage** as the data source.
+2. Under data type, select **Unstructured documents with metadata** (or **Unstructured documents**). This automatically sets `contentConfig = CONTENT_REQUIRED`.
+3. Enter `gs://<your-bucket>/config/metadata.jsonl` and create the Data Store.
+
+
