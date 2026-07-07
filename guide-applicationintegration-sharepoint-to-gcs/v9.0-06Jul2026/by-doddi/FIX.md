@@ -101,3 +101,22 @@ The import will read the repaired `config/metadata.jsonl` and successfully index
 ## 6. Permanent Prevention for Future Traversal Runs
 
 Our latest release of `cf-sharepoint/main.py` has been updated so that any future scheduled or manual run of the Cloud Function automatically formats document URIs with `files/` during manifest generation.
+
+---
+
+## 7. FAQ: Should I Purge the Datastore First?
+
+**Q: Do I need to purge or empty the Datastore before running `python3 sync/sync_datastore.py`?**
+
+**A: No, purging is NOT required.**
+Because our pipeline uses `reconciliationMode: INCREMENTAL`, running `sync_datastore.py` safely updates existing documents and inserts any new or repaired ones without creating duplicates.
+
+### What if my customer wants a 100% fresh start?
+If your customer prefers to clear out any old or experimental index entries so the Datastore matches GCS exactly:
+
+1. **Recommended Approach (FULL Reconciliation Mode - No Manual Purge Required):**
+   You can run a FULL reconciliation import, which tells Vertex AI Datastore to synchronize its index so it matches `config/metadata.jsonl` 1-to-1 (automatically removing any documents not present in the manifest). To do this, temporarily set `"CONFIG_Datastore_Reconciliation_Mode": "FULL"` in `parameters.json` and run `python3 sync/sync_datastore.py`.
+
+2. **Manual Purge via Console (If customer wants to empty it manually):**
+   Go to Google Cloud Console > **Vertex AI Search** > **Data Stores** > select your Datastore > **Documents** tab, and click **Purge Documents** (or delete documents) before re-running `python3 sync/sync_datastore.py`.
+
