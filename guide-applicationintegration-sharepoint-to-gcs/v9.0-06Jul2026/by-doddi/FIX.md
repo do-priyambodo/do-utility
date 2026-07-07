@@ -133,10 +133,21 @@ To create document with content, the content config of data store must be CONTEN
 **Root Cause:**
 When the Data Store was created, an option for structured metadata or website indexing (`NO_CONTENT`) was selected. Because `config/metadata.jsonl` contains file pointers (`"content": {"mimeType": "...", "uri": "gs://..."}`), Vertex AI requires a Data Store configured for unstructured documents (`CONTENT_REQUIRED`).
 
-**Resolution:**
-When creating the Data Store in Google Cloud Console (**Vertex AI Search / Agent Builder > Data Stores > Create Data Store**):
-1. Select **Cloud Storage** as the data source.
-2. Under data type, select **Unstructured documents with metadata** (or **Unstructured documents**). This automatically sets `contentConfig = CONTENT_REQUIRED`.
-3. Enter `gs://<your-bucket>/config/metadata.jsonl` and create the Data Store.
+**Resolution (Zero SharePoint Re-Sync Required):**
+In Vertex AI Discovery Engine, `contentConfig` is immutable and cannot be changed after a Data Store is created. However, because all your files are already safely stored in Google Cloud Storage, you can resolve this in ~30 seconds:
+
+1. **Create a New Data Store:**
+   Go to Google Cloud Console (**Vertex AI Search / Agent Builder > Data Stores > Create Data Store**):
+   * Select **Cloud Storage** as the data source.
+   * Under data type, select 👉 **Unstructured documents with metadata** (or **Unstructured documents**). This automatically sets `contentConfig = CONTENT_REQUIRED`.
+   * Enter `gs://<CONFIG_GCS_Bucket>/config/metadata.jsonl` and create the Data Store.
+2. **Update `parameters.json`:**
+   * Replace `"CONFIG_Datastore_Id"` with your newly created Data Store ID.
+3. **Delete the Old Misconfigured Data Store:**
+   * Go to **Data Stores**, select the old misconfigured Data Store, and click **Delete**.
+   * **Important Reassurance:** Deleting a Data Store **only removes search index metadata** in Vertex AI—it **does NOT delete any files** in your Google Cloud Storage bucket! All thousands of files remain safe and untouched in GCS.
+
+You will end up with exactly **1 active, working Data Store** indexing 100% of your customer's files.
+
 
 
