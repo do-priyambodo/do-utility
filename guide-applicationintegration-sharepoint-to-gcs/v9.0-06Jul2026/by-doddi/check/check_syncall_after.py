@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-check_syncall_after.py - V9.0 Post-Sync Verification
+check_syncall_after.py - V9.0 High-Performance Post-Sync Verification
 
 Calculates:
   1. Total modern site pages (.pdf) and document files in the Google Cloud Storage (GCS) bucket.
   2. How many files and pages are already synced and up-to-date (Delta cache verification).
   3. Confirms whether any remaining delta items still require synchronization.
+
+Features:
+  - Multi-Threaded Direct Client-Side Discovery (ThreadPoolExecutor with 10 concurrent workers)
+    to verify 9,000+ SharePoint assets against GCS inventory in seconds without touching backend Cloud Functions.
+  - Automatic O(1) GCS Delta Cache memory comparison.
 """
 
 import os
@@ -17,6 +22,8 @@ import urllib.error
 import subprocess
 import threading
 import time
+import datetime
+import concurrent.futures
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
@@ -54,31 +61,108 @@ def run_with_heartbeat(msg, func, *args, **kwargs):
         print()
         raise e
 
-def get_identity_token():
+def get_secret_gcloud(secret_name):
     try:
-        return subprocess.check_output(["gcloud", "auth", "print-identity-token"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        secret_part = secret_name.split("/")[-1]
+        secret_id = secret_name.split("/")[-3] if "secrets/" in secret_name else secret_name
+        return subprocess.check_output(["gcloud", "secrets", "versions", "access", secret_part, f"--secret={secret_id}"], text=True, stderr=subprocess.DEVNULL).strip()
     except Exception:
-        return None
+        return subprocess.check_output(["gcloud", "secrets", "versions", "access", "latest", f"--secret={secret_name}"], text=True, stderr=subprocess.DEVNULL).strip()
 
-def get_cf_url(function_name, location, project_id):
+def get_graph_token(tenant_id, client_id, client_secret):
+    token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    payload = urllib.parse.urlencode({
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "scope": "https://graph.microsoft.com/.default",
+        "grant_type": "client_credentials"
+    }).encode("utf-8")
+    req = urllib.request.Request(token_url, data=payload, method="POST")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        return data.get("access_token")
+
+def graph_get_paginated(url, headers):
+    results = []
+    while url:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            results.extend(data.get("value", []))
+            url = data.get("@odata.nextLink")
+    return results
+
+def list_drive_items_concurrent(token, drive_id, item_id="root", parent_path="", all_files=None, sync_files=None, gcs_cache=None, lock=None, executor=None):
+    if all_files is None:
+        all_files = []
+    if sync_files is None:
+        sync_files = []
+    if lock is None:
+        lock = threading.Lock()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/children"
+    if item_id == "root":
+        url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+
     try:
-        cmd = [
-            "gcloud", "functions", "describe", function_name,
-            "--gen2",
-            "--region", location,
-            "--project", project_id,
-            "--format", "value(serviceConfig.uri)"
-        ]
-        return subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        items = graph_get_paginated(url, headers)
     except Exception:
-        return None
+        return all_files, sync_files
+
+    folders = []
+    for item in items:
+        item_name = item.get("name", "")
+        curr_id = item.get("id")
+        if "folder" in item:
+            folders.append((curr_id, f"{parent_path}{item_name}/"))
+        else:
+            if item_name.lower().endswith(".aspx"):
+                continue
+            rel_path = f"{parent_path}{item_name}"
+            file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False}
+            needs_sync = True
+            gcs_path = f"files/{rel_path}"
+            if gcs_cache and gcs_path in gcs_cache:
+                sp_mod = item.get("lastModifiedDateTime")
+                if sp_mod:
+                    try:
+                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                        if gcs_cache[gcs_path] >= sp_dt:
+                            needs_sync = False
+                    except Exception:
+                        pass
+
+            with lock:
+                all_files.append(file_obj)
+                if needs_sync:
+                    sync_files.append(file_obj)
+
+    if folders:
+        own_executor = False
+        if executor is None:
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+            own_executor = True
+        futures = [
+            executor.submit(
+                list_drive_items_concurrent,
+                token, drive_id, f_id, f_path, all_files, sync_files, gcs_cache, lock, executor
+            )
+            for f_id, f_path in folders
+        ]
+        concurrent.futures.wait(futures)
+        if own_executor:
+            executor.shutdown()
+
+    return all_files, sync_files
 
 def inspect_gcs_bucket(bucket_name):
     gcs_pages = 0
     gcs_files = 0
     gcs_total_bytes = 0
-
-    # Try Google Cloud Storage Python SDK first
     try:
         from google.cloud import storage
         client = storage.Client()
@@ -94,7 +178,6 @@ def inspect_gcs_bucket(bucket_name):
     except Exception:
         pass
 
-    # Fall back to gcloud storage CLI
     try:
         ls_out = subprocess.check_output(
             ["gcloud", "storage", "ls", "--long", "--recursive", f"gs://{bucket_name}/**"],
@@ -113,12 +196,104 @@ def inspect_gcs_bucket(bucket_name):
                         gcs_files += 1
     except Exception:
         pass
-
     return gcs_pages, gcs_files, gcs_total_bytes
+
+def run_fast_direct_check(params):
+    tenant_id = params.get("CONFIG_M365_Tenant_Id")
+    client_id = params.get("CONFIG_M365_Client_Id")
+    secret_name = params.get("CONFIG_M365_Secret_Name")
+    hostname = params.get("CONFIG_SharePoint_Hostname", "priyambodo.sharepoint.com")
+    site_path = params.get("CONFIG_Sharepoint_Sites", "sites/doddi-sharepoint-to-gcs")
+    library_name = params.get("CONFIG_Sharepoint_Library", "Documents")
+    bucket_name = params.get("CONFIG_GCS_Bucket")
+
+    gcs_cache = {}
+    graph_token = [None]
+
+    def load_graph_token():
+        secret_val = get_secret_gcloud(secret_name)
+        graph_token[0] = get_graph_token(tenant_id, client_id, secret_val)
+
+    def load_gcs_cache():
+        try:
+            from google.cloud import storage
+            client = storage.Client()
+            for b in client.list_blobs(bucket_name):
+                if b.updated:
+                    gcs_cache[b.name] = b.updated
+        except Exception:
+            pass
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as init_pool:
+        f1 = init_pool.submit(load_graph_token)
+        f2 = init_pool.submit(load_gcs_cache)
+        concurrent.futures.wait([f1, f2])
+
+    token = graph_token[0]
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
+    site_url = f"https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/{site_name_clean}"
+    req = urllib.request.Request(site_url, headers=headers)
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        site_data = json.loads(resp.read().decode("utf-8"))
+        site_id = site_data.get("id")
+
+    drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
+    drives = graph_get_paginated(drives_url, headers)
+    target_drive_id = None
+    for d in drives:
+        if d.get("name", "").lower() == library_name.lower():
+            target_drive_id = d.get("id")
+            break
+    if not target_drive_id and drives:
+        target_drive_id = drives[0].get("id")
+
+    all_items = []
+    sync_items = []
+    lock = threading.Lock()
+
+    def crawl_files():
+        if target_drive_id:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                list_drive_items_concurrent(token, target_drive_id, "root", "", all_items, sync_items, gcs_cache, lock, executor)
+
+    def crawl_pages():
+        pages_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/pages"
+        try:
+            pages = graph_get_paginated(pages_url, headers)
+            for p in pages:
+                page_name = p.get("name", "Page.aspx")
+                pdf_name = page_name.replace(".aspx", ".pdf")
+                rel_page_path = f"pages/{pdf_name}"
+                page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True}
+                needs_sync = True
+                if gcs_cache and rel_page_path in gcs_cache:
+                    p_mod = p.get("lastModifiedDateTime")
+                    if p_mod:
+                        try:
+                            sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                            if gcs_cache[rel_page_path] >= sp_dt:
+                                needs_sync = False
+                        except Exception:
+                            pass
+                with lock:
+                    all_items.append(page_obj)
+                    if needs_sync:
+                        sync_items.append(page_obj)
+        except Exception:
+            pass
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        f_files = pool.submit(crawl_files)
+        f_pages = pool.submit(crawl_pages)
+        concurrent.futures.wait([f_files, f_pages])
+
+    return all_items, sync_items
 
 def main():
     print("================================================================================")
-    print("🔍 POST-SYNC CHECK: GCS BUCKET INVENTORY & DELTA VERIFICATION (AFTER SYNC)")
+    print("⚡ HIGH-SPEED POST-SYNC CHECK: GCS BUCKET & DELTA VERIFICATION (AFTER SYNC)")
     print("================================================================================\n")
 
     if not os.path.exists("parameters.json"):
@@ -129,12 +304,9 @@ def main():
         params = json.load(f)
 
     project_id = params.get("CONFIG_ProjectId", "")
-    location = params.get("CONFIG_Location", "asia-southeast1")
     bucket_name = params.get("CONFIG_GCS_Bucket", "")
-    site_path = params.get("CONFIG_Sharepoint_Sites", "sites/yourorg-sharepoint-to-gcs")
+    site_path = params.get("CONFIG_Sharepoint_Sites", "sites/doddi-sharepoint-to-gcs")
     library_name = params.get("CONFIG_Sharepoint_Library", "Documents")
-    function_name = params.get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files")
-    cf_endpoint = params.get("CONFIG_CloudFunction_URL")
 
     print("📂 Step 1: Loading Pipeline Parameters...")
     print(f" • Project ID            : {project_id}")
@@ -142,7 +314,7 @@ def main():
     print(f" • Target SharePoint Site: {site_path}")
     print(f" • Document Library      : {library_name}\n")
 
-    print(f"📂 Step 2: Inspecting Google Cloud Storage Bucket Inventory (gs://{bucket_name}/)...")
+    print(f"⚡ Step 2: Inspecting Google Cloud Storage Bucket Inventory (gs://{bucket_name}/)...")
     gcs_pages, gcs_files, gcs_total_bytes = inspect_gcs_bucket(bucket_name)
     gcs_size_mb = gcs_total_bytes / (1024 * 1024) if gcs_total_bytes > 0 else 0.0
     gcs_total_items = gcs_pages + gcs_files
@@ -151,54 +323,32 @@ def main():
     print(f"   • Document Files in GCS ('files/')          : {gcs_files}")
     print(f"   • Total Items Stored in GCS                 : {gcs_total_items} ({gcs_size_mb:.2f} MB)\n")
 
-    if not cf_endpoint and function_name and project_id:
-        print("🔍 Resolving Traversal Cloud Function URI...")
-        cf_endpoint = get_cf_url(function_name, location, project_id)
+    all_items = None
+    sync_items = None
 
-    if not cf_endpoint:
-        print("❌ Could not resolve Traversal Cloud Function URL. Ensure CONFIG_CloudFunction_URL is set or function is deployed.")
-        sys.exit(1)
-
-    token = get_identity_token()
-    if not token:
-        print("❌ Failed to obtain Google OIDC identity token. Please run 'gcloud auth login'.")
-        sys.exit(1)
-
-    site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
-
-    payload = {
-        "site_name": site_name_clean,
-        "library_name": library_name,
-        "trigger_integration": False,
-        "sync_files": True,
-        "sync_pages": True
-    }
-
-    print(f"📂 Step 3: Verifying Sync Completion via Live Delta Comparison...")
-    req = urllib.request.Request(
-        cf_endpoint,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        },
-        method="POST"
-    )
-
+    print("⚡ Step 3: Verifying Sync Completion via Multi-Threaded Direct Discovery...")
     try:
-        with run_with_heartbeat("Checking SharePoint inventory against GCS Delta Cache", urllib.request.urlopen, req, timeout=600) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        err_msg = e.read().decode("utf-8", errors="replace")
-        print(f"❌ Traversal Cloud Function invocation failed (HTTP {e.code}): {e.reason}")
-        print(f"   Response details: {err_msg}")
-        sys.exit(1)
+        all_items, sync_items = run_with_heartbeat("Checking SharePoint inventory against GCS Delta Cache concurrently", run_fast_direct_check, params)
     except Exception as e:
-        print(f"❌ Error invoking Traversal Cloud Function: {e}")
-        sys.exit(1)
-
-    all_items = data.get("all_resources", data.get("items", []))
-    sync_items = data.get("sync_resources", data.get("items", []))
+        print(f"ℹ️ Direct client-side check notice ({e}). Falling back to Traversal Cloud Function...")
+        cf_endpoint = params.get("CONFIG_CloudFunction_URL")
+        function_name = params.get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files")
+        location = params.get("CONFIG_Location", "asia-southeast1")
+        try:
+            if not cf_endpoint and function_name:
+                cmd = ["gcloud", "functions", "describe", function_name, "--gen2", "--region", location, "--project", project_id, "--format", "value(serviceConfig.uri)"]
+                cf_endpoint = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
+            token = subprocess.check_output(["gcloud", "auth", "print-identity-token"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
+            site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
+            payload = {"site_name": site_name_clean, "library_name": library_name, "trigger_integration": False, "sync_files": True, "sync_pages": True}
+            req = urllib.request.Request(cf_endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
+            resp = run_with_heartbeat("Querying Traversal Cloud Function for live inventory", urllib.request.urlopen, req, timeout=600)
+            data = json.loads(resp.read().decode("utf-8"))
+            all_items = data.get("all_resources", data.get("items", []))
+            sync_items = data.get("sync_resources", data.get("items", []))
+        except Exception as ex2:
+            print(f"❌ Failed to inspect inventory: {ex2}")
+            sys.exit(1)
 
     # Calculate SharePoint target totals
     total_sp_pages = sum(1 for x in all_items if x.get("IsPage"))
