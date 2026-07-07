@@ -69,29 +69,37 @@ Verify the following GCP and Microsoft Azure details are active before deploymen
 
 ### 1. GCP Project Parameters
 Verify credentials and names inside [parameters.json](parameters.json):
-*   `CONFIG_ProjectId`: The target GCP Project ID.
-*   `CONFIG_Location`: GCP region for deployment (e.g. `asia-southeast1`).
-*   `CONFIG_Service_Account`: Service account under which the integrations and scheduler run.
-*   `CONFIG_Child_Integration_Name`: Name of the child worker integration (e.g. `yourorg-sharepoint-gcs-child`).
-*   `CONFIG_Parent_Integration_Name`: Name of the parent orchestrator integration (e.g. `yourorg-sharepoint-gcs-parent`).
-*   `CONFIG_SharePoint_Connection`: Integration Connector resource ID for SharePoint.
-*   `CONFIG_Sharepoint_Sites`: Subsite URL path (e.g. `sites/yourorg-sharepoint-to-gcs`).
-*   `CONFIG_GCS_Connection`: Integration Connector resource ID for Google Cloud Storage.
-*   `CONFIG_GCS_Bucket`: GCS target bucket for synchronizing files and pages.
-*   `CONFIG_CloudFunction_Name`: Name of the Traversal Cloud Function (e.g. `yourorg-sharepoint-list-files`).
-*   `CONFIG_M365_Tenant_Id`: Azure AD / M365 Directory Tenant ID.
-*   `CONFIG_M365_Client_Id`: Azure AD Application (Client) ID.
-*   `CONFIG_M365_Secret_Name`: GCP Secret Manager resource ID storing the M365 client secret.
-*   `CONFIG_SharePoint_Hostname`: SharePoint tenant hostname (e.g. `yourorg.sharepoint.com`).
-*   `CONFIG_Developer_Group_Or_User`: Developer user email or SSO group granted invoker rights for manual testing runs.
-*   `CONFIG_Scheduler_Job_Name`: Name of the recurring Cloud Scheduler trigger job.
-*   `CONFIG_Batch_Size`: Number of items sliced into each micro-batch (e.g. `10`).
-*   `CONFIG_Max_Parallel_Workers`: Maximum concurrency limit for parallel thread execution (e.g. `10`).
-*   `CONFIG_Sync_SharePoint_Files`: Boolean flag (`true` or `false`) to enable/disable syncing standard documents from Document Libraries.
-*   `CONFIG_Sync_SharePoint_Pages`: Boolean flag (`true` or `false`) to enable/disable querying and converting Modern Site Pages (`.aspx`) into executive PDFs.
-*   `CONFIG_PDF_Conversion_Engine`: Selects the rendering engine for `.aspx` to PDF conversion (`playwright` vs `weasyprint`).
-    *   **`playwright` (Default / Recommended)**: Launches full Headless Chromium browser automation (`playwright-python`). Executes live JavaScript, dropdowns, and dynamic widgets to capture exact desktop browser snapshots with high-definition styling. Deployed via custom Docker container (Option A) with Chromium binaries baked inside.
-    *   **`weasyprint` (Fallback Engine)**: Pure Python HTML5 vector PDF generator. Used as an automatic fallback if Chromium container binaries are unavailable in standard buildpacks.
+
+| Parameter Key | Current Status in `parameters.json` | Description |
+| :--- | :--- | :--- |
+| `CONFIG_ProjectId` | `"work-mylab-machinelearning"` | The target GCP Project ID. |
+| `CONFIG_Location` | `"asia-southeast1"` | GCP region for serverless deployment. |
+| `CONFIG_Service_Account` | `"doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"` | Service account identity running Cloud Run/Functions, Integrations, and Scheduler. |
+| `CONFIG_Child_Integration_Name` | `"doddi-sharepoint-gcs-child"` | Name of the child worker Application Integration pipeline. |
+| `CONFIG_Parent_Integration_Name` | `"doddi-sharepoint-gcs-parent"` | Name of the parent orchestrator Application Integration pipeline. |
+| `CONFIG_SharePoint_Connection` | `"projects/$CONFIG_ProjectId/locations/$CONFIG_Location/connections/doddi-connection-sharepoint-sync"` | Integration Connector resource ID for Microsoft SharePoint. |
+| `CONFIG_Sharepoint_Sites` | `"sites/doddi-sharepoint-to-gcs"` | Target SharePoint subsite path. |
+| `CONFIG_Sharepoint_Library` | `"Documents"` | Target SharePoint document library name. |
+| `CONFIG_GCS_Connection` | `"projects/$CONFIG_ProjectId/locations/$CONFIG_Location/connections/doddi-connection-gcs-sync"` | Integration Connector resource ID for Google Cloud Storage. |
+| `CONFIG_GCS_Bucket` | `"doddi-bucket-sharepoint-sync"` | Target GCS bucket for synchronized files, rendered `.pdf` pages, and `metadata.jsonl`. |
+| `CONFIG_CloudFunction_Name` | `"doddi-sharepoint-list-files"` | Name of the Traversal Cloud Function / Cloud Run service. |
+| `CONFIG_M365_Tenant_Id` | `"36764916-28f8-4114-9116-60602e790f00"` | Microsoft Azure AD / M365 Directory Tenant ID. |
+| `CONFIG_M365_Client_Id` | `"40e717da-e880-4013-a8ba-274593753477"` | Microsoft Azure AD Application (Client) ID. |
+| `CONFIG_M365_Secret_Name` | `"projects/388889235558/secrets/doddi-sharepoint-to-gcs-credentials/versions/1"` | GCP Secret Manager resource URI storing the M365 client secret. |
+| `CONFIG_SharePoint_Hostname` | `"priyambodo.sharepoint.com"` | SharePoint tenant hostname. |
+| `CONFIG_Scheduler_Job_Name` | `"doddi-sharepoint-sync-hourly"` | Name of the recurring Cloud Scheduler trigger job. |
+| `CONFIG_Scheduler_Cron_Schedule` | `"0 */12 * * *"` | Standard 5-field cron expression for recurring sync execution (every 12 hours). |
+| `CONFIG_Batch_Size` | `5` | Number of items sliced into each micro-batch per integration trigger. |
+| `CONFIG_Max_Parallel_Workers` | `5` | Maximum concurrency limit for parallel thread rendering and execution. |
+| `CONFIG_Sync_SharePoint_Files` | `true` | Boolean toggle to enable/disable syncing standard documents from Document Libraries. |
+| `CONFIG_Sync_SharePoint_Pages` | `true` | Boolean toggle to enable/disable querying and rendering Modern Site Pages (`.aspx` to `.pdf`). |
+| `CONFIG_Datastore_Id` | `"doddi-sharepoint-gcs-datastore_1782668342491_gcs_store"` | Vertex AI Discovery Engine / Agent Assist datastore ID. |
+| `CONFIG_Datastore_Location` | `"global"` | Vertex AI Discovery Engine datastore location. |
+| `CONFIG_Developer_Group_Or_User` | `"user:admin@priyambodo.altostrat.com"` | Developer user email or SSO group granted invoker rights for testing. |
+| `CONFIG_PDF_Conversion_Engine` | `"playwright"` | PDF rendering engine for `.aspx` conversion (`playwright` vs `weasyprint`). |
+
+*   **`playwright` (Default / Active)**: Launches full Headless Chromium browser automation (`playwright-python`). Executes live JavaScript, dropdowns, and dynamic widgets to capture exact desktop browser snapshots with high-definition styling. Deployed via custom Docker container (Option A) with Chromium binaries baked inside.
+*   **`weasyprint` (Fallback Engine)**: Pure Python HTML5 vector PDF generator. Used as an automatic fallback if Chromium container binaries are unavailable in standard buildpacks.
 
 ### 2. Azure App Registration & Microsoft Graph API Scopes
 Your Azure app registration must be granted both **Delegated and Application** types for these scopes:
