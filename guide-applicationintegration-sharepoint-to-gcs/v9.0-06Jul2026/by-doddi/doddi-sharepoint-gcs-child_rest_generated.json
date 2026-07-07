@@ -4,14 +4,14 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/yourorg-sharepoint-gcs-child-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-trigger",
       "startTasks": [
         {
           "taskId": "6"
         }
       ],
       "properties": {
-        "Trigger name": "yourorg-sharepoint-gcs-child-trigger"
+        "Trigger name": "doddi-sharepoint-gcs-child-trigger"
       },
       "inputVariables": {
         "names": [
@@ -69,7 +69,7 @@
         "connectionName": {
           "key": "connectionName",
           "value": {
-            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-sharepoint-sync"
+            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
           }
         },
         "connectionVersion": {
@@ -159,7 +159,7 @@
         "connectionName": {
           "key": "connectionName",
           "value": {
-            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-gcs-sync"
+            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
           }
         },
         "connectionVersion": {
@@ -208,7 +208,7 @@
         "connectionName": {
           "key": "connectionName",
           "value": {
-            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-gcs-sync"
+            "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
           }
         },
         "connectionVersion": {
@@ -326,7 +326,7 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "yourorg-bucket-sharepoint-sync"
+          "stringValue": "doddi-bucket-sharepoint-sync"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       }
@@ -346,7 +346,7 @@
         "key": "`CONFIG_GCS_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-gcs-sync"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
         },
         "displayName": "`CONFIG_GCS_Connection`"
       }
@@ -356,12 +356,12 @@
         "key": "`CONFIG_SharePoint_Connection`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-sharepoint-sync"
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
         },
         "displayName": "`CONFIG_SharePoint_Connection`"
       }
     }
   ],
   "description": "V4 child integration leveraging recursive Cloud Function and modern site page pre-renderer sync",
-  "runAsServiceAccount": "yourorg-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
 }
