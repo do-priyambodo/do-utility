@@ -57,7 +57,8 @@ def run_datastore_sync():
         "gcsSource": {
             "inputUris": [
                 f"gs://{bucket_name}/config/metadata.jsonl"
-            ]
+            ],
+            "dataSchema": "custom"
         },
         "reconciliationMode": "INCREMENTAL"
     }
