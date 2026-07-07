@@ -214,10 +214,11 @@ echo "✅ Job triggered successfully! The Traversal Cloud Function is now proces
 ### Step 3: Monitor Automated Execution & Diagnose Failures
 Because automated Cloud Scheduler runs execute asynchronously without an interactive terminal stream, you must monitor progress and diagnose any errors using Google Cloud Logging and our comprehensive diagnostic runbook:
 
-1. **Verify Scheduler Execution Result**:
+1. **Verify Scheduler Execution Result (Formatted in Local Time)**:
    ```bash
    gcloud logging read "resource.type=\"cloud_scheduler_job\" AND resource.labels.job_id:\"${SCHEDULER_JOB}\"" \
-       --project="${PROJECT_ID}" --limit=5 --order=desc --format="table(timestamp, severity, jsonPayload.status.message)"
+       --project="${PROJECT_ID}" --limit=5 --order=desc \
+       --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, jsonPayload.status.message)"
    ```
 2. **Refer to the Enterprise Troubleshooting Guide**:
    For complete end-to-end monitoring, error tracing, and root-cause resolution across all serverless components (Cloud Scheduler, Cloud Run/Functions, Integration Connectors, Application Integration, Secret Manager, VPC Service Controls, and SharePoint Throttling), **consult the official diagnostic document**:

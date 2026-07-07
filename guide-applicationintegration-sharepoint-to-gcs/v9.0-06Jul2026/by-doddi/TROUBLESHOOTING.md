@@ -172,7 +172,7 @@ gcloud logging read "resource.type=\"cloud_scheduler_job\" AND resource.labels.j
     --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
-    --format="table(timestamp, severity, jsonPayload.status.message, textPayload)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, jsonPayload.status.message, textPayload)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query
@@ -198,7 +198,7 @@ gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_
     --project="${PROJECT_ID}" \
     --limit=30 \
     --order=desc \
-    --format="table(timestamp, severity, textPayload, jsonPayload.message)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, textPayload, jsonPayload.message)"
 ```
 
 *(Tip: To filter strictly for crashes or exceptions, append `AND severity>=WARNING` to the query string.)*
@@ -225,7 +225,7 @@ gcloud logging read "resource.type=\"connectors.googleapis.com/Connection\" AND 
     --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
-    --format="table(timestamp, severity, jsonPayload.status.message, jsonPayload.message)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, jsonPayload.status.message, jsonPayload.message)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query
@@ -249,7 +249,7 @@ gcloud logging read "resource.type=\"integrations.googleapis.com/IntegrationVers
     --project="${PROJECT_ID}" \
     --limit=25 \
     --order=desc \
-    --format="table(timestamp, severity, jsonPayload.errorMessage, jsonPayload.integrationVersionId)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, jsonPayload.errorMessage, jsonPayload.integrationVersionId)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query
@@ -274,7 +274,7 @@ gcloud logging read "resource.type=\"gcs_bucket\" AND resource.labels.bucket_nam
     --project="${PROJECT_ID}" \
     --limit=20 \
     --order=desc \
-    --format="table(timestamp, severity, protoPayload.status.message, protoPayload.authenticationInfo.principalEmail)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, protoPayload.status.message, protoPayload.authenticationInfo.principalEmail)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query
@@ -298,7 +298,7 @@ gcloud logging read "protoPayload.serviceName=\"secretmanager.googleapis.com\"" 
     --project="${PROJECT_ID}" \
     --limit=15 \
     --order=desc \
-    --format="table(timestamp, protoPayload.authenticationInfo.principalEmail, protoPayload.status.message)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, protoPayload.authenticationInfo.principalEmail, protoPayload.status.message)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query
@@ -321,7 +321,7 @@ gcloud logging read "protoPayload.metadata.@type=\"type.googleapis.com/google.cl
     --project="${PROJECT_ID}" \
     --limit=15 \
     --order=desc \
-    --format="table(timestamp, protoPayload.metadata.violationReason, protoPayload.authenticationInfo.principalEmail)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, protoPayload.metadata.violationReason, protoPayload.authenticationInfo.principalEmail)"
 ```
 
 #### 🔍 GCP Console Log Explorer Query (VPC-SC & Firewall Rules)
@@ -356,7 +356,7 @@ gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_
     --project="${PROJECT_ID}" \
     --limit=25 \
     --order=desc \
-    --format="table(timestamp, severity, textPayload)"
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, textPayload)"
 ```
 
 ### 🛡️ How to Resolve & Prevent Throttling in V9.0
