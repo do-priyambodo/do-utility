@@ -172,12 +172,15 @@ While the synchronization runs in the background across Application Integration 
 In automated production environments, synchronization is managed entirely by Google Cloud Scheduler, which triggers the Traversal Cloud Function on a recurring cron schedule (e.g., `0 */12 * * *` for every 12 hours) via secure OpenID Connect (OIDC) authentication.
 
 ### Step 1: Verify Cloud Scheduler Job Status
-Check if your configured Cloud Scheduler job is active and enabled in your GCP project:
+Check if your configured Cloud Scheduler job is active and enabled in your GCP project (ensure service account impersonation is disabled so commands run directly as your user):
 
 ```bash
-export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
-export SCHEDULER_JOB=$(jq -r '.CONFIG_Scheduler_Job_Name' parameters.json)
-export LOCATION=$(jq -r '.CONFIG_Location' parameters.json)
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+unset CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT 2>/dev/null || true
+
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+export SCHEDULER_JOB=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
 
 # List job details and schedule:
 gcloud scheduler jobs describe "${SCHEDULER_JOB}" --location="${LOCATION}" --project="${PROJECT_ID}"
@@ -194,6 +197,9 @@ python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 Once verified, you do not need to wait for the next scheduled cron interval to execute an automated sync. You can manually force Cloud Scheduler to trigger an immediate run from your terminal:
 
 ```bash
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+unset CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT 2>/dev/null || true
+
 export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 export SCHEDULER_JOB=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', ''))")
 export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
