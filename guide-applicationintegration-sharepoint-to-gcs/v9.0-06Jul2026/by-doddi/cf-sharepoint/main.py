@@ -327,7 +327,15 @@ def main(request):
         # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages and integration is triggered
         if trigger_integration and bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None:
             print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
-            active_gcs_paths = set(item.get("RelativePath") for item in all_list if item.get("RelativePath"))
+            active_gcs_paths = set()
+            for item in all_list:
+                rel = item.get("RelativePath")
+                if not rel:
+                    continue
+                if item.get("IsPage") or rel.startswith("pages/") or rel.startswith("files/"):
+                    active_gcs_paths.add(rel)
+                else:
+                    active_gcs_paths.add(f"files/{rel}")
             deleted_count = 0
             for cached_path in list(gcs_cache.keys()):
                 if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
