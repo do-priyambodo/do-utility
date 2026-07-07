@@ -1,7 +1,7 @@
-# Maxis SharePoint to GCS Synchronization — Master Architecture & Scaling Plan
+# YourOrg SharePoint to GCS Synchronization — Master Architecture & Scaling Plan
 
 ## Executive Summary
-This document serves as the master architectural reference and future scaling plan for the Maxis SharePoint-to-GCS synchronization pipeline (V7.0). It captures all evaluated conversion methodologies, engine comparison matrices, and production scaling steps.
+This document serves as the master architectural reference and future scaling plan for the YourOrg SharePoint-to-GCS synchronization pipeline (V7.0). It captures all evaluated conversion methodologies, engine comparison matrices, and production scaling steps.
 
 ---
 
@@ -22,7 +22,7 @@ To solve customer feedback regarding missing content, unrendered images, and 1-l
 ### Methodology 3: Gotenberg / External Dedicated Microservice
 *   **Mechanism**: Offloads document rendering to an external Dockerized API container (Gotenberg) running Chrome/LibreOffice.
 *   **Pros**: Decouples heavy rendering compute from serverless API endpoints.
-*   **Cons**: Introduces unnecessary network latency, extra infrastructure costs, and operational maintenance overhead for Maxis.
+*   **Cons**: Introduces unnecessary network latency, extra infrastructure costs, and operational maintenance overhead for YourOrg.
 
 ---
 
@@ -42,20 +42,20 @@ To solve customer feedback regarding missing content, unrendered images, and 1-l
 
 ### Phase 1: Enterprise Scaling & Rate-Limit Mitigation
 *   **Modular Backend Architecture:** Decomposed monolithic 1,023-line code into `graph_client.py`, `pdf_renderer.py`, `sharepoint_traversal.py`, and `main.py` following industry best practices. Maintained `main.py.monolithic.bak` and git tag `v6.0-monolithic-backup` for instant revertability.
-*   **O(1) GCS Delta Cache (`$delta`)**: The pipeline automatically checks existing files in `gs://doddi-bucket-sharepoint-sync/pages/`. Pages matching existing timestamps are skipped instantly, protecting Microsoft Graph API limits and ensuring daily incremental runs finish in under 60 seconds.
+*   **O(1) GCS Delta Cache (`$delta`)**: The pipeline automatically checks existing files in `gs://yourorg-bucket-sharepoint-sync/pages/`. Pages matching existing timestamps are skipped instantly, protecting Microsoft Graph API limits and ensuring daily incremental runs finish in under 60 seconds.
 *   **Parallel Micro-Batching**: Inventory is sliced into micro-batches (`CONFIG_Batch_Size: 10`) running concurrently across 10 parallel workers (`CONFIG_Max_Parallel_Workers: 10`).
 *   **Action Item**: Execute an off-peak **Initial Seed Warm-Up** run to populate the delta cache across all 3,000+ items.
 
 ### Phase 2: Downstream Contact Center AI Ingestion (GKA & Vertex AI Search)
 *   **Automated Citation Routing**: Every sync appends exact citations to `metadata.jsonl`:
     ```json
-    {"id": "gs://doddi-bucket-sharepoint-sync/pages/Culture.pdf", "structData": {"sharepoint_url": "https://maxis.sharepoint.com/.../Culture.aspx"}}
+    {"id": "gs://yourorg-bucket-sharepoint-sync/pages/Culture.pdf", "structData": {"sharepoint_url": "https://yourorg.sharepoint.com/.../Culture.aspx"}}
     ```
 *   **Action Item**: Configure Genesys Agent Assist widget with `linkMetadataKey: "sharepoint_url"` so agent clicks navigate directly to authenticated live SharePoint pages instead of storage blobs.
-*   **Automated 12-Hour Datastore Indexing Scheduler (`deploy_scheduler_datastore_sync.sh`)**: Deployed an automated Cloud Scheduler cron job (`doddi-sharepoint-datastore-sync-12h`) running every 12 hours (`0 */12 * * *`) targeting the Discovery Engine `importDocuments` API (`INCREMENTAL` mode) with OIDC/OAuth Service Account authentication (`roles/discoveryengine.editor`).
+*   **Automated 12-Hour Datastore Indexing Scheduler (`deploy_scheduler_datastore_sync.sh`)**: Deployed an automated Cloud Scheduler cron job (`yourorg-sharepoint-datastore-sync-12h`) running every 12 hours (`0 */12 * * *`) targeting the Discovery Engine `importDocuments` API (`INCREMENTAL` mode) with OIDC/OAuth Service Account authentication (`roles/discoveryengine.editor`).
 *   **Standalone Manual Test Runner (`sync_datastore.py`)**: A lightweight script to immediately trigger incremental indexing and verify Datastore ingestion from `gs://YOUR_BUCKET/config/metadata.jsonl`.
 
 
 ### Phase 3: Operational Monitoring & Lifecycle Management
-*   **Action Item**: Configure Cloud Logging alerts for `HTTP 500` or container crashes on `doddi-sharepoint-list-files`.
-*   **Action Item**: Apply a 90-day GCS lifecycle deletion rule on `gs://doddi-bucket-sharepoint-sync/config/status/` audit records.
+*   **Action Item**: Configure Cloud Logging alerts for `HTTP 500` or container crashes on `yourorg-sharepoint-list-files`.
+*   **Action Item**: Apply a 90-day GCS lifecycle deletion rule on `gs://yourorg-bucket-sharepoint-sync/config/status/` audit records.

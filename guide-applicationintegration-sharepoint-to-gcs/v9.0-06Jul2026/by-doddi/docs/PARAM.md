@@ -6,7 +6,7 @@ This guide details how to validate the integration parameters and provides step-
 
 ## 🔍 Section 1: Parameters Validator Utility (`validate_params.py`)
 
-The validator script [validate_params.py](file:///usr/local/google/home/yourorg/Coding/DO-PRIYAMBODO/customer-maxis/do-applicationintegration/app/v2.0/util/validate_params.py) is a diagnostic tool designed to verify your configuration file `parameters.json` before deploying any Cloud Functions or Application Integration workflows.
+The validator script [validate_params.py](file:///usr/local/google/home/yourorg/Coding/DO-PRIYAMBODO/customer-yourorg/do-applicationintegration/app/v2.0/util/validate_params.py) is a diagnostic tool designed to verify your configuration file `parameters.json` before deploying any Cloud Functions or Application Integration workflows.
 
 ### What it checks:
 1. **Local Format Validation**:

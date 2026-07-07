@@ -13,33 +13,33 @@ Total Items Requiring Synchronization   : 0
 ================================================================
 
 --- PART 1: ALL AVAILABLE RESOURCES IN SHAREPOINT (14) ---
-1. [Document] 17June2026-by-DODDI.txt
-   Relative Path : 17June2026-by-DODDI/17June2026-by-DODDI.txt
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/17June2026-by-DODDI.txt
+1. [Document] 17June2026-by-YOURORG.txt
+   Relative Path : 17June2026-by-YOURORG/17June2026-by-YOURORG.txt
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/17June2026-by-YOURORG/17June2026-by-YOURORG.txt
 
 2. [Document] Judges InfoPack.pdf
-   Relative Path : 17June2026-by-DODDI/Judges InfoPack.pdf
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judges%20InfoPack.pdf
+   Relative Path : 17June2026-by-YOURORG/Judges InfoPack.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/17June2026-by-YOURORG/Judges%20InfoPack.pdf
 
 3. [Document] Judges Judging Criteria Final.pdf
-   Relative Path : 17June2026-by-DODDI/Judges Judging Criteria Final.pdf
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judges%20Judging%20Criteria%20Final.pdf
+   Relative Path : 17June2026-by-YOURORG/Judges Judging Criteria Final.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/17June2026-by-YOURORG/Judges%20Judging%20Criteria%20Final.pdf
 
 4. [Document] Judging Criteria Prelim.pdf
-   Relative Path : 17June2026-by-DODDI/Judging Criteria Prelim.pdf
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/17June2026-by-DODDI/Judging%20Criteria%20Prelim.pdf
+   Relative Path : 17June2026-by-YOURORG/Judging Criteria Prelim.pdf
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/17June2026-by-YOURORG/Judging%20Criteria%20Prelim.pdf
 
-5. [Document] doddi-is-speaking-optimized.webp
-   Relative Path : Files by Doddi/doddi-is-speaking-optimized.webp
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/Files%20by%20Doddi/doddi-is-speaking-optimized.webp
+5. [Document] yourorg-is-speaking-optimized.webp
+   Relative Path : Files by YourOrg/yourorg-is-speaking-optimized.webp
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/Files%20by%20YourOrg/yourorg-is-speaking-optimized.webp
 
 6. [Document] BidBot.png
    Relative Path : BidBot.png
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/BidBot.png
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/BidBot.png
 
 7. [Document] bitbot-google.jpeg
    Relative Path : bitbot-google.jpeg
-   Source URL    : https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/Shared%20Documents/bitbot-google.jpeg
+   Source URL    : https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/Shared%20Documents/bitbot-google.jpeg
 
 8. [Page] Culture.html
    Relative Path : pages/Culture.html

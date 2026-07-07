@@ -132,7 +132,7 @@ python3 sync/sync_datastore.py
 ```
 *(Alternatively, trigger the deployed Cloud Scheduler job directly via CLI)*:
 ```bash
-gcloud scheduler jobs run doddi-sharepoint-datastore-sync-12h --location=$(python3 -c "import json; print(json.load(open('parameters.json'))['CONFIG_Location'])")
+gcloud scheduler jobs run yourorg-sharepoint-datastore-sync-12h --location=$(python3 -c "import json; print(json.load(open('parameters.json'))['CONFIG_Location'])")
 ```
 
 ### Step 3.2: Verify Ingestion Status
@@ -162,8 +162,8 @@ When reporting back to stakeholders or customers after a full test run, complete
 # 📋 V9.0 SharePoint-to-GCS Synchronization: Full Test Execution Report
 
 **Date of Execution:** [e.g., 01 July 2026]
-**Environment / Customer:** [e.g., Customer Maxis - Production / Staging Tenant]
-**Operator / Engineer:** [e.g., Doddi Priyambodo]
+**Environment / Customer:** [e.g., Customer YourOrg - Production / Staging Tenant]
+**Operator / Engineer:** [e.g., YourOrg Priyambodo]
 **Pipeline Version:** V9.0 (Modular Serverless Architecture)
 
 ---
@@ -200,12 +200,12 @@ When reporting back to stakeholders or customers after a full test run, complete
 * **Execution Results:** All 180 child workflow executions completed with status `SUCCEEDED`. Zero timeout drops or memory limit exceeded events recorded on Cloud Run.
 
 #### C. Vertex AI Discovery Engine Indexing (`cf-datastore`)
-* **Service Endpoint:** `doddi-datastore-import` Cloud Function triggered via OIDC authentication.
+* **Service Endpoint:** `yourorg-datastore-import` Cloud Function triggered via OIDC authentication.
 * **Ingestion Status:** Manifest `metadata.jsonl` successfully imported into Vertex AI Datastore. All 9,000 documents indexed and available for Generative Knowledge Assist (GKA) citation querying.
 
 ---
 
 ### 📝 4. Additional Observations & Next Steps
 * **Observations:** The pipeline operated smoothly within Google Cloud quotas and Microsoft Entra ID rate limits. Memory utilization on the `cf-sharepoint` Cloud Run container remained steady under ~450 MB per instance.
-* **Next Operational Step:** The system is certified for live production operation. Automated Cloud Scheduler cron jobs (`doddi-sharepoint-full-sync-24h` and `doddi-sharepoint-datastore-sync-12h`) have been enabled for ongoing automated delta synchronization.
+* **Next Operational Step:** The system is certified for live production operation. Automated Cloud Scheduler cron jobs (`yourorg-sharepoint-full-sync-24h` and `yourorg-sharepoint-datastore-sync-12h`) have been enabled for ongoing automated delta synchronization.
 ```

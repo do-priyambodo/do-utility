@@ -181,7 +181,7 @@ When customer service agents handle live interactions inside **Genesys Contact C
 │                                                                                 │                           │
 │   ┌───────────────────────────────────────────────┐     ┌───────────────────────┴───────────────────────┐   │
 │   │        5. Microsoft 365 SharePoint Intranet   │     │       4. Synchronized GCS Repository          │   │
-│   │           (https://maxis.sharepoint.com)      │     │         (gs://yourorg-bucket-sharepoint-sync) │   │
+│   │           (https://yourorg.sharepoint.com)      │     │         (gs://yourorg-bucket-sharepoint-sync) │   │
 │   │                                               │     │                                               │   │
 │   │  • Live Interactive Enterprise Page           │◀────│ • Rendered Executive PDFs (pages/*.pdf)       │   │
 │   │  • Enforces M365 Entra ID SSO / Permissions   │     │ • Metadata Manifest (config/metadata.jsonl)   │   │
@@ -193,7 +193,7 @@ When customer service agents handle live interactions inside **Genesys Contact C
 
 1. **Synchronization & Discovery Ingestion**:
    * **GCS Repository**: The backend Traversal & Integration pipeline keeps PDF snapshots and `config/metadata.jsonl` continuously synchronized in GCS.
-   * **12-Hour Automated Scheduler**: A dedicated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-12h`) calls `sync_datastore.py` every 12 hours (`0 */12 * * *`) to ingest `metadata.jsonl` into **Vertex AI Discovery Engine** (`importDocuments` in `INCREMENTAL` mode).
+   * **12-Hour Automated Scheduler**: A dedicated Cloud Scheduler job (`yourorg-sharepoint-datastore-sync-12h`) calls `sync_datastore.py` every 12 hours (`0 */12 * * *`) to ingest `metadata.jsonl` into **Vertex AI Discovery Engine** (`importDocuments` in `INCREMENTAL` mode).
 
 2. **Real-Time Agent Query in Genesys**:
    * During a live customer interaction on **Genesys Agent Desktop**, real-time conversation audio/text triggers **Google Contact Center AI (CCAI) / Agent Assist**.
@@ -211,7 +211,7 @@ When customer service agents handle live interactions inside **Genesys Contact C
        }
      };
      ```
-   * When an agent clicks the citation link, the UI automatically intercepts the default blob URL and redirects the browser directly to `sharepoint_url` (`https://maxis.sharepoint.com/...`).
+   * When an agent clicks the citation link, the UI automatically intercepts the default blob URL and redirects the browser directly to `sharepoint_url` (`https://yourorg.sharepoint.com/...`).
 
 4. **Live SharePoint Navigation & SSO Enforcement**:
    * The agent lands on the official, interactive SharePoint modern page.

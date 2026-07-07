@@ -30,7 +30,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
 *Goal*: Automate periodic execution of the targeted synchronization pipeline.
 
 - [x] **Task 3: Create or Replace Cloud Scheduler Jobs**
-  - *Completed*: Updated scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to dynamically read `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` and point to the Cloud Function URI with OIDC authentication. Successfully executed `./deploy_scheduler_targeted_gcs_sync.sh` creating active Cloud Scheduler job `doddi-sharepoint-sync-hourly-gcs-dynamic`.
+  - *Completed*: Updated scheduler deployment scripts (`deploy_scheduler_targeted_gcs_sync.sh`, `deploy_scheduler_full_sharepoint_sync.sh`) to dynamically read `CONFIG_Scheduler_Cron_Schedule` from `parameters.json` and point to the Cloud Function URI with OIDC authentication. Successfully executed `./deploy_scheduler_targeted_gcs_sync.sh` creating active Cloud Scheduler job `yourorg-sharepoint-sync-hourly-gcs-dynamic`.
 
 ---
 
@@ -54,7 +54,7 @@ This document outlines the execution roadmap for synchronizing Microsoft SharePo
   - *IAM Validation*: Confirmed that granting `roles/discoveryengine.editor` to the service account allows clean 1-second import submission without permission errors.
 
 - [x] **Task 4b.2: Deploy Automated Datastore Cron Scheduler (`deploy_scheduler_datastore_sync.sh`)**
-  - *Delivered Architecture*: Deployed Cloud Scheduler job `doddi-sharepoint-datastore-sync-12h` running every 12 hours (`0 */12 * * *`) directly targeting the Google Cloud Discovery Engine import endpoint (`discoveryengine.googleapis.com/.../documents:import`) using OAuth Service Account token authentication (`--oauth-service-account-email`).
+  - *Delivered Architecture*: Deployed Cloud Scheduler job `yourorg-sharepoint-datastore-sync-12h` running every 12 hours (`0 */12 * * *`) directly targeting the Google Cloud Discovery Engine import endpoint (`discoveryengine.googleapis.com/.../documents:import`) using OAuth Service Account token authentication (`--oauth-service-account-email`).
   - *GCP Console Tip*: When configuring the Data Store in the GCP Console, create it as **Cloud Storage > JSON lines (JSONL) with custom metadata** pointing directly to `gs://YOUR_BUCKET/config/metadata.jsonl` to ensure citation URLs work seamlessly!
 
 ---

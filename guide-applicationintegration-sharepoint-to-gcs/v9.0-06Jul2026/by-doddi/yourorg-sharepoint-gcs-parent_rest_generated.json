@@ -1,34 +1,73 @@
 {
-  "origin": "UI",
-  "snapshotNumber": "1",
   "triggerConfigs": [
     {
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
       "triggerId": "api_trigger/yourorg-sharepoint-gcs-parent-trigger",
-      "startTaskId": "1"
+      "startTasks": [
+        {
+          "taskId": "1"
+        }
+      ],
+      "properties": {
+        "Trigger name": "yourorg-sharepoint-gcs-parent-trigger"
+      },
+      "inputVariables": {
+        "names": [
+          "`Parent_Files_List`"
+        ]
+      },
+      "outputVariables": {}
     }
   ],
   "taskConfigs": [
     {
-      "task": "SubIntegrationForEachLoopTask",
-      "taskNumber": "1",
-      "label": "ForEach Loop",
+      "task": "SubWorkflowForEachLoopV2Task",
       "parameters": {
-        "subIntegrationName": {
-          "stringValue": "yourorg-sharepoint-gcs-child"
+        "workflowName": {
+          "key": "workflowName",
+          "value": {
+            "stringValue": "yourorg-sharepoint-gcs-child"
+          }
         },
-        "subIntegrationTriggerId": {
-          "stringValue": "api_trigger/yourorg-sharepoint-gcs-child-trigger"
+        "triggerId": {
+          "key": "triggerId",
+          "value": {
+            "stringValue": "api_trigger/yourorg-sharepoint-gcs-child-trigger"
+          }
         },
-        "subIntegrationMapCurrentElementTo": {
-          "stringValue": "INPUT_Loop_Item"
+        "iterationElementMapping": {
+          "key": "iterationElementMapping",
+          "value": {
+            "stringValue": "INPUT_Loop_Item"
+          }
         },
-        "arrayToIterate": {
-          "stringValue": "Parent_Files_List"
+        "listToIterate": {
+          "key": "listToIterate",
+          "value": {
+            "stringValue": "$`Parent_Files_List`$"
+          }
+        },
+        "disableEucPropagation": {
+          "key": "disableEucPropagation",
+          "value": {
+            "booleanValue": false
+          }
+        },
+        "loopMetadata": {
+          "key": "loopMetadata",
+          "value": {
+            "stringArray": {
+              "stringValues": [
+                "$`Task_1_loopMetadata`$"
+              ]
+            }
+          }
         }
-      }
+      },
+      "displayName": "ForEach Loop",
+      "taskId": "1"
     }
   ],
   "integrationParameters": [
@@ -40,6 +79,12 @@
       "defaultValue": {
         "jsonValue": "[]"
       }
+    },
+    {
+      "key": "`Task_1_loopMetadata`",
+      "dataType": "JSON_VALUE",
+      "displayName": "`Task_1_loopMetadata`",
+      "isTransient": true
     }
   ],
   "integrationConfigParameters": [
@@ -51,9 +96,6 @@
           "stringValue": "yourorg-bucket-sharepoint-sync"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
-      },
-      "value": {
-        "stringValue": "yourorg-bucket-sharepoint-sync"
       }
     },
     {
@@ -64,9 +106,6 @@
           "stringValue": "Documents"
         },
         "displayName": "`CONFIG_Sharepoint_Library`"
-      },
-      "value": {
-        "stringValue": "Documents"
       }
     },
     {
@@ -77,9 +116,6 @@
           "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-gcs-sync"
         },
         "displayName": "`CONFIG_GCS_Connection`"
-      },
-      "value": {
-        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-gcs-sync"
       }
     },
     {
@@ -90,9 +126,6 @@
           "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-sharepoint-sync"
         },
         "displayName": "`CONFIG_SharePoint_Connection`"
-      },
-      "value": {
-        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/yourorg-connection-sharepoint-sync"
       }
     }
   ],

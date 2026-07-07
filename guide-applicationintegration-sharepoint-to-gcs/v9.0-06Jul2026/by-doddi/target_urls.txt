@@ -1,8 +1,8 @@
 # Add your target SharePoint SitePages or document URLs below (one URL per line)
 # Lines starting with # are comments and will be ignored automatically
 
-https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Our-Leadership.aspx
-https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Our-teams.aspx
-https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Vision-and-Priorities.aspx
-https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/Culture.aspx
-https://priyambodo.sharepoint.com/sites/doddi-sharepoint-to-gcs/SitePages/training.aspx
+https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/SitePages/Our-Leadership.aspx
+https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/SitePages/Our-teams.aspx
+https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/SitePages/Vision-and-Priorities.aspx
+https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/SitePages/Culture.aspx
+https://priyambodo.sharepoint.com/sites/yourorg-sharepoint-to-gcs/SitePages/training.aspx

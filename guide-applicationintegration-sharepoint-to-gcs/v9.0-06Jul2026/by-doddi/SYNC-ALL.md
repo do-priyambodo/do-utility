@@ -8,7 +8,7 @@
 > * **Automatic Self-Healing**: V9.0 automatically detects any missing or deleted items and re-renders/uploads only what is needed while preserving existing inventory.
 
 > [!NOTE]
-> **Customer Operational Reference — Maxis Deployment**
+> **Customer Operational Reference — YourOrg Deployment**
 > This operational guide outlines the two supported methods for triggering a full Microsoft 365 SharePoint-to-Google Cloud Storage (GCS) synchronization in your environment:
 > * **Option 1: Manual Execution via Virtual Machine (Compute Engine / Cloud Shell)** — Recommended for initial verification, controlled debugging, and easier real-time troubleshooting.
 > * **Option 2: Automated Execution via Cloud Scheduler** — Recommended for scheduled, recurring unattended production syncs (hourly, 12-hourly, or daily).
@@ -20,9 +20,9 @@
 Before initiating either synchronization method, ensure your local environment configuration is ready:
 1. **Confirm Working Directory**: Navigate to the root folder of the V9.0 application bundle:
    ```bash
-   cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-doddi
+   cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg
    ```
-2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
+2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
 3. **Verify Python Environment**: Ensure Python 3.9+ and required libraries (`google-cloud-storage`, `msal`, `requests`) are installed:
    ```bash
    python3 -m pip install -r cf-sharepoint/requirements.txt --quiet
@@ -100,7 +100,7 @@ python3 sync/sync_sharepoint_to_gcs.py
 ================================================================================
 
 🔍 Resolving Cloud Function URI dynamically...
-✅ Resolved Cloud Function URI: https://doddi-sharepoint-list-files-00009-8sz.asia-southeast1.run.app
+✅ Resolved Cloud Function URI: https://yourorg-sharepoint-list-files-00009-8sz.asia-southeast1.run.app
    ⏳ Crawling SharePoint inventory & submitting batches to Application Integration (Elapsed time: 14s)... 
    ✅ Completed in 14s!                                    
 
@@ -134,7 +134,7 @@ While the synchronization runs in the background across Application Integration 
 
    python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <EXECUTION_ID>
    ```
-3. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/TROUBLSHOOTING.md).
+3. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md).
 
 ---
 
@@ -182,7 +182,7 @@ Because automated Cloud Scheduler runs execute asynchronously without an interac
 2. **Refer to the Enterprise Troubleshooting Guide**:
    For complete end-to-end monitoring, error tracing, and root-cause resolution across all serverless components (Cloud Scheduler, Cloud Run/Functions, Integration Connectors, Application Integration, Secret Manager, VPC Service Controls, and SharePoint Throttling), **consult the official diagnostic document**:
    
-   👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v9.0-06Jul2026/by-doddi/TROUBLSHOOTING.md)**
+   👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md)**
 
 ---
-*Generated for Maxis Enterprise Support — Application Integration V9.0 Pipeline.*
+*Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*

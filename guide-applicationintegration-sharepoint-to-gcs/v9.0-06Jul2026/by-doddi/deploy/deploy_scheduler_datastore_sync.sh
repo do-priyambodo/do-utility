@@ -15,7 +15,7 @@ DATASTORE_ID=$(python3 -c "import json; print(json.load(open('parameters.json'))
 DATASTORE_LOC=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Location', 'global'))")
 BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
-JOB_NAME="doddi-sharepoint-datastore-sync-12h"
+JOB_NAME="yourorg-sharepoint-datastore-sync-12h"
 
 if [ -z "$PROJECT_ID" ] || [ -z "$DATASTORE_ID" ] || [ -z "$BUCKET_NAME" ]; then
   echo "❌ Error: CONFIG_ProjectId, CONFIG_Datastore_Id, and CONFIG_GCS_Bucket must be set in parameters.json!"

@@ -13,7 +13,7 @@ The V9.0 codebase is organized into clean domain-specific subdirectories with au
 * **`test/`**: Verification unit tests (`test_image_fetch.py`), Jupyter notebooks, and subset trial runners.
 * **`util/`**: Prerequisite IAM scripts (`prereq/`), parameter validation (`validate_params.py`), and logging helpers (`log_helper.py`).
 * **`docs/`**: Architecture guides (`GUIDE_GKA_Live_SharePoint_Links.md`), parameter reference (`PARAM.md`), and roadmaps.
-* **Root (`by-doddi/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`), SharePoint Traversal & PDF backend source (`cf-sharepoint/`), and dedicated Datastore import service (`cf-datastore/`).
+* **Root (`by-yourorg/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`), SharePoint Traversal & PDF backend source (`cf-sharepoint/`), and dedicated Datastore import service (`cf-datastore/`).
 
 ---
 
@@ -457,7 +457,7 @@ To ensure that newly synchronized SharePoint files and converted `.aspx` PDFs in
 
 ### Step 1: Verify Datastore Configuration in `parameters.json`
 Before creating the scheduler or running manual tests, open `parameters.json` and verify that your Discovery Engine Datastore credentials and location are configured:
-*   `CONFIG_Datastore_Id`: The ID of your Vertex AI Search / Agent Assist Datastore (e.g. `doddi-sharepoint-gcs-datastore_1782668342491_gcs_store`).
+*   `CONFIG_Datastore_Id`: The ID of your Vertex AI Search / Agent Assist Datastore (e.g. `yourorg-sharepoint-gcs-datastore_1782668342491_gcs_store`).
 *   `CONFIG_Datastore_Location`: The location of your Datastore (e.g. `global` or `us`, `eu`, `asia-southeast1`).
 *   `CONFIG_GCS_Bucket`: Your sync bucket where `config/metadata.jsonl` is written.
 *   `CONFIG_Scheduler_Cron_Schedule`: The recurrence interval (default: `0 */12 * * *` for every 12 hours; or use `0 3,9,15,21 * * *` for 4x daily runs).
@@ -491,7 +491,7 @@ python3 sync/sync_datastore.py
 *(This confirms your Service Account IAM role is active and that your Datastore accepts the metadata manifest!)*
 
 ### Step 4: Deploy Automated 12-Hour Cron Scheduler
-Deploy the automated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-12h`) to run every 12 hours in the background:
+Deploy the automated Cloud Scheduler job (`yourorg-sharepoint-datastore-sync-12h`) to run every 12 hours in the background:
 ```bash
 ./deploy/deploy_scheduler_datastore_sync.sh
 ```

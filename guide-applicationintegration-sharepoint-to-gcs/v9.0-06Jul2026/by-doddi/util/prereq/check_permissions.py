@@ -381,7 +381,7 @@ def main():
     if log_helper:
         log_helper.init_logging("setup")
     parser = argparse.ArgumentParser(
-        description="Verify IAM permissions and requirements for Maxis SharePoint to GCS Sync Integration.",
+        description="Verify IAM permissions and requirements for YourOrg SharePoint to GCS Sync Integration.",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
