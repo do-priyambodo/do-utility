@@ -92,6 +92,10 @@ python3 sync/sync_datastore.py
 
 The import will read the repaired `config/metadata.jsonl` and successfully index 100% of the documents into your Vertex AI Discovery Engine Datastore.
 
+> [!NOTE]
+> **Understanding the Console Activity Log:**
+> In the Google Cloud Console (**Vertex AI Search > Data Stores > Activity** tab), past failed import operations remain listed in chronological history. Seeing older failed entries is normal; check the **topmost row** (most recent timestamp) to verify that your new import operation completed with status **Succeeded**, or check the **Documents** tab to view your indexed files.
+
 ---
 
 ## 6. Permanent Prevention for Future Traversal Runs
