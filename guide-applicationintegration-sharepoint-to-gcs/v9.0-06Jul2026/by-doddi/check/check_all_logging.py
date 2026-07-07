@@ -140,7 +140,7 @@ def main():
     )
 
     # 2. Traversal Cloud Function / Cloud Run Logs
-    q_fn = f'(resource.type="cloud_function" OR resource.type="cloud_run_revision") AND resource.labels.service_name:"{function_name}"{time_filter}'
+    q_fn = f'(resource.type="cloud_function" OR resource.type="cloud_run_revision") AND resource.labels.service_name:"{function_name}" AND NOT textPayload=~"ktd|watcher.go|saferun.go|krsieventreader.go|ktdclient.go|goroutine"{time_filter}'
     run_gcloud_logging(
         f"TRAVERSAL CLOUD FUNCTION STREAM ({function_name})",
         q_fn,
