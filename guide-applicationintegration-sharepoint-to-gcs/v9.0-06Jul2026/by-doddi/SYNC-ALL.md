@@ -244,4 +244,37 @@ python3 sync/sync_datastore.py
 ```
 
 ---
+
+## 🔍 Pre- & Post-Sync Verification (Before & After Checks)
+
+To quantitatively verify the synchronization pipeline before and after execution, V9.0 provides two dedicated automated diagnostic scripts in the `check/` directory:
+
+### 1. Pre-Sync Verification (`check_syncall_before.py`)
+Before executing a synchronization run, call `check_syncall_before.py` to inspect the target SharePoint inventory and calculate the exact delta that will be synchronized:
+
+```bash
+python3 check/check_syncall_before.py
+```
+
+**What it calculates:**
+* **SharePoint Target Inventory**: Total modern site pages (`.aspx` to be rendered as `.pdf`) and total document files in the configured SharePoint site and library.
+* **Sync Delta Estimation**: Exactly how many files and pages are new or modified and **will be synced** during execution.
+* **Delta Cache Hits**: How many files and pages are already up-to-date in Google Cloud Storage and will be skipped in O(1) time (<1ms per item).
+
+---
+
+### 2. Post-Sync Verification (`check_syncall_after.py`)
+After the synchronization workflow completes, call `check_syncall_after.py` to verify that all files and pages have landed in Google Cloud Storage and are fully up-to-date:
+
+```bash
+python3 check/check_syncall_after.py
+```
+
+**What it calculates:**
+* **Google Cloud Storage Inventory**: Total modern site pages (`pages/`) and total document files (`files/`) currently stored in the GCS bucket, along with total storage size.
+* **Verified Delta Status**: Exactly how many files and pages are **already synced** and up-to-date against live SharePoint timestamps.
+* **Remaining Delta Check**: Confirms that `0` items remain unsynced, validating 100% synchronization completeness.
+
+---
 *Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*
+
