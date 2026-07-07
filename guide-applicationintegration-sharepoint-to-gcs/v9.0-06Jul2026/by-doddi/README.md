@@ -297,10 +297,18 @@ To deploy an automated hourly background trigger that reads `target_urls.txt` fr
 
 ---
 
-### Option 2: Sync the whole SharePoint Sites content
-Crawl and synchronize **all** documents and modern site pages across the configured SharePoint subsite and library with O(1) GCS timestamp skipping.
+### Option 2: Sync the whole SharePoint Sites content (`SYNC-ALL.md`)
+Crawl and synchronize **all** documents and modern site pages across the configured SharePoint subsite and library with O(1) GCS timestamp skipping and streaming parallel pipelined chunk execution.
+
+> [!IMPORTANT]
+> **V9.0 Operational Note: DO NOT Empty Your Storage Bucket Before Syncing!**
+> When executing a full enterprise synchronization in **V9.0**, **DO NOT delete or empty existing files, pages (`pages/`), or metadata (`config/metadata.jsonl`)** in your GCS bucket.
+> * **Pre-Render Delta Cache Hit**: V9.0 checks SharePoint timestamps (`lastModifiedDateTime`) against existing GCS objects *before* browser rendering, skipping unchanged pages instantly (<1ms).
+> * **Automatic Self-Healing**: V9.0 detects missing or deleted files and restores only what is missing without re-rendering existing valid inventory.
+> * For the complete end-to-end enterprise runbook, see [SYNC-ALL.md](SYNC-ALL.md).
 
 #### A. Manual On-Demand Execution (Terminal)
+For detailed step-by-step diagnostic execution instructions, consult the complete runbook in **[SYNC-ALL.md](SYNC-ALL.md)**:
 ```bash
 python3 sync/sync_sharepoint_to_gcs.py
 ```
@@ -312,25 +320,10 @@ To deploy an automated periodic full-crawl schedule:
 ```
 
 #### C. Step-by-Step Playbook: Start Sync for Whole Contents (~Thousands of Pages)
-When initiating a fresh enterprise synchronization across thousands of documents and site pages, follow this 4-step execution and verification playbook:
+When initiating an enterprise synchronization across thousands of documents and site pages, follow this execution playbook (see **[SYNC-ALL.md](SYNC-ALL.md)** for full reference):
 
-##### Step 1: Empty the Storage Bucket (Clean Reset)
-Run this block in Cloud Shell to wipe existing files, site pages, and delta cache manifests so the sync starts from a clean baseline:
-```bash
-BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
-echo "🧹 1. Wiping Document Library files (files/**)..."
-gcloud storage rm -r gs://${BUCKET_NAME}/files/** 2>/dev/null || echo "No files to delete."
-
-echo "🧹 2. Wiping rendered Modern Site Pages (pages/**)..."
-gcloud storage rm -r gs://${BUCKET_NAME}/pages/** 2>/dev/null || echo "No pages to delete."
-
-echo "🧹 3. Wiping Delta Cache manifest (config/metadata.jsonl)..."
-gcloud storage rm gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null || echo "No manifest to delete."
-
-echo "✨ 100% Clean state established! You can now click 'Force run' in Cloud Scheduler."
-```
-
-##### Step 2: Trigger the Sync in Cloud Scheduler
+##### Step 1: Trigger the Sync in Cloud Scheduler (No Bucket Reset Needed)
+Navigate to **Google Cloud Console ➔ Cloud Scheduler**, locate your full SharePoint synchronization job (e.g., `yourorg-sharepoint-sync-hourly`), and click **Force run**. Unchanged pages will be skipped via delta cache, and missing pages will be automatically self-healed.
 Navigate to **Google Cloud Console ➔ Cloud Scheduler**, locate your full SharePoint synchronization job (e.g., `yourorg-sharepoint-sync-hourly`), and click **Force run**.
 
 ##### Step 3: Live Progress Monitoring Command

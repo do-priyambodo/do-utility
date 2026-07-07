@@ -1,7 +1,13 @@
-# 🚀 SharePoint-to-GCS Synchronization Operations Guide (V8.0)
+# 🚀 SharePoint-to-GCS Complete Synchronization Operations Guide (`SYNC-ALL.md` - V9.0)
 ## Enterprise Execution Runbook — Production & Manual Diagnostic Sync
 
 > [!IMPORTANT]
+> **V9.0 Operational Best Practice: DO NOT Empty Your Existing Storage Bucket!**
+> Unlike earlier versions, when executing a full synchronization in **V9.0**, you **DO NOT need to delete or empty existing files, modern site pages (`pages/`), or metadata (`config/metadata.jsonl`)** in your GCS bucket.
+> * **Pre-Render Delta Cache Hit**: V9.0 compares timestamps (`lastModifiedDateTime`) against existing GCS objects *before* browser rendering, skipping unchanged pages instantly (<1ms per item).
+> * **Automatic Self-Healing**: V9.0 automatically detects any missing or deleted items and re-renders/uploads only what is needed while preserving existing inventory.
+
+> [!NOTE]
 > **Customer Operational Reference — Maxis Deployment**
 > This operational guide outlines the two supported methods for triggering a full Microsoft 365 SharePoint-to-Google Cloud Storage (GCS) synchronization in your environment:
 > * **Option 1: Manual Execution via Virtual Machine (Compute Engine / Cloud Shell)** — Recommended for initial verification, controlled debugging, and easier real-time troubleshooting.
@@ -12,9 +18,9 @@
 ## 🏗️ Prerequisites & Configuration Checklist
 
 Before initiating either synchronization method, ensure your local environment configuration is ready:
-1. **Confirm Working Directory**: Navigate to the root folder of the V8.0 application bundle:
+1. **Confirm Working Directory**: Navigate to the root folder of the V9.0 application bundle:
    ```bash
-   cd /path/to/do-applicationintegration/app/v8.0-01Jul2026/by-doddi
+   cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-doddi
    ```
 2. **Verify [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v8.0-01Jul2026/by-doddi/parameters.json)**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
 3. **Verify Python Environment**: Ensure Python 3.9+ and required libraries (`google-cloud-storage`, `msal`, `requests`) are installed:
