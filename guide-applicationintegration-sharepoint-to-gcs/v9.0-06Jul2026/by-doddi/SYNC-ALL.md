@@ -167,6 +167,15 @@ While the synchronization runs in the background across Application Integration 
 
 ---
 
+### Step 6: Trigger Vertex AI Discovery Engine / Agent Assist Indexing
+Once the files and `config/metadata.jsonl` manifest have landed in your GCS bucket, run the standalone datastore import script to trigger incremental indexing into Vertex AI Discovery Engine:
+
+```bash
+python3 sync/sync_datastore.py
+```
+
+---
+
 ## Option 2: Automated Execution via Google Cloud Scheduler (Production Mode)
 
 In automated production environments, synchronization is managed entirely by Google Cloud Scheduler, which triggers the Traversal Cloud Function on a recurring cron schedule (e.g., `0 */12 * * *` for every 12 hours) via secure OpenID Connect (OIDC) authentication.
@@ -224,6 +233,15 @@ Because automated Cloud Scheduler runs execute asynchronously without an interac
    For complete end-to-end monitoring, error tracing, and root-cause resolution across all serverless components (Cloud Scheduler, Cloud Run/Functions, Integration Connectors, Application Integration, Secret Manager, VPC Service Controls, and SharePoint Throttling), **consult the official diagnostic document**:
    
    👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md)**
+
+---
+
+### Step 4: Trigger Vertex AI Discovery Engine / Agent Assist Indexing
+Once your scheduled sync finishes uploading new files and `config/metadata.jsonl` to GCS, trigger Vertex AI Search / Discovery Engine to index the latest manifest:
+
+```bash
+python3 sync/sync_datastore.py
+```
 
 ---
 *Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*
