@@ -58,7 +58,7 @@ def run_datastore_sync():
             "inputUris": [
                 f"gs://{bucket_name}/config/metadata.jsonl"
             ],
-            "dataSchema": "custom"
+            "dataSchema": "document"
         },
         "reconciliationMode": "INCREMENTAL"
     }
