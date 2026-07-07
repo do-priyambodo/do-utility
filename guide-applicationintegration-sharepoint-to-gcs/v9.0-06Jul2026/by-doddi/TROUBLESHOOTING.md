@@ -380,4 +380,36 @@ Use this structured checklist to evaluate the top 6 most common enterprise root 
 | 🔲 6 | **Micro-Batch Payload Serialization Timeout** | Application Integration | **Diagnose**: Check **Section 3.4** for workflow execution timeouts or payload size errors.<br>**Resolve**: Reduce `CONFIG_Batch_Size` to `5` or `10` in [parameters.json](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/parameters.json) to ensure smooth streaming without exceeding integration message limits. |
 
 ---
+
+## 6. Unified Diagnostic Log Inspector (Interactive & Timezone/Timeframe Aware)
+
+To streamline troubleshooting across all serverless components without running individual `gcloud logging read` commands manually, use our automated diagnostic inspector script: [`check/check_all_logging.py`](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/check/check_all_logging.py).
+
+This script automatically pulls your Project ID, Function Name, Scheduler Job, and GCS Bucket from `parameters.json`, formats all timestamps in your selected time zone, and allows you to define custom lookback windows or start timestamps.
+
+### Method A: Interactive Mode (Recommended)
+Run the script interactively to select your time zone and enter a lookback duration or RFC3339 start timestamp:
+
+```bash
+python3 check/check_all_logging.py --interactive
+```
+
+**Interactive Prompts:**
+1. **Enter target Time Zone**: Type your desired display timezone (e.g., `Asia/Singapore`, `Asia/Kuala_Lumpur`, `LOCAL`, or `UTC`).
+2. **Select log timeframe filter**:
+   * **Option 1 (Relative Lookback Duration)**: Enter a duration like `15m`, `30m`, `1h`, `6h`, or `24h`.
+   * **Option 2 (Specific Start Timestamp)**: Enter an exact RFC3339 timestamp (e.g., `2026-07-07T05:00:00Z`).
+
+### Method B: One-Line Non-Interactive Execution
+You can also invoke the script directly with command-line arguments:
+
+```bash
+# Example 1: Look back over the last 30 minutes formatted in Singapore/Kuala Lumpur time (+08)
+python3 check/check_all_logging.py --tz "Asia/Singapore" --since "30m" --limit 10
+
+# Example 2: Query logs starting from a specific timestamp formatted in local system timezone
+python3 check/check_all_logging.py --tz "LOCAL" --start-time "2026-07-07T05:00:00Z" --limit 15
+```
+
+---
 *Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*
