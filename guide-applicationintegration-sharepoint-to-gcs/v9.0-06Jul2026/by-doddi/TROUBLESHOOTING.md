@@ -191,20 +191,22 @@ resource.labels.job_id="${SCHEDULER_JOB}"
 ### 3.2 Traversal Cloud Function / Cloud Run Logs (Graph API Crawl & Playwright Rendering)
 **Purpose**: Diagnose Microsoft Graph API authentication failures, folder traversal crashes, `.aspx` page harvesting errors, and Playwright Chromium container rendering faults. *(Note: Gen2 Cloud Functions run on underlying Cloud Run revisions).*
 
-#### 🖥️ CLI Command
+#### 🖥️ CLI Command (View All Live Execution & Status Logs)
+Standard Python `print()` statements log at `INFO`/`DEFAULT` severity. Run this command to view live progress outputs (`✅ Status Log`, `⏭️ Skipping...`, `🟢 Batch scheduled`):
 ```bash
-gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\" AND severity>=WARNING" \
+gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\"" \
     --project="${PROJECT_ID}" \
     --limit=30 \
     --order=desc \
     --format="table(timestamp, severity, textPayload, jsonPayload.message)"
 ```
 
+*(Tip: To filter strictly for crashes or exceptions, append `AND severity>=WARNING` to the query string.)*
+
 #### 🔍 GCP Console Log Explorer Query
 ```query
 (resource.type="cloud_function" OR resource.type="cloud_run_revision")
 resource.labels.service_name="${FUNCTION_NAME}"
-severity>=INFO
 ```
 
 * **What to look for**:
