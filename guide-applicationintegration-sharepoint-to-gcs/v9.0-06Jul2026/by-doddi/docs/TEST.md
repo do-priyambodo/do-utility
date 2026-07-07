@@ -96,7 +96,7 @@ echo "✨ Clean state pre-condition established! Ready for baseline full sync te
 ### Step 2.2: Execute Read-Only Full Discovery Dry Run
 Run the repository-wide discovery dry run. This queries the Microsoft Graph API across all configured sites, counts every physical document and site page, checks in-memory delta cache timestamps (which will now show 0% hits due to our clean wipe), and estimates total transfer volume.
 ```bash
-python3 check/check_sync_sharepoint_to_gcs.py --dry-run
+python3 check/check_syncall_before.py
 ```
 *What to observe:* Ensure the discovered item count matches your expected SharePoint asset inventory (e.g., verifying all ~9,000 enterprise assets are discovered cleanly without rate-limiting).
 

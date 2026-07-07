@@ -114,7 +114,7 @@ The V9.0 codebase includes a dedicated diagnostic check tool that directly crawl
 
 Run the diagnostic script from the root project directory:
 ```bash
-python3 check/check_sync_sharepoint_to_gcs.py
+python3 check/check_syncall_before.py
 ```
 
 **What this script reveals**:

@@ -104,14 +104,15 @@ echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...â
 
 ---
 
-### Step 3: Run the Pre-Flight Dry-Run Diagnostic Check (Optional but Recommended)
-Before triggering live document downloads and batch integration workflows, run the read-only diagnostic check to inspect SharePoint inventory vs. GCS delta cache:
+### Step 3: Run the Pre-Sync Verification Check (Recommended)
+Before triggering live document downloads and batch integration workflows, run the fast V9.0 pre-sync verification check to inspect SharePoint inventory and calculate exact sync delta without timeouts:
 ```bash
-python3 check/check_sync_sharepoint_to_gcs.py
+python3 check/check_syncall_before.py
 ```
 **What to verify in output**:
-* Confirm the total number of files and site pages discovered in SharePoint.
-* Check how many items will be skipped due to V9.0 O(1) GCS Delta Caching.
+* Confirm the total number of files and modern site pages discovered in SharePoint.
+* Check how many items are already up-to-date in GCS and will be skipped ($O(1)$ Delta Cache hit).
+* Confirm the exact delta count that will be synchronized.
 
 ---
 
@@ -198,9 +199,9 @@ gcloud scheduler jobs describe "${SCHEDULER_JOB}" --location="${LOCATION}" --pro
 ---
 
 ### Step 2: Perform Pre-Flight Verification & Trigger Immediate Sync (Force Run)
-Before triggering an unattended production sync, run our standalone diagnostic verification script to test authentication and inspect discovered inventory:
+Before triggering an unattended production sync, run our fast V9.0 pre-sync verification check to verify authentication and calculate exact sync delta without timeouts:
 ```bash
-python3 check/check_sync_sharepoint_to_gcs.py --dry-run
+python3 check/check_syncall_before.py
 ```
 
 Once verified, you do not need to wait for the next scheduled cron interval to execute an automated sync. You can manually force Cloud Scheduler to trigger an immediate run from your terminal:

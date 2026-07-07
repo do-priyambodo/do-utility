@@ -243,7 +243,7 @@ Before deploying integration workflows (or when upgrading an existing customer e
      ```
    * **For Option 2 (Full Enterprise Traversal)**:
      ```bash
-     python3 check/check_sync_sharepoint_to_gcs.py --dry-run
+     python3 check/check_syncall_before.py
      ```
 3. **Granular File-by-File Audit**:
    If you want to print out the complete itemized list of every discovered file and folder path:
