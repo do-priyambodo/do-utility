@@ -370,25 +370,33 @@ def main(request):
                         mime_val = "application/pdf"
                     else:
                         mime_map = {
+                            'pdf': 'application/pdf',
                             'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            'doc': 'application/msword',
+                            'doc': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                             'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                            'ppt': 'application/vnd.ms-powerpoint',
+                            'ppt': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                             'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'xls': 'application/vnd.ms-excel',
+                            'xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'xlsm': 'application/vnd.ms-excel.sheet.macroenabled.12',
                             'txt': 'text/plain',
+                            'md': 'text/plain',
+                            'csv': 'text/plain',
+                            'log': 'text/plain',
                             'html': 'text/html',
                             'htm': 'text/html',
                             'aspx': 'text/html',
+                            'json': 'application/json',
+                            'xml': 'application/xml',
                             'png': 'image/png',
                             'jpg': 'image/jpeg',
                             'jpeg': 'image/jpeg',
                             'gif': 'image/gif',
                             'bmp': 'image/bmp',
                             'tiff': 'image/tiff',
+                            'tif': 'image/tiff',
                             'webp': 'image/png'
                         }
-                        mime_val = mime_map.get(ext, 'application/octet-stream')
+                        mime_val = mime_map.get(ext, 'text/plain')
                     if item.get("IsPage") or rel_path.startswith("pages/") or rel_path.startswith("files/"):
                         full_gcs_path = rel_path
                     else:
