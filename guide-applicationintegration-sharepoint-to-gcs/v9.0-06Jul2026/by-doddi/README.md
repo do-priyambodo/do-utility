@@ -377,14 +377,13 @@ echo "========================================================"
 Once all worker batches transition to `SUCCEEDED`, execute this final audit block to confirm total ingestion:
 ```bash
 BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+
 echo "========================================================"
 echo "🎉 FINAL SYNCHRONIZATION RESULTS:"
 echo "========================================================"
-echo -n "📂 Total Documents Downloaded: "
-gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l
-
-echo -n "📄 Total Site Pages Rendered to PDF: "
-gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l
+echo "📂 files/ folder count  : $(gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l)"
+echo "📄 pages/ folder count  : $(gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l)"
+echo "⚙️ config/ folder count : $(gcloud storage ls gs://${BUCKET_NAME}/config/** 2>/dev/null | wc -l)"
 
 echo -n "🧠 Total Items Indexed in Metadata Manifest: "
 gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | grep -c .
