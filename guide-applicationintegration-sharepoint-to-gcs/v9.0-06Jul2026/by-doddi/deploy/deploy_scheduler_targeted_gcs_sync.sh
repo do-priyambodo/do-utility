@@ -54,11 +54,14 @@ payload = {
 print(json.dumps(payload))
 ")
 
-echo "🔍 Resolving Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
-FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)")
+echo "🔍 Resolving Cloud Run Service / Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
+FUNCTION_URL=$(gcloud run services describe "${FUNCTION_NAME}" --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(status.url)" 2>/dev/null || true)
+if [ -z "$FUNCTION_URL" ]; then
+  FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)" 2>/dev/null || true)
+fi
 
 if [ -z "$FUNCTION_URL" ]; then
-  echo "❌ Error: Could not resolve Cloud Function URI. Is '${FUNCTION_NAME}' deployed?"
+  echo "❌ Error: Could not resolve Cloud Run Service or Cloud Function URI. Is '${FUNCTION_NAME}' deployed?"
   exit 1
 fi
 

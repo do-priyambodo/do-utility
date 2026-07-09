@@ -35,11 +35,14 @@ echo "================================================================"
 
 FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Function_Name', 'yourorg-datastore-import'))")
 
-echo "🔍 Resolving Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
-FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)")
+echo "🔍 Resolving Cloud Run Service / Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
+FUNCTION_URL=$(gcloud run services describe "${FUNCTION_NAME}" --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(status.url)" 2>/dev/null || true)
+if [ -z "$FUNCTION_URL" ]; then
+  FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)" 2>/dev/null || true)
+fi
 
 if [ -z "$FUNCTION_URL" ]; then
-  echo "❌ Error: Could not resolve Cloud Function URI for '${FUNCTION_NAME}'. Is the datastore function deployed? Try running ./deploy/deploy_cf_datastore.sh first."
+  echo "❌ Error: Could not resolve Cloud Run Service or Cloud Function URI for '${FUNCTION_NAME}'. Is the datastore function deployed? Try running ./deploy/deploy_cf_datastore.sh first."
   exit 1
 fi
 
