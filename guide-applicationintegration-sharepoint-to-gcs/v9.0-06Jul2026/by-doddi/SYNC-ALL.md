@@ -153,6 +153,7 @@ While the synchronization runs in the background across Application Integration 
    watch -n 30 'export GCS_BUCKET=$(jq -r ".CONFIG_GCS_Bucket" parameters.json) && \
    echo "=== 📊 LIVE SYNC MONITOR ===" && \
    echo "Total Synced Files/Pages in GCS: $(gcloud storage ls --recursive gs://${GCS_BUCKET}/** 2>/dev/null | wc -l)" && \
+   echo "Total Metadata Records Indexed : $(gcloud storage cat gs://${GCS_BUCKET}/config/metadata.jsonl 2>/dev/null | grep -c .)" && \
    echo "Total Storage Footprint        : $(gcloud storage du -s gs://${GCS_BUCKET}/ --readable-sizes 2>/dev/null | cut -f1)"'
    ```
 2. **Inspect Individual Micro-Batch Execution Status**:
@@ -164,7 +165,25 @@ While the synchronization runs in the background across Application Integration 
 
    python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <EXECUTION_ID>
    ```
-3. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md).
+3. **Verify Final Synchronization Summary**:
+   Once all batches succeed, check the final item counts in your GCS bucket using `grep -c .` to accurately count records in `metadata.jsonl`:
+   ```bash
+   BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+
+   echo "========================================================"
+   echo "🎉 FINAL SYNCHRONIZATION RESULTS:"
+   echo "========================================================"
+   echo -n "📂 Total Documents Downloaded: "
+   gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l
+
+   echo -n "📄 Total Site Pages Rendered to PDF: "
+   gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l
+
+   echo -n "🧠 Total Items Indexed in Metadata Manifest: "
+   gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | grep -c .
+   echo "========================================================"
+   ```
+4. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md).
 
 ---
 

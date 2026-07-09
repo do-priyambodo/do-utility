@@ -387,7 +387,7 @@ echo -n "📄 Total Site Pages Rendered to PDF: "
 gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l
 
 echo -n "🧠 Total Items Indexed in Metadata Manifest: "
-gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | wc -l
+gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | grep -c .
 echo "========================================================"
 ```
 
