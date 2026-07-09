@@ -156,7 +156,13 @@ While the synchronization runs in the background across Application Integration 
    echo "Total Metadata Records Indexed : $(gcloud storage cat gs://${GCS_BUCKET}/config/metadata.jsonl 2>/dev/null | grep -c .)" && \
    echo "Total Storage Footprint        : $(gcloud storage du -s gs://${GCS_BUCKET}/ --readable-sizes 2>/dev/null | cut -f1)"'
    ```
-2. **Inspect Individual Micro-Batch Execution Status**:
+2. **Watch Live Real-Time Logs from Traversal Service**:
+   ```bash
+   watch -n 3 'export PROJECT_ID=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_ProjectId\", \"\"))") && \
+   export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_CloudFunction_Name\", \"\"))") && \
+   gcloud logging read "resource.labels.service_name=\"${FUNCTION_NAME}\" OR resource.labels.function_name=\"${FUNCTION_NAME}\"" --project="${PROJECT_ID}" --limit=15 --format="table(timestamp,severity,textPayload,jsonPayload.message)"'
+   ```
+3. **Inspect Individual Micro-Batch Execution Status**:
    ```bash
    # Substitute <EXECUTION_ID> with an ID printed in Step 4:
    export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)

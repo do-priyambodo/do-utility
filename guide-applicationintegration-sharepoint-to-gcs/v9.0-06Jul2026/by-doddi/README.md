@@ -522,8 +522,15 @@ export CHILD_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('p
 export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
 ```
 
-### 1. Cloud Function (SharePoint Traversal) Requests & Auth Logs
-To verify whether requests reached the Traversal Cloud Function or failed with authentication errors (`401 Unauthorized` / `403 Forbidden`):
+### 1. Cloud Function / Cloud Run (SharePoint Traversal) Live Monitoring & Logs
+To watch live real-time logs from the Traversal Service (`CONFIG_CloudFunction_Name`) refreshing every 3 seconds:
+```bash
+watch -n 3 'export PROJECT_ID=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_ProjectId\", \"\"))") && \
+export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_CloudFunction_Name\", \"\"))") && \
+gcloud logging read "resource.labels.service_name=\"${FUNCTION_NAME}\" OR resource.labels.function_name=\"${FUNCTION_NAME}\"" --project="${PROJECT_ID}" --limit=15 --format="table(timestamp,severity,textPayload,jsonPayload.message)"'
+```
+
+To inspect historical requests or check for authentication errors (`401 Unauthorized` / `403 Forbidden`):
 ```bash
 gcloud logging read '(resource.type="cloud_run_revision" AND resource.labels.service_name="'"${FUNCTION_NAME}"'") OR protoPayload.serviceName="run.googleapis.com"' \
   --project="${PROJECT_ID}" \
