@@ -44,6 +44,13 @@ gcloud run deploy "${SERVICE_NAME}" \
   --cpu=4 \
   --clear-base-image
 
+echo "🔐 Granting Cloud Run Invoker role (roles/run.invoker) to ${SERVICE_ACCOUNT}..."
+gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+  --region="${LOCATION}" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/run.invoker" \
+  --project="${PROJECT_ID}"
+
 echo "🧹 Cleaning up deployment context copy..."
 rm cf-sharepoint/parameters.json
 
