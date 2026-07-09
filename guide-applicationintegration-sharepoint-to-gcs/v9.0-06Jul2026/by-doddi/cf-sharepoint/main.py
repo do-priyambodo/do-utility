@@ -379,16 +379,27 @@ def main(request):
                             'txt': 'text/plain',
                             'html': 'text/html',
                             'htm': 'text/html',
-                            'aspx': 'text/html'
+                            'aspx': 'text/html',
+                            'png': 'image/png',
+                            'jpg': 'image/jpeg',
+                            'jpeg': 'image/jpeg',
+                            'gif': 'image/gif',
+                            'bmp': 'image/bmp',
+                            'tiff': 'image/tiff',
+                            'webp': 'image/png'
                         }
                         mime_val = mime_map.get(ext, 'application/octet-stream')
-                    gcs_uri = f"gs://{bucket_name}/{rel_path}"
+                    if item.get("IsPage") or rel_path.startswith("pages/") or rel_path.startswith("files/"):
+                        full_gcs_path = rel_path
+                    else:
+                        full_gcs_path = f"files/{rel_path}"
+                    gcs_uri = f"gs://{bucket_name}/{full_gcs_path}"
                     meta_record = {
                         "id": doc_id,
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),
                             "title": raw_name,
-                            "relative_path": rel_path
+                            "relative_path": full_gcs_path
                         },
                         "content": {
                             "mimeType": mime_val,

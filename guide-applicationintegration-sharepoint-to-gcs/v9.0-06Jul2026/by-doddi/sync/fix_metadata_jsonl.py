@@ -57,9 +57,31 @@ def main():
     lines = raw_content.splitlines()
     print(f"   🟢 Loaded {len(lines)} existing records.")
 
-    print("⚡ Step 2: Repairing document URIs and relative paths...")
+    print("⚡ Step 2: Repairing document URIs, relative paths, and MIME types...")
     fixed_lines = []
-    fixed_count = 0
+    fixed_uri_count = 0
+    fixed_mime_count = 0
+
+    mime_map = {
+        'pdf': 'application/pdf',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'doc': 'application/msword',
+        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'ppt': 'application/vnd.ms-powerpoint',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'xls': 'application/vnd.ms-excel',
+        'txt': 'text/plain',
+        'html': 'text/html',
+        'htm': 'text/html',
+        'aspx': 'text/html',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'bmp': 'image/bmp',
+        'tiff': 'image/tiff',
+        'webp': 'image/png'
+    }
 
     for line in lines:
         line_str = line.strip()
@@ -84,12 +106,23 @@ def main():
                         struct_data["relative_path"] = new_rel
                         record["structData"] = struct_data
 
-                    fixed_count += 1
+                    fixed_uri_count += 1
+
+            # Fix MIME type if application/octet-stream or missing
+            curr_mime = content_obj.get("mimeType", "")
+            ext = uri.rsplit('.', 1)[-1].lower() if '.' in uri else ''
+            if curr_mime == "application/octet-stream" or not curr_mime:
+                new_mime = mime_map.get(ext, "application/pdf" if "/pages/" in uri else curr_mime)
+                if new_mime and new_mime != curr_mime:
+                    content_obj["mimeType"] = new_mime
+                    record["content"] = content_obj
+                    fixed_mime_count += 1
+
             fixed_lines.append(json.dumps(record))
         except Exception:
             fixed_lines.append(line_str)
 
-    print(f"   🔧 Corrected {fixed_count} document URI(s) to include 'files/' folder prefix.")
+    print(f"   🔧 Corrected {fixed_uri_count} document URI(s) and {fixed_mime_count} MIME type(s).")
 
     print("📤 Step 3: Re-uploading corrected manifest back to GCS...")
     fixed_payload = "\n".join(fixed_lines) + "\n"
