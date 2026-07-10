@@ -115,72 +115,58 @@ def graph_get_paginated(url, headers, max_retries=10):
         url = data.get("@odata.nextLink")
     return results
 
-def list_drive_items_concurrent(token, drive_id, item_id="root", parent_path="", all_files=None, sync_files=None, gcs_cache=None, lock=None, executor=None):
-    if all_files is None:
-        all_files = []
-    if sync_files is None:
-        sync_files = []
-    if lock is None:
-        lock = threading.Lock()
+from collections import deque
 
+def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock):
+    queue = deque([("root", "")])
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/children"
-    if item_id == "root":
-        url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        while queue:
+            batch = []
+            while queue and len(batch) < 10:
+                batch.append(queue.popleft())
 
-    try:
-        items = graph_get_paginated(url, headers)
-    except Exception:
-        return all_files, sync_files
+            def fetch_folder(folder_item):
+                f_id, f_path = folder_item
+                url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{f_id}/children"
+                if f_id == "root":
+                    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+                try:
+                    return f_path, graph_get_paginated(url, headers)
+                except Exception as e:
+                    return f_path, []
 
-    folders = []
-    for item in items:
-        item_name = item.get("name", "")
-        curr_id = item.get("id")
-        if "folder" in item:
-            folders.append((curr_id, f"{parent_path}{item_name}/"))
-        else:
-            if item_name.lower().endswith(".aspx"):
-                continue
-            rel_path = f"{parent_path}{item_name}"
-            file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False}
-            needs_sync = True
-            gcs_path = f"files/{rel_path}"
-            if gcs_cache and gcs_path in gcs_cache:
-                sp_mod = item.get("lastModifiedDateTime")
-                if sp_mod:
-                    try:
-                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                        if gcs_cache[gcs_path] >= sp_dt:
-                            needs_sync = False
-                    except Exception:
-                        pass
-
-            with lock:
-                all_files.append(file_obj)
-                if needs_sync:
-                    sync_files.append(file_obj)
-
-    if folders:
-        own_executor = False
-        if executor is None:
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-            own_executor = True
-        futures = [
-            executor.submit(
-                list_drive_items_concurrent,
-                token, drive_id, f_id, f_path, all_files, sync_files, gcs_cache, lock, executor
-            )
-            for f_id, f_path in folders
-        ]
-        concurrent.futures.wait(futures)
-        if own_executor:
-            executor.shutdown()
-
-    return all_files, sync_files
+            futures = [executor.submit(fetch_folder, item) for item in batch]
+            for future in concurrent.futures.as_completed(futures):
+                parent_path, items = future.result()
+                for item in items:
+                    item_name = item.get("name", "")
+                    curr_id = item.get("id")
+                    if "folder" in item:
+                        queue.append((curr_id, f"{parent_path}{item_name}/"))
+                    else:
+                        if item_name.lower().endswith(".aspx"):
+                            continue
+                        rel_path = f"{parent_path}{item_name}"
+                        file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False}
+                        needs_sync = True
+                        gcs_path = f"files/{rel_path}"
+                        if gcs_cache and gcs_path in gcs_cache:
+                            sp_mod = item.get("lastModifiedDateTime")
+                            if sp_mod:
+                                try:
+                                    sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                    if gcs_cache[gcs_path] >= sp_dt:
+                                        needs_sync = False
+                                except Exception:
+                                    pass
+                        with lock:
+                            all_files.append(file_obj)
+                            if needs_sync:
+                                sync_files.append(file_obj)
 
 def inspect_gcs_bucket(bucket_name):
     gcs_pages = 0
@@ -283,22 +269,21 @@ def run_fast_direct_check(params):
 
     drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
     drives = graph_get_paginated(drives_url, headers)
-    target_drive_id = None
+
+    target_drives = []
     for d in drives:
-        if d.get("name", "").lower() == library_name.lower():
-            target_drive_id = d.get("id")
-            break
-    if not target_drive_id and drives:
-        target_drive_id = drives[0].get("id")
+        if not library_name or library_name.lower() in ["all", "*"] or d.get("name", "").lower() == library_name.lower():
+            target_drives.append(d)
+    if not target_drives and drives:
+        target_drives = [drives[0]]
 
     all_items = []
     sync_items = []
     lock = threading.Lock()
 
     def crawl_files():
-        if target_drive_id:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                list_drive_items_concurrent(token, target_drive_id, "root", "", all_items, sync_items, gcs_cache, lock, executor)
+        for d in target_drives:
+            crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock)
 
     def crawl_pages():
         pages_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/pages"
