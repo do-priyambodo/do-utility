@@ -134,18 +134,11 @@ python3 -m unittest discover tests -v
 python3 check/check_entra_id_auth.py
 ```
 
-### Method A: Direct Client-Side Multi-Threaded Discovery (`Recommended & Fastest for Enterprise Scale - ~5 to 15s`)
-Runs directly from your local terminal session using **20 concurrent worker threads** (`ThreadPoolExecutor`) with unthrottled 4-Strategy page discovery. This is the **fastest pre-flight verification method for large enterprise repositories (`14,000+ assets`)**, printing an **Executive Subsite/Department Breakdown Table (`No. | Subsite / Department Name | Docs | Site Pages | Total`)** and auditing live Microsoft Graph API inventory in **~5 to 20 seconds**:
+### High-Speed Pre-Flight Inventory & Delta Verification (`~5 to 15s`)
+Runs directly from your local terminal session using **20 concurrent worker threads** (`ThreadPoolExecutor`) with unthrottled 4-Strategy page discovery. This audits live Microsoft Graph API inventory and GCS counts in **~5 to 15 seconds**, printing a clear **Executive Subsite/Department Breakdown Table (`No. | Subsite / Department Name | Docs | Site Pages | Total`)**:
 
 ```bash
 python3 check/check_syncall_before.py
-```
-
-### Method B: Server-Side Cloud Run Container Verification (`Tests Production Container - ~2 to 5m for 13,000+ assets`)
-Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`). This verifies that your production container, IAM invoker permissions (`roles/run.invoker`), and GCS Delta Cache are reachable. **Note on Enterprise Scale**: Because Cloud Run executes a single-threaded sequential crawl across nested folders, verifying **13,000+ items** takes **~2 to 5 minutes**:
-
-```bash
-python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 ```
 
 ---
