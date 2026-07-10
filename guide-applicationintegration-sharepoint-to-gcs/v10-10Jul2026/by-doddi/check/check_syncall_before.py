@@ -250,6 +250,15 @@ def run_fast_direct_check(params):
     if not target_drives and drives:
         target_drives = [drives[0]]
 
+    print("--------------------------------------------------------------------------------")
+    print(f"🏢 SHAREPOINT SITE DISCOVERY (Subsite: '{site_name_clean}')")
+    print(f"   • Found {len(drives)} Document Libraries / Drives on Site:")
+    for idx, d in enumerate(drives, 1):
+        print(f"     {idx}. '{d.get('name')}' (Drive ID: {d.get('id', '')[:15]}...)")
+    print(f"   • Active Configured Target ('CONFIG_Sharepoint_Library'): '{library_name}'")
+    print(f"   • Crawling ({len(target_drives)}) Library/Drive(s): {[d.get('name') for d in target_drives]}")
+    print("--------------------------------------------------------------------------------\n")
+
     all_items = []
     sync_items = []
     lock = threading.Lock()

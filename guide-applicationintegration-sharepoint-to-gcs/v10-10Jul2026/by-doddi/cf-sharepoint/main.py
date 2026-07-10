@@ -236,35 +236,27 @@ def main(request):
                 print(f"Warning: Failed to list drives for site {curr_site_id}: {e}")
                 continue
                 
-            target_drive_id = None
-            target_drive_url = None
+            target_drives = []
             for d in drives:
                 d_name = d.get("name", "")
-                if d_name == library_name or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
-                    target_drive_id = d.get("id")
-                    target_drive_url = d.get("webUrl")
-                    break
-                    
-            if not target_drive_id and drives:
-                for d in drives:
-                    if d.get("driveType") == "documentLibrary" and d.get("name") not in ["Site Pages", "Style Library", "Form Templates", "Site Assets"]:
-                        target_drive_id = d.get("id")
-                        target_drive_url = d.get("webUrl")
-                        break
-                if not target_drive_id:
-                    target_drive_id = drives[0].get("id")
-                    target_drive_url = drives[0].get("webUrl")
-                
-            # 6. Recursively list all files inside the target Document Library
+                if not library_name or library_name.lower() in ["all", "*"] or d_name.lower() == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
+                    target_drives.append(d)
+            if not target_drives and drives:
+                target_drives = [drives[0]]
+
+            # 6. Recursively list all files inside the target Document Library/Libraries
             max_items = req_data.get("max_items")
-            if target_drive_id and sync_files_flag:
-                if target_drive_url:
-                    base_file_url = f"{target_drive_url.rstrip('/')}/"
-                else:
-                    library_encoded = urllib.parse.quote(library_name)
-                    sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
-                    base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+            if sync_files_flag:
+                for d_item in target_drives:
+                    target_drive_id = d_item.get("id")
+                    target_drive_url = d_item.get("webUrl")
+                    if target_drive_url:
+                        base_file_url = f"{target_drive_url.rstrip('/')}/"
+                    else:
+                        library_encoded = urllib.parse.quote(library_name)
+                        sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
+                        base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
+                    list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
                 
