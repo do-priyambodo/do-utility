@@ -155,13 +155,9 @@ Initiate the full enterprise synchronization (`100,000+ assets`). Standard regul
 Trigger your deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
 
 ```bash
-JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))")
-LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))")
-PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-
-gcloud scheduler jobs run "${JOB_NAME}" \
-  --location="${LOCATION}" \
-  --project="${PROJECT_ID}"
+gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'full-sharepoint-sync'))") \
+  --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") \
+  --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
 
 ### Option B: Interactive Python Runner (Manual Debug & Console Tracking)
