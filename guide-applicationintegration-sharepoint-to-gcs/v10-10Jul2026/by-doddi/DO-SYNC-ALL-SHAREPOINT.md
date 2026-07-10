@@ -183,5 +183,5 @@ python3 check/check_syncall_after.py
 gcloud storage ls -l "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', 'fullsharepoint-1stjuly'))")/config/metadata.jsonl"
 
 # 3. Verify total synchronized record count inside metadata.jsonl
-echo -n "Total metadata records in GCS: " && gcloud storage cat "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")/config/metadata.jsonl" | wc -l
+echo -n "Total metadata records in GCS: " && gcloud storage cat "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")/config/metadata.jsonl" | grep -c "^{"
 ```
