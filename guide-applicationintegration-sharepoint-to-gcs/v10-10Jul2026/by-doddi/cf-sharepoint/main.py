@@ -445,7 +445,7 @@ def main(request):
             print("⏭️ Status Log: Skipping orphaned GCS file cleanup (Partial/Scoped/Dry-Run Sync detected).")
 
         # Phase 4a.1: Generate config/metadata.jsonl Manifest for Vertex AI Discovery Engine / CCAI GKA
-        if trigger_integration and bucket_obj and len(all_list) > 0:
+        if bucket_obj and len(all_list) > 0:
             try:
                 print("🧠 Generating config/metadata.jsonl manifest for Vertex AI Datastore indexing...")
                 jsonl_lines = []
