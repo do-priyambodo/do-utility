@@ -83,14 +83,37 @@ def get_graph_token(tenant_id, client_id, client_secret):
         data = json.loads(resp.read().decode("utf-8"))
         return data.get("access_token")
 
-def graph_get_paginated(url, headers):
+import requests
+import random
+
+_CHECK_SESSION = requests.Session()
+
+def graph_get_paginated(url, headers, max_retries=10):
     results = []
+    if "/children" in url or "/sites" in url or "/drives" in url:
+        if "?" in url and "$top=" not in url:
+            url += "&$top=999"
+        elif "?" not in url:
+            url += "?$top=999"
+
     while url:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            results.extend(data.get("value", []))
-            url = data.get("@odata.nextLink")
+        for attempt in range(max_retries):
+            response = _CHECK_SESSION.get(url, headers=headers, timeout=30)
+            if response.status_code == 200:
+                break
+            elif response.status_code in [429, 502, 503, 504]:
+                retry_after = response.headers.get("Retry-After")
+                wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(60, (2 ** attempt) + random.uniform(0, 1))
+                time.sleep(wait_time)
+                continue
+            else:
+                raise Exception(f"Graph API returned fatal status {response.status_code}: {response.text}")
+        else:
+            raise Exception(f"Graph API request failed after {max_retries} attempts: {url}")
+
+        data = response.json()
+        results.extend(data.get("value", []))
+        url = data.get("@odata.nextLink")
     return results
 
 def list_drive_items_concurrent(token, drive_id, item_id="root", parent_path="", all_files=None, sync_files=None, gcs_cache=None, lock=None, executor=None):
