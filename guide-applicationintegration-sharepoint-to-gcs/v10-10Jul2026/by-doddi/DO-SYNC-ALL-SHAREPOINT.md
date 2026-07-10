@@ -132,7 +132,7 @@ python3 check/check_entra_id_auth.py
 ```
 
 ### Method A: Direct Client-Side Multi-Threaded Discovery (`Recommended & Fastest for Enterprise Scale - ~5 to 15s`)
-Runs directly from your local terminal session using **10 concurrent worker threads** (`ThreadPoolExecutor`). This is the **fastest pre-flight verification method for large enterprise repositories (`10,000+ assets`)**, auditing live Microsoft Graph API inventory and GCS counts in **~5 to 15 seconds**:
+Runs directly from your local terminal session using **20 concurrent worker threads** (`ThreadPoolExecutor`) with unthrottled 4-Strategy page discovery. This is the **fastest pre-flight verification method for large enterprise repositories (`14,000+ assets`)**, printing an **Executive Subsite/Department Breakdown Table (`No. | Subsite / Department Name | Docs | Site Pages | Total`)** and auditing live Microsoft Graph API inventory in **~5 to 20 seconds**:
 
 ```bash
 python3 check/check_syncall_before.py
@@ -184,5 +184,5 @@ Compare your ingested GCS bucket items against live SharePoint repository counts
 python3 check/check_syncall_after.py
 
 # 2. Inspect generated metadata JSONL record
-gsutil ls -lh "gs://${GCS_BUCKET}/config/metadata.jsonl"
+gcloud storage ls -lh "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', 'fullsharepoint-1stjuly'))")/config/metadata.jsonl"
 ```
