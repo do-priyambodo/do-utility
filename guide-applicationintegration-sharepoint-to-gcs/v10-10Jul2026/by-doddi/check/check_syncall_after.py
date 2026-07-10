@@ -149,24 +149,42 @@ def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock, sub
                         queue.append((curr_id, f"{parent_path}{item_name}/"))
                     else:
                         if item_name.lower().endswith(".aspx"):
-                            continue
-                        rel_path = f"{parent_path}{item_name}"
-                        file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False, "Subsite": subsite_name}
-                        needs_sync = True
-                        gcs_path = f"files/{rel_path}"
-                        if gcs_cache and gcs_path in gcs_cache:
-                            sp_mod = item.get("lastModifiedDateTime")
-                            if sp_mod:
-                                try:
-                                    sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                    if gcs_cache[gcs_path] >= sp_dt:
-                                        needs_sync = False
-                                except Exception:
-                                    pass
-                        with lock:
-                            all_files.append(file_obj)
-                            if needs_sync:
-                                sync_files.append(file_obj)
+                            pdf_name = item_name.replace(".aspx", ".pdf")
+                            rel_page_path = f"pages/{parent_path}{pdf_name}"
+                            page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": subsite_name}
+                            needs_sync = True
+                            if gcs_cache and rel_page_path in gcs_cache:
+                                sp_mod = item.get("lastModifiedDateTime")
+                                if sp_mod:
+                                    try:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if gcs_cache[rel_page_path] >= sp_dt:
+                                            needs_sync = False
+                                    except Exception:
+                                        pass
+                            with lock:
+                                if not any(x["RelativePath"] == rel_page_path for x in all_files):
+                                    all_files.append(page_obj)
+                                    if needs_sync:
+                                        sync_files.append(page_obj)
+                        else:
+                            rel_path = f"{parent_path}{item_name}"
+                            file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False, "Subsite": subsite_name}
+                            needs_sync = True
+                            gcs_path = f"files/{rel_path}"
+                            if gcs_cache and gcs_path in gcs_cache:
+                                sp_mod = item.get("lastModifiedDateTime")
+                                if sp_mod:
+                                    try:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if gcs_cache[gcs_path] >= sp_dt:
+                                            needs_sync = False
+                                    except Exception:
+                                        pass
+                            with lock:
+                                all_files.append(file_obj)
+                                if needs_sync:
+                                    sync_files.append(file_obj)
 
 def crawl_pages_bfs(token, drive_id, all_items, sync_items, gcs_cache, lock, subsite_name="Home"):
     queue = deque([("root", "")])
