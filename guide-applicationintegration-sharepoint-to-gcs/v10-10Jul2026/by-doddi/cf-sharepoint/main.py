@@ -334,8 +334,10 @@ def main(request):
                 try:
                     lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists", headers, max_retries=3, timeout=20)
                     for lst in lists:
-                        l_name = lst.get("name", "").lower().replace(" ", "")
-                        if l_name in ["sitepages", "pages"] or "page" in l_name:
+                        l_name = lst.get("name", "").lower()
+                        l_display = lst.get("displayName", "").lower()
+                        l_tmpl = lst.get("list", {}).get("template", "").lower()
+                        if any(k in l_name or k in l_display for k in ["page", "sitepages", "faq", "article", "kb", "wiki"]) or l_tmpl in ["sitepages", "sitepage", "wikipage"]:
                             items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
                             for itm in items:
                                 fields = itm.get("fields", {})
