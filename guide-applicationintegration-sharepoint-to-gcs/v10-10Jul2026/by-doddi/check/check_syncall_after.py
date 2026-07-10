@@ -569,7 +569,7 @@ def main():
     print("\n================================================================================")
     print("📊 SHAREPOINT SITE COLLECTION DEPARTMENT BREAKDOWN (ASSETS BY SUBSITE)")
     print("================================================================================")
-    print(f"{'No.':<5}{'Subsite / Department Name':<40}{'Docs':<12}{'Site Pages':<12}{'Total':<10}")
+    print(f"{'No.':<5}{'Subsite / Department Name':<40}{'Files':<12}{'Pages':<12}{'Total':<10}")
     print("-" * 80)
     
     from collections import defaultdict
