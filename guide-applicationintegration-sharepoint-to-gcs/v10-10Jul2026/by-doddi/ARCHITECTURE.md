@@ -6,7 +6,7 @@ This architectural blueprint describes the end-to-end serverless synchronization
 
 ## 1. Traversal Cloud Run Service (Core Engine Mechanism)
 
-The Traversal Cloud Run service (`yourorg-sharepoint-list-files`) is the intelligence hub of the pipeline. Built with a clean modular architecture (`graph_client.py`, `sharepoint_traversal.py`, `pdf_renderer.py`, `main.py`), it combines Microsoft Graph API crawl capabilities with full browser automation.
+The Traversal Cloud Run service (`yourorg-sharepoint-list-files`) is the intelligence hub of the pipeline. Built with a clean modular architecture (`graph_client.py`, `sharepoint_traversal.py`, `sharepoint_engine/discovery.py`, `config_schema.py`, `pdf_renderer.py`, `main.py`), it combines Microsoft Graph API crawl capabilities with full browser automation, strict configuration validation, and a shared Single Source of Truth discovery package (`sharepoint_engine.discovery`).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐

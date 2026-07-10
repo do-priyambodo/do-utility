@@ -1,19 +1,19 @@
-# Serverless SharePoint-to-GCS Synchronization Pipeline (V9.0)
+# Serverless SharePoint-to-GCS Synchronization Pipeline (V10.0 Enterprise Release)
 
-A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Function (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features dynamic micro-batching, O(1) GCS delta caching, automated deletion of inactive SharePoint inventory, and an **Intelligent Image URL Resolver** for enterprise OData/thumbnail endpoints.
+A production-ready enterprise serverless pipeline utilizing a Traversal Cloud Run Service (Python) and Google Cloud Application Integration to synchronize SharePoint documents and convert modern SharePoint site pages into executive high-fidelity PDF reports in Google Cloud Storage (GCS). Features **Rugged Enterprise Best Practices (`awesome-agv v3.6.0`)**, including a DRY Single Source of Truth Discovery Engine (`sharepoint_engine`), strict configuration schema validation (`config_schema.py`), structured JSON Cloud Logging, dynamic micro-batching, O(1) GCS delta caching, and automated unit testing.
 
 ---
 
-## 📂 Modular Directory Architecture (V9.0)
+## 📂 Modular Directory Architecture (V10.0)
 
-The V9.0 codebase is organized into clean domain-specific subdirectories with automated root path resolution:
+The V10.0 codebase is organized into clean domain-specific subdirectories with automated root path resolution:
 * **`deploy/`**: Infrastructure and workflow deployment scripts (`deploy_cloud_run.sh`, `deploy_workflows.py`, cron schedulers) and workflow JSON templates.
 * **`sync/`**: Synchronization pipeline runners (`sync_sharepoint_to_gcs.py`, `sync_gcs_dynamic.py`, `sync_datastore.py`, `upload_gcs_targets.sh`).
-* **`check/`**: Read-only pre-flight inspection and diagnostic scripts (`check_entra_id_auth.py`, discovery dry-runs).
-* **`test/`**: Verification unit tests (`test_image_fetch.py`), Jupyter notebooks, and subset trial runners.
+* **`check/`**: Read-only pre-flight inspection and diagnostic scripts (`check_entra_id_auth.py`, high-speed discovery checks `check_syncall_before.py` & `check_syncall_after.py`).
+* **`tests/`**: Automated enterprise unit test suite (`test_config_schema.py`, `test_discovery.py`) verifying schema and asset classification.
 * **`util/`**: Prerequisite IAM scripts (`prereq/`), parameter validation (`validate_params.py`), and logging helpers (`log_helper.py`).
-* **`docs/`**: Architecture guides (`GUIDE_GKA_Live_SharePoint_Links.md`), parameter reference (`PARAM.md`), and roadmaps.
-* **Root (`by-yourorg/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`), SharePoint Traversal & PDF backend source (`cf-sharepoint/`), and dedicated Datastore import service (`cf-datastore/`).
+* **`docs/`**: Architecture guides (`GUIDE_GKA_Live_SharePoint_Links.md`), parameter reference (`PARAM.md`), and testing playbooks (`TEST.md`).
+* **Root (`by-doddi/`)**: Retains only core configuration (`parameters.json`, `target_urls.txt`), and the Traversal Cloud Run service (`cf-sharepoint/`).
 
 ---
 
