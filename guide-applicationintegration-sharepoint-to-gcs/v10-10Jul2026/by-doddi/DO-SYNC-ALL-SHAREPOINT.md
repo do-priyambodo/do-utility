@@ -31,10 +31,11 @@ export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json
 export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 export DEV_MEMBER=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
 export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")
+export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))")
 export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 
 gcloud config set project "${PROJECT_ID}"
-echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Location: ${LOCATION}"
+echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler: ${SCHEDULER_JOB_NAME}"
 ```
 
 ---
@@ -105,16 +106,20 @@ python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
-### Option A: Run Directly via Python Orchestrator (Recommended for Console Tracking)
-```bash
-python3 sync/sync_sharepoint_to_gcs.py
-```
+### Option A: Cloud Scheduler (Recommended Unattended Production Execution)
+Trigger your configured Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
 
-### Option B: Trigger Existing Cloud Scheduler Job
 ```bash
-gcloud scheduler jobs run doddi-sharepoint-sync-hourly \
+gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
+```
+
+### Option B: Interactive Python Runner (Manual Debug & Console Tracking)
+Runs the complete synchronization interactively in your terminal shell:
+
+```bash
+python3 sync/sync_sharepoint_to_gcs.py
 ```
 
 > [!TIP]
