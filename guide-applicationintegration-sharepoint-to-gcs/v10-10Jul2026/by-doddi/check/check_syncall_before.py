@@ -268,7 +268,7 @@ def run_fast_direct_check(params):
             d_name = d.get("name", "")
             d_lower = d_name.lower()
             if d.get("driveType") == "documentLibrary" and d_lower not in system_libraries:
-                if not library_name or library_name.lower() in ["all", "*", "documents", "shared documents"] or d_lower == library_name.lower():
+                if not library_name or library_name.lower() in ["all", "*"] or d_lower == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
                     all_target_drives.append((s_id, d))
         if not any(sid == s_id for sid, _ in all_target_drives) and s_drives:
             for d in s_drives:
