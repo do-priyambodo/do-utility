@@ -259,16 +259,22 @@ def run_fast_direct_check(params):
     target_sites.extend(get_all_subsites_recursive(site_id, ""))
 
     all_target_drives = []
+    system_libraries = {"site pages", "style library", "form templates", "site assets"}
     for s in target_sites:
         s_id = s["id"]
         drives_url = f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives"
         s_drives = graph_get_paginated(drives_url, headers)
         for d in s_drives:
             d_name = d.get("name", "")
-            if not library_name or library_name.lower() in ["all", "*"] or d_name.lower() == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
-                all_target_drives.append((s_id, d))
-        if not all_target_drives and s_drives:
-            all_target_drives.append((s_id, s_drives[0]))
+            d_lower = d_name.lower()
+            if d.get("driveType") == "documentLibrary" and d_lower not in system_libraries:
+                if not library_name or library_name.lower() in ["all", "*", "documents", "shared documents"] or d_lower == library_name.lower():
+                    all_target_drives.append((s_id, d))
+        if not any(sid == s_id for sid, _ in all_target_drives) and s_drives:
+            for d in s_drives:
+                if d.get("name", "").lower() not in system_libraries:
+                    all_target_drives.append((s_id, d))
+                    break
 
     print("--------------------------------------------------------------------------------")
     print(f"🏢 SHAREPOINT SITE & SUBSITE COLLECTION DISCOVERY (Root: '{site_name_clean}')")
