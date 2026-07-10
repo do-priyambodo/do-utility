@@ -1,0 +1,304 @@
+# 🚀 SharePoint-to-GCS Complete Synchronization Operations Guide (`SYNC-ALL.md` - V9.0)
+## Enterprise Execution Runbook — Production & Manual Diagnostic Sync
+
+> [!IMPORTANT]
+> **V9.0 Operational Best Practice: DO NOT Empty Your Existing Storage Bucket!**
+> Unlike earlier versions, when executing a full synchronization in **V9.0**, you **DO NOT need to delete or empty existing files, modern site pages (`pages/`), or metadata (`config/metadata.jsonl`)** in your GCS bucket.
+> * **Pre-Render Delta Cache Hit**: V9.0 compares timestamps (`lastModifiedDateTime`) against existing GCS objects *before* browser rendering, skipping unchanged pages instantly (<1ms per item).
+> * **Automatic Self-Healing**: V9.0 automatically detects any missing or deleted items and re-renders/uploads only what is needed while preserving existing inventory.
+
+> [!NOTE]
+> **Customer Operational Reference — YourOrg Deployment**
+> This operational guide outlines the two supported methods for triggering a full Microsoft 365 SharePoint-to-Google Cloud Storage (GCS) synchronization in your environment:
+> * **Option 1: Manual Execution via Virtual Machine (Compute Engine / Cloud Shell)** — Recommended for initial verification, controlled debugging, and easier real-time troubleshooting.
+> * **Option 2: Automated Execution via Cloud Scheduler** — Recommended for scheduled, recurring unattended production syncs (hourly, 12-hourly, or daily).
+
+---
+
+## 🏗️ Prerequisites & Configuration Checklist
+
+Before initiating either synchronization method, ensure your local environment configuration is ready:
+1. **Confirm Working Directory**: Navigate to the root folder of the V9.0 application bundle:
+   ```bash
+   cd /path/to/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg
+   ```
+2. **Verify `parameters.json`**: Confirm that all configuration values (Project ID, GCS Bucket, SharePoint sites, etc.) reflect your actual target environment.
+3. **Verify Python Environment**: Ensure Python 3.9+ and required libraries (`google-cloud-storage`, `msal`, `requests`) are installed:
+   ```bash
+   python3 -m pip install -r cf-sharepoint/requirements.txt --quiet
+   ```
+4. **Export Configuration Variables from `parameters.json`**: Run the following commands in your terminal shell to ensure all environment variables are properly exported before executing scripts:
+   ```bash
+   # 1. Export configuration variables from parameters.json
+   export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+   export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
+   export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
+   export DEVELOPER_PRINCIPAL=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
+   export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
+   export PARENT_INTEGRATION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Parent_Integration_Name', 'yourorg-sharepoint-gcs-parent'))")
+   export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+
+   # 2. Extract SharePoint subsite path dynamically
+   export SITE_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Sharepoint_Sites', 'sites/yourorg-sharepoint-to-gcs'))")
+   if [[ "$SITE_PATH" == "sites/"* ]]; then
+     export SITE_NAME="${SITE_PATH#sites/}"
+   else
+     export SITE_NAME="$SITE_PATH"
+   fi
+
+   # 3. Extract Secret Name dynamically from parameters.json
+   export SECRET_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_M365_Secret_Name', ''))")
+   export SECRET_NAME=$(echo "$SECRET_PATH" | cut -d'/' -f4)
+
+   # 4. Extract Scheduler Job Name dynamically from parameters.json
+   export SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+   ```
+
+---
+
+## Option 1: Manual Execution via Virtual Machine (Recommended for Troubleshooting)
+
+Running the synchronization manually from a Virtual Machine (e.g., Google Compute Engine Linux VM, local terminal, or Google Cloud Shell) gives engineers direct interactive console streaming, real-time heartbeat monitoring, and instant access to diagnostic logs.
+
+### Step 1: Authenticate to Google Cloud SDK
+Your Virtual Machine or terminal must be authenticated with a Google Cloud user account or service account that possesses permissions to invoke Cloud Functions (`roles/run.invoker` / `roles/cloudfunctions.invoker`) and query Application Integration (`roles/integrations.integrationInvoker`).
+
+#### Method A: Authenticate as an Admin User / Developer (Interactive Login)
+If you are logged into a Linux VM or Cloud Shell as an administrative engineer:
+```bash
+# 1. Ensure service account impersonation is disabled so commands run directly as your user:
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+
+# 2. Login to Google Cloud SDK with your user account:
+gcloud auth login --update-adc
+
+# 3. Set your active target GCP Project ID from parameters.json:
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+gcloud config set project "${PROJECT_ID}"
+
+# 4. Verify your authentication status and active project:
+gcloud auth list
+echo "✅ Active Project: $(gcloud config get-value project)"
+```
+
+#### Method B: Authenticate via Service Account Key / Workload Identity (Headless VM)
+If running on a dedicated Compute Engine instance using a service account key or Workload Identity:
+```bash
+# Authenticate using a JSON service account key:
+gcloud auth activate-service-account --key-file=/path/to/credentials.json
+
+# Export project configuration:
+export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
+gcloud config set project "${PROJECT_ID}"
+```
+
+---
+
+### Step 2: Validate IAM Token Generation Pre-Flight
+The manual synchronization script utilizes your local SDK credentials to generate Google Cloud OAuth access and identity bearer tokens. Run this quick test to ensure token generation succeeds:
+```bash
+echo "Testing Identity Token: $(gcloud auth print-identity-token | cut -c1-20)...✅ Valid"
+echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...✅ Valid"
+```
+*(If either command fails, re-run `gcloud auth login --update-adc` in Step 1).*
+
+---
+
+### Step 3: Run the Pre-Sync Verification Check (Recommended)
+Before triggering live document downloads and batch integration workflows, run the fast V9.0 pre-sync verification check to inspect SharePoint inventory and calculate exact sync delta without timeouts:
+```bash
+python3 check/check_syncall_before.py
+```
+**What to verify in output**:
+* Confirm the total number of files and modern site pages discovered in SharePoint.
+* Check how many items are already up-to-date in GCS and will be skipped ($O(1)$ Delta Cache hit).
+* Confirm the exact delta count that will be synchronized.
+
+---
+
+### Step 4: Execute the Interactive Synchronization Runner
+Launch the main synchronization runner. This script connects to the Traversal Cloud Function, initiates the recursive SharePoint crawl, and submits micro-batches to the Application Integration parent orchestrator:
+
+```bash
+python3 sync/sync_sharepoint_to_gcs.py
+```
+
+#### 🖥️ What You Will See on Console (Real-Time Terminal Output):
+```
+================================================================================
+🚀 STARTING SHAREPOINT TO GCS FULL SYNCHRONIZATION (V9.0)
+================================================================================
+
+🔍 Resolving Cloud Function URI dynamically...
+✅ Resolved Cloud Function URI: https://yourorg-sharepoint-list-files-00009-8sz.asia-southeast1.run.app
+   ⏳ Crawling SharePoint inventory & submitting batches to Application Integration (Elapsed time: 14s)... 
+   ✅ Completed in 14s!                                    
+
+================================================================================
+🎉 ALL SYNC BATCHES SCHEDULED SUCCESSFULLY!
+================================================================================
+ℹ️ Executions Triggered: 12 batches
+ℹ️ Batch 1 Execution ID : 39017360-1234-5678-9abc-def012345678
+ℹ️ Batch 2 Execution ID : 39017360-8765-4321-cba9-876543210fed
+...
+```
+
+---
+
+### Step 5: Live Progress Monitoring & Troubleshooting
+While the synchronization runs in the background across Application Integration workers, open a second terminal window on your VM to track live progress and troubleshoot any errors:
+
+1. **Watch Live GCS Bucket Accumulation**:
+   ```bash
+   watch -n 30 'export GCS_BUCKET=$(jq -r ".CONFIG_GCS_Bucket" parameters.json) && \
+   echo "=== 📊 LIVE SYNC MONITOR ===" && \
+   echo "Total Synced Files/Pages in GCS: $(gcloud storage ls --recursive gs://${GCS_BUCKET}/** 2>/dev/null | wc -l)" && \
+   echo "Total Metadata Records Indexed : $(gcloud storage cat gs://${GCS_BUCKET}/config/metadata.jsonl 2>/dev/null | grep -c .)" && \
+   echo "Total Storage Footprint        : $(gcloud storage du -s gs://${GCS_BUCKET}/ --readable-sizes 2>/dev/null | cut -f1)"'
+   ```
+2. **Watch Live Real-Time Logs from Traversal Service**:
+   ```bash
+   watch -n 3 'export PROJECT_ID=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_ProjectId\", \"\"))") && \
+   export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_CloudFunction_Name\", \"\"))") && \
+   gcloud logging read "resource.labels.service_name=\"${FUNCTION_NAME}\" OR resource.labels.function_name=\"${FUNCTION_NAME}\"" --project="${PROJECT_ID}" --limit=15 --format="table(timestamp,severity,textPayload,jsonPayload.message)"'
+   ```
+3. **Inspect Individual Micro-Batch Execution Status**:
+   ```bash
+   # Substitute <EXECUTION_ID> with an ID printed in Step 4:
+   export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
+   export LOCATION=$(jq -r '.CONFIG_Location' parameters.json)
+   export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' parameters.json)
+
+   python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <EXECUTION_ID>
+   ```
+3. **Verify Final Synchronization Summary**:
+   Once all batches succeed, check the final item counts in your GCS bucket using `grep -c .` to accurately count records in `metadata.jsonl`:
+   ```bash
+   BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+
+   echo "========================================================"
+   echo "🎉 FINAL SYNCHRONIZATION RESULTS:"
+   echo "========================================================"
+   echo "📂 files/ folder count  : $(gcloud storage ls gs://${BUCKET_NAME}/files/** 2>/dev/null | wc -l)"
+   echo "📄 pages/ folder count  : $(gcloud storage ls gs://${BUCKET_NAME}/pages/** 2>/dev/null | wc -l)"
+   echo "⚙️ config/ folder count : $(gcloud storage ls gs://${BUCKET_NAME}/config/** 2>/dev/null | wc -l)"
+
+   echo -n "🧠 Total Items Indexed in Metadata Manifest: "
+   gcloud storage cat gs://${BUCKET_NAME}/config/metadata.jsonl 2>/dev/null | grep -c .
+   echo "========================================================"
+   ```
+4. **Troubleshoot Errors**: For in-depth diagnostic logging commands (Cloud Run logs, Connector errors, SharePoint throttling/DDoS blocks, and 404 troubleshooting), refer directly to [TROUBLSHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md).
+
+---
+
+### Step 6: Trigger Vertex AI Discovery Engine / Agent Assist Indexing
+Once the files and `config/metadata.jsonl` manifest have landed in your GCS bucket, run the standalone datastore import script to trigger incremental indexing into Vertex AI Discovery Engine:
+
+```bash
+python3 sync/sync_datastore.py
+```
+
+---
+
+## Option 2: Automated Execution via Google Cloud Scheduler (Production Mode)
+
+In automated production environments, synchronization is managed entirely by Google Cloud Scheduler, which triggers the Traversal Cloud Function on a recurring cron schedule (e.g., `0 */12 * * *` for every 12 hours) via secure OpenID Connect (OIDC) authentication.
+
+### Step 1: Verify Cloud Scheduler Job Status
+Check if your configured Cloud Scheduler job is active and enabled in your GCP project (ensure service account impersonation is disabled so commands run directly as your user):
+
+```bash
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+unset CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT 2>/dev/null || true
+
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+export SCHEDULER_JOB=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
+
+# List job details and schedule:
+gcloud scheduler jobs describe "${SCHEDULER_JOB}" --location="${LOCATION}" --project="${PROJECT_ID}"
+```
+
+---
+
+### Step 2: Perform Pre-Flight Verification & Trigger Immediate Sync (Force Run)
+Before triggering an unattended production sync, run our fast V9.0 pre-sync verification check to verify authentication and calculate exact sync delta without timeouts:
+```bash
+python3 check/check_syncall_before.py
+```
+
+Once verified, you do not need to wait for the next scheduled cron interval to execute an automated sync. You can manually force Cloud Scheduler to trigger an immediate run from your terminal:
+
+```bash
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+unset CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT 2>/dev/null || true
+
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+export SCHEDULER_JOB=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
+
+echo "⚡ Force-triggering Cloud Scheduler Job: ${SCHEDULER_JOB}..."
+gcloud scheduler jobs run "${SCHEDULER_JOB}" --location="${LOCATION}" --project="${PROJECT_ID}"
+echo "✅ Job triggered successfully! The Traversal Cloud Function is now processing in the background."
+```
+
+---
+
+### Step 3: Monitor Automated Execution & Diagnose Failures
+Because automated Cloud Scheduler runs execute asynchronously without an interactive terminal stream, you must monitor progress and diagnose any errors using Google Cloud Logging and our comprehensive diagnostic runbook:
+
+1. **Verify Scheduler Execution Result (Formatted in Local Time)**:
+   ```bash
+   gcloud logging read "resource.type=\"cloud_scheduler_job\" AND resource.labels.job_id:\"${SCHEDULER_JOB}\"" \
+       --project="${PROJECT_ID}" --limit=5 --order=desc \
+       --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, jsonPayload.status.message)"
+   ```
+2. **Refer to the Enterprise Troubleshooting Guide**:
+   For complete end-to-end monitoring, error tracing, and root-cause resolution across all serverless components (Cloud Scheduler, Cloud Run/Functions, Integration Connectors, Application Integration, Secret Manager, VPC Service Controls, and SharePoint Throttling), **consult the official diagnostic document**:
+   
+   👉 **[📖 Enterprise Troubleshooting, Diagnostic Logging & Active Monitoring Guide (TROUBLSHOOTING.md)](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-yourorg/do-applicationintegration/app/v9.0-06Jul2026/by-yourorg/TROUBLSHOOTING.md)**
+
+---
+
+### Step 4: Trigger Vertex AI Discovery Engine / Agent Assist Indexing
+Once your scheduled sync finishes uploading new files and `config/metadata.jsonl` to GCS, trigger Vertex AI Search / Discovery Engine to index the latest manifest:
+
+```bash
+python3 sync/sync_datastore.py
+```
+
+---
+
+## 🔍 Pre- & Post-Sync Verification (Before & After Checks)
+
+To quantitatively verify the synchronization pipeline before and after execution, V9.0 provides two dedicated automated diagnostic scripts in the `check/` directory:
+
+### 1. Pre-Sync Verification (`check_syncall_before.py`)
+Before executing a synchronization run, call `check_syncall_before.py` to inspect the target SharePoint inventory and calculate the exact delta that will be synchronized:
+
+```bash
+python3 check/check_syncall_before.py
+```
+
+**What it calculates:**
+* **SharePoint Target Inventory**: Total modern site pages (`.aspx` to be rendered as `.pdf`) and total document files in the configured SharePoint site and library.
+* **Sync Delta Estimation**: Exactly how many files and pages are new or modified and **will be synced** during execution.
+* **Delta Cache Hits**: How many files and pages are already up-to-date in Google Cloud Storage and will be skipped in O(1) time (<1ms per item).
+
+---
+
+### 2. Post-Sync Verification (`check_syncall_after.py`)
+After the synchronization workflow completes, call `check_syncall_after.py` to verify that all files and pages have landed in Google Cloud Storage and are fully up-to-date:
+
+```bash
+python3 check/check_syncall_after.py
+```
+
+**What it calculates:**
+* **Google Cloud Storage Inventory**: Total modern site pages (`pages/`) and total document files (`files/`) currently stored in the GCS bucket, along with total storage size.
+* **Verified Delta Status**: Exactly how many files and pages are **already synced** and up-to-date against live SharePoint timestamps.
+* **Remaining Delta Check**: Confirms that `0` items remain unsynced, validating 100% synchronization completeness.
+
+---
+*Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*
+
