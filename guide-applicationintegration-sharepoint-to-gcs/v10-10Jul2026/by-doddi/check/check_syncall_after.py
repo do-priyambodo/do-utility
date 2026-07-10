@@ -322,30 +322,74 @@ def run_fast_direct_check(params):
 
     def scan_subsite_pages(s):
         s_name = s["name"] or "Home"
-        pages_url = f"https://graph.microsoft.com/v1.0/sites/{s['id']}/pages"
+        s_id = s["id"]
+        discovered_pages = []
+        seen_names = set()
+
+        # Strategy 1: Modern Site Pages API v1.0
         try:
-            pages = graph_get_paginated(pages_url, headers)
+            pages = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/pages", headers, max_retries=2, timeout=15)
             for p in pages:
-                page_name = p.get("name", "Page.aspx")
-                pdf_name = page_name.replace(".aspx", ".pdf")
-                rel_page_path = f"pages/{pdf_name}"
-                page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
-                needs_sync = True
-                if gcs_cache and rel_page_path in gcs_cache:
-                    p_mod = p.get("lastModifiedDateTime")
-                    if p_mod:
-                        try:
-                            sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                            if gcs_cache[rel_page_path] >= sp_dt:
-                                needs_sync = False
-                        except Exception:
-                            pass
-                with lock:
-                    all_items.append(page_obj)
-                    if needs_sync:
-                        sync_items.append(page_obj)
+                pname = p.get("name", "Page.aspx")
+                if pname not in seen_names:
+                    seen_names.add(pname)
+                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
         except Exception:
             pass
+
+        # Strategy 2: Modern Site Pages API beta
+        if not discovered_pages:
+            try:
+                pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers, max_retries=2, timeout=15)
+                for p in pages_beta:
+                    pname = p.get("name", "Page.aspx")
+                    if pname not in seen_names:
+                        seen_names.add(pname)
+                        discovered_pages.append((pname, p.get("lastModifiedDateTime")))
+            except Exception:
+                pass
+
+        # Strategy 3: Direct crawl of the "Site Pages" Document Library (.aspx files)
+        if not discovered_pages:
+            try:
+                drives = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives", headers, max_retries=2, timeout=15)
+                sp_drive = next((d for d in drives if d.get("name", "").lower().replace(" ", "") in ["sitepages", "pages"]), None)
+                if sp_drive:
+                    queue = deque([("root", "")])
+                    while queue:
+                        curr_id, parent_path = queue.popleft()
+                        url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
+                        if curr_id == "root":
+                            url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
+                        items = graph_get_paginated(url, headers, max_retries=2, timeout=15)
+                        for item in items:
+                            iname = item.get("name", "")
+                            if "folder" in item:
+                                queue.append((item.get("id"), f"{parent_path}{iname}/"))
+                            elif iname.lower().endswith(".aspx"):
+                                if iname not in seen_names:
+                                    seen_names.add(iname)
+                                    discovered_pages.append((iname, item.get("lastModifiedDateTime")))
+            except Exception:
+                pass
+
+        for page_name, p_mod in discovered_pages:
+            pdf_name = page_name.replace(".aspx", ".pdf")
+            rel_page_path = f"pages/{pdf_name}"
+            page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
+            needs_sync = True
+            if gcs_cache and rel_page_path in gcs_cache:
+                if p_mod:
+                    try:
+                        sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                        if gcs_cache[rel_page_path] >= sp_dt:
+                            needs_sync = False
+                    except Exception:
+                        pass
+            with lock:
+                all_items.append(page_obj)
+                if needs_sync:
+                    sync_items.append(page_obj)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
         f_list = [pool.submit(scan_drive_files, sid, d) for sid, d in all_target_drives]

@@ -277,61 +277,102 @@ def main(request):
                 print(f"⏱️ Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Skipping remaining pages/subsites to guarantee processing pipeline completion...")
                 break
 
-            # 7. Query modern site pages under Option B
+            # 7. Query modern site pages under Option B (3-Strategy Robust Discovery)
             if sync_pages_flag and (max_items is None or len(all_list) < max_items):
-                pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
+                pages = []
+                seen_page_urls = set()
                 try:
-                    pages = graph_get_paginated(pages_url, headers, max_retries=2, timeout=15)
-                    for p in pages:
-                        if max_items is not None and len(all_list) >= max_items:
-                            break
-                        page_id = p.get("id")
-                        page_name = p.get("name", "Page.aspx")
-                        pdf_name = page_name.replace(".aspx", ".pdf")
-                        rel_page_path = f"pages/{site_prefix}{pdf_name}"
-                        
-                        page_obj = {
-                            "Name": pdf_name,
-                            "Url": p.get("webUrl", ""),
-                            "RelativePath": rel_page_path,
-                            "IsPage": True
-                        }
-                        
-                        needs_sync = True
-                        if gcs_cache is not None and rel_page_path in gcs_cache:
-                            p_mod = p.get("lastModifiedDateTime")
-                            if p_mod:
-                                try:
-                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                    if gcs_cache[rel_page_path] >= sp_dt_p:
-                                        needs_sync = False
-                                except Exception:
-                                    pass
-                        elif bucket_obj and not gcs_cache:
+                    pages_v1 = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
+                    for p in pages_v1:
+                        u = p.get("webUrl", "")
+                        if u not in seen_page_urls:
+                            seen_page_urls.add(u)
+                            pages.append(p)
+                except Exception:
+                    pass
+
+                if not pages:
+                    try:
+                        pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
+                        for p in pages_beta:
+                            u = p.get("webUrl", "")
+                            if u not in seen_page_urls:
+                                seen_page_urls.add(u)
+                                pages.append(p)
+                    except Exception:
+                        pass
+
+                if not pages:
+                    try:
+                        drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives", headers, max_retries=2, timeout=15)
+                        sp_drive = next((d for d in drives_list if d.get("name", "").lower().replace(" ", "") in ["sitepages", "pages"]), None)
+                        if sp_drive:
+                            queue = deque([("root", "")])
+                            while queue:
+                                curr_id, parent_path = queue.popleft()
+                                url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
+                                if curr_id == "root":
+                                    url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
+                                items = graph_get_paginated(url, headers, max_retries=2, timeout=15)
+                                for item in items:
+                                    iname = item.get("name", "")
+                                    if "folder" in item:
+                                        queue.append((item.get("id"), f"{parent_path}{iname}/"))
+                                    elif iname.lower().endswith(".aspx"):
+                                        u = item.get("webUrl", "")
+                                        if u not in seen_page_urls:
+                                            seen_page_urls.add(u)
+                                            pages.append(item)
+                    except Exception:
+                        pass
+
+                for p in pages:
+                    if max_items is not None and len(all_list) >= max_items:
+                        break
+                    page_id = p.get("id")
+                    page_name = p.get("name", "Page.aspx")
+                    pdf_name = page_name.replace(".aspx", ".pdf")
+                    rel_page_path = f"pages/{site_prefix}{pdf_name}"
+                    
+                    page_obj = {
+                        "Name": pdf_name,
+                        "Url": p.get("webUrl", ""),
+                        "RelativePath": rel_page_path,
+                        "IsPage": True
+                    }
+                    needs_sync = True
+                    if gcs_cache is not None and rel_page_path in gcs_cache:
+                        p_mod = p.get("lastModifiedDateTime")
+                        if p_mod:
                             try:
-                                blob_p = bucket_obj.get_blob(rel_page_path)
-                                p_mod = p.get("lastModifiedDateTime")
-                                if blob_p and blob_p.updated and p_mod:
-                                    sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                    if blob_p.updated >= sp_dt_p:
-                                        needs_sync = False
+                                sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                if gcs_cache[rel_page_path] >= sp_dt_p:
+                                    needs_sync = False
                             except Exception:
                                 pass
+                    elif bucket_obj and not gcs_cache:
+                        try:
+                            blob_p = bucket_obj.get_blob(rel_page_path)
+                            p_mod = p.get("lastModifiedDateTime")
+                            if blob_p and blob_p.updated and p_mod:
+                                sp_dt_p = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                if blob_p.updated >= sp_dt_p:
+                                    needs_sync = False
+                        except Exception:
+                            pass
 
-                        if not needs_sync:
-                            print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
-                            all_list.append(page_obj)
-                            continue
-
-                        # Mark for parallel pipelined chunk rendering
-                        page_obj["_page_id"] = page_id
-                        page_obj["_site_id"] = curr_site_id
-                        page_obj["_raw_url"] = p.get("webUrl", "")
-                        page_obj["_filename"] = pdf_name
+                    if not needs_sync:
+                        print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
                         all_list.append(page_obj)
-                        sync_list.append(page_obj)
-                except Exception as e:
-                    print(f"Warning: Could not fetch pages for site {curr_site_id}: {e}")
+                        continue
+
+                    # Mark for parallel pipelined chunk rendering
+                    page_obj["_page_id"] = page_id
+                    page_obj["_site_id"] = curr_site_id
+                    page_obj["_raw_url"] = p.get("webUrl", "")
+                    page_obj["_filename"] = pdf_name
+                    all_list.append(page_obj)
+                    sync_list.append(page_obj)
             elif not sync_pages_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
                 
