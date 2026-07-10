@@ -289,43 +289,41 @@ def run_fast_direct_check(params):
     sync_items = []
     lock = threading.Lock()
 
-    def crawl_files():
-        for sid, d in all_target_drives:
-            s_match = next((x["name"] for x in target_sites if x["id"] == sid), "Home") or "Home"
-            crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock, subsite_name=s_match)
+    def scan_drive_files(sid, d):
+        s_match = next((x["name"] for x in target_sites if x["id"] == sid), "Home") or "Home"
+        crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock, subsite_name=s_match)
 
-    def crawl_pages():
-        for s in target_sites:
-            s_name = s["name"] or "Home"
-            pages_url = f"https://graph.microsoft.com/v1.0/sites/{s['id']}/pages"
-            try:
-                pages = graph_get_paginated(pages_url, headers)
-                for p in pages:
-                    page_name = p.get("name", "Page.aspx")
-                    pdf_name = page_name.replace(".aspx", ".pdf")
-                    rel_page_path = f"pages/{pdf_name}"
-                    page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
-                    needs_sync = True
-                    if gcs_cache and rel_page_path in gcs_cache:
-                        p_mod = p.get("lastModifiedDateTime")
-                        if p_mod:
-                            try:
-                                sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                if gcs_cache[rel_page_path] >= sp_dt:
-                                    needs_sync = False
-                            except Exception:
-                                pass
-                    with lock:
-                        all_items.append(page_obj)
-                        if needs_sync:
-                            sync_items.append(page_obj)
-            except Exception:
-                pass
+    def scan_subsite_pages(s):
+        s_name = s["name"] or "Home"
+        pages_url = f"https://graph.microsoft.com/v1.0/sites/{s['id']}/pages"
+        try:
+            pages = graph_get_paginated(pages_url, headers)
+            for p in pages:
+                page_name = p.get("name", "Page.aspx")
+                pdf_name = page_name.replace(".aspx", ".pdf")
+                rel_page_path = f"pages/{pdf_name}"
+                page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
+                needs_sync = True
+                if gcs_cache and rel_page_path in gcs_cache:
+                    p_mod = p.get("lastModifiedDateTime")
+                    if p_mod:
+                        try:
+                            sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                            if gcs_cache[rel_page_path] >= sp_dt:
+                                needs_sync = False
+                        except Exception:
+                            pass
+                with lock:
+                    all_items.append(page_obj)
+                    if needs_sync:
+                        sync_items.append(page_obj)
+        except Exception:
+            pass
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        f_files = pool.submit(crawl_files)
-        f_pages = pool.submit(crawl_pages)
-        concurrent.futures.wait([f_files, f_pages])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+        f_list = [pool.submit(scan_drive_files, sid, d) for sid, d in all_target_drives]
+        p_list = [pool.submit(scan_subsite_pages, s) for s in target_sites]
+        concurrent.futures.wait(f_list + p_list)
 
     return all_items, sync_items
 
