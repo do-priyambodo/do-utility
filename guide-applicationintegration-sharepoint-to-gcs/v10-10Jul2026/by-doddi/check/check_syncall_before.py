@@ -124,7 +124,7 @@ def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock, sub
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         while queue:
             batch = []
             while queue and len(batch) < 10:
