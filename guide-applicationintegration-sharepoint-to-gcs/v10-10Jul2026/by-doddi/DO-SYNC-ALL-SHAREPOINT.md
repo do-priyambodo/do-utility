@@ -107,14 +107,14 @@ Before triggering file downloads, run our read-only diagnostic checks to verify 
 python3 check/check_entra_id_auth.py
 ```
 
-### Method A: Server-Side Cloud Run Verification (`Tests Deployed Container`)
-Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`) to verify that the container is healthy and can analyze live Graph API inventory vs GCS Delta Cache without starting sync workflows:
+### Method A: Server-Side Cloud Run Verification (`Recommended & Fastest - ~3 to 4s`)
+Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`). This is the **recommended primary method** because it is the fastest (`~3 to 4 seconds` on GCP infrastructure) and verifies that your production container, IAM invoker permissions (`roles/run.invoker`), and GCS Delta Cache are 100% healthy:
 
 ```bash
 python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 ```
 
-### Method B: Direct Client-Side Discovery Check (`Tests Graph API Directly`)
+### Method B: Direct Client-Side Discovery Check (`Local Verification - ~4 to 6s`)
 Runs directly from your local terminal (using 10 concurrent worker threads) to independently query Microsoft Graph API and GCS inventory (`gs://bucket/files/`) without invoking the server-side Cloud Run container:
 
 ```bash
