@@ -454,12 +454,12 @@ def run_fast_direct_check(params):
                     if needs_sync:
                         sync_items.append(page_obj)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         f_list = [pool.submit(scan_drive_files, sid, sname, d) for sid, sname, d in all_target_drives]
         p_list = [pool.submit(scan_page_library, sid, sname, d) for sid, sname, d in all_page_drives]
         concurrent.futures.wait(f_list + p_list)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as page_pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as page_pool:
         api_list = [page_pool.submit(scan_subsite_pages_unthrottled, s) for s in target_sites]
         concurrent.futures.wait(api_list)
 
