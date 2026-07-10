@@ -117,10 +117,14 @@ python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
 ### Option A: Cloud Scheduler (Recommended Unattended Production Execution)
-Trigger your newly deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
+Trigger your deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
 
 ```bash
-gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" \
+JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))")
+LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+
+gcloud scheduler jobs run "${JOB_NAME}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 ```

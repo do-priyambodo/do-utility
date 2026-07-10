@@ -118,7 +118,10 @@ Initiate the synchronization for your selected URLs:
 
 ### Option A: Cloud Scheduler Targeted Job (Recommended Unattended Production Execution)
 ```bash
-gcloud scheduler jobs run "${SCHEDULER_TARGETED_JOB}" \
+LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+
+gcloud scheduler jobs run doddi-sharepoint-sync-targeted \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 ```
