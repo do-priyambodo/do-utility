@@ -124,25 +124,25 @@ Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that l
 
 ## Step 7: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
 
-Before triggering file downloads, run our read-only diagnostic checks to verify authentication and simulate full SharePoint discovery (`$top=999` + iterative BFS queue, completes in ~3 to 5 seconds):
+Before initiating file synchronization, run our read-only pre-flight diagnostic checks to verify authentication and audit your SharePoint repository:
 
 ```bash
 # 1. Verify Azure AD / Microsoft Graph Authentication
 python3 check/check_entra_id_auth.py
 ```
 
-### Method A: Server-Side Cloud Run Verification (`Recommended & Fastest - ~3 to 4s`)
-Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`). This is the **recommended primary method** because it is the fastest (`~3 to 4 seconds` on GCP infrastructure) and verifies that your production container, IAM invoker permissions (`roles/run.invoker`), and GCS Delta Cache are 100% healthy:
-
-```bash
-python3 check/check_sync_sharepoint_to_gcs.py --dry-run
-```
-
-### Method B: Direct Client-Side Discovery Check (`Local Verification - ~4 to 6s`)
-Runs directly from your local terminal (using 10 concurrent worker threads) to independently query Microsoft Graph API and GCS inventory (`gs://bucket/files/`) without invoking the server-side Cloud Run container:
+### Method A: Direct Client-Side Multi-Threaded Discovery (`Recommended & Fastest for Enterprise Scale - ~5 to 15s`)
+Runs directly from your local terminal session using **10 concurrent worker threads** (`ThreadPoolExecutor`). This is the **fastest pre-flight verification method for large enterprise repositories (`10,000+ assets`)**, auditing live Microsoft Graph API inventory and GCS counts in **~5 to 15 seconds**:
 
 ```bash
 python3 check/check_syncall_before.py
+```
+
+### Method B: Server-Side Cloud Run Container Verification (`Tests Production Container - ~2 to 5m for 13,000+ assets`)
+Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`). This verifies that your production container, IAM invoker permissions (`roles/run.invoker`), and GCS Delta Cache are reachable. **Note on Enterprise Scale**: Because Cloud Run executes a single-threaded sequential crawl across nested folders, verifying **13,000+ items** takes **~2 to 5 minutes**:
+
+```bash
+python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 ```
 
 ---
