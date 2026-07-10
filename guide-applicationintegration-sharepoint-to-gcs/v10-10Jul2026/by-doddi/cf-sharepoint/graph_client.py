@@ -81,7 +81,7 @@ import time
 import random
 
 # Helper to handle OData paginated Microsoft Graph API requests with automatic 429 backoff & $top=999 maximization
-def graph_get_paginated(url, headers, max_retries=10):
+def graph_get_paginated(url, headers, max_retries=3, timeout=20):
     results = []
     
     # Ensure maximum page size ($top=999) to cut Graph API calls by 80% on 10,000-100,000 assets
@@ -93,17 +93,24 @@ def graph_get_paginated(url, headers, max_retries=10):
 
     while url:
         for attempt in range(max_retries):
-            response = http.get(url, headers=headers, timeout=60)
-            if response.status_code == 200:
-                break
-            elif response.status_code in [429, 502, 503, 504]:
-                retry_after = response.headers.get("Retry-After")
-                wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(60, (2 ** attempt) + random.uniform(0, 1))
-                print(f"⏳ Microsoft Graph API throttled (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...")
+            try:
+                response = http.get(url, headers=headers, timeout=timeout)
+                if response.status_code == 200:
+                    break
+                elif response.status_code in [429, 502, 503, 504]:
+                    retry_after = response.headers.get("Retry-After")
+                    wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(10, (2 ** attempt) + random.uniform(0, 1))
+                    print(f"⏳ Microsoft Graph API throttled/delayed (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise Exception(f"Graph API returned fatal status {response.status_code} for url {url}: {response.text}")
+            except Exception as e_net:
+                if attempt + 1 >= max_retries:
+                    raise e_net
+                wait_time = min(5, (2 ** attempt) + random.uniform(0, 1))
+                print(f"⏳ Graph API network retry on {url[:60]}... ({e_net}). Retrying in {wait_time:.1f}s...")
                 time.sleep(wait_time)
-                continue
-            else:
-                raise Exception(f"Graph API returned fatal status {response.status_code} for url {url}: {response.text}")
         else:
             raise Exception(f"Graph API request failed after {max_retries} retry attempts: {url}")
 

@@ -224,7 +224,12 @@ def main(request):
                 sync_list.append(item_obj)
                 
         target_sites_to_scan = target_sites if not target_urls else []
+        discovery_start_time = time.time()
         for site_info in target_sites_to_scan:
+            if time.time() - discovery_start_time > 420:
+                print(f"⏱️ Wall-Clock Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Finalizing discovered inventory ({len(sync_list)} delta items) and initiating processing/upload pipeline immediately...")
+                break
+
             curr_site_id = site_info["id"]
             site_prefix = site_info["prefix"] # e.g. "Consumer/" or "Business/"
             
@@ -268,11 +273,15 @@ def main(request):
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
                 
+            if time.time() - discovery_start_time > 420:
+                print(f"⏱️ Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Skipping remaining pages/subsites to guarantee processing pipeline completion...")
+                break
+
             # 7. Query modern site pages under Option B
             if sync_pages_flag and (max_items is None or len(all_list) < max_items):
                 pages_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages"
                 try:
-                    pages = graph_get_paginated(pages_url, headers)
+                    pages = graph_get_paginated(pages_url, headers, max_retries=2, timeout=15)
                     for p in pages:
                         if max_items is not None and len(all_list) >= max_items:
                             break
