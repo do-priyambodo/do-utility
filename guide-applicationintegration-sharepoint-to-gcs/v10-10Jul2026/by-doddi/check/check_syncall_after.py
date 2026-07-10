@@ -87,7 +87,7 @@ import random
 
 _CHECK_SESSION = requests.Session()
 
-def graph_get_paginated(url, headers, max_retries=10):
+def graph_get_paginated(url, headers, max_retries=10, timeout=30):
     results = []
     if "/children" in url or "/sites" in url or "/drives" in url:
         if "?" in url and "$top=" not in url:
@@ -97,7 +97,7 @@ def graph_get_paginated(url, headers, max_retries=10):
 
     while url:
         for attempt in range(max_retries):
-            response = _CHECK_SESSION.get(url, headers=headers, timeout=30)
+            response = _CHECK_SESSION.get(url, headers=headers, timeout=timeout)
             if response.status_code == 200:
                 break
             elif response.status_code in [429, 502, 503, 504]:
