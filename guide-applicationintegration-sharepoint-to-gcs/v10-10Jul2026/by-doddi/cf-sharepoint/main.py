@@ -278,60 +278,81 @@ def main(request):
                 print(f"⏱️ Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Skipping remaining pages/subsites to guarantee processing pipeline completion...")
                 break
 
-            # 7. Query modern site pages under Option B (3-Strategy Robust Discovery)
+            # 7. Query modern site pages under Option B (4-Strategy Robust Merged Discovery)
             if sync_pages_flag and (max_items is None or len(all_list) < max_items):
                 pages = []
                 seen_page_urls = set()
+
+                # Strategy 1: Modern Site Pages API v1.0
                 try:
-                    pages_v1 = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
+                    pages_v1 = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages", headers, max_retries=3, timeout=20)
                     for p in pages_v1:
                         u = p.get("webUrl", "")
-                        if u not in seen_page_urls:
+                        if u and u not in seen_page_urls:
                             seen_page_urls.add(u)
                             pages.append(p)
                 except Exception:
                     pass
 
-                if not pages:
-                    try:
-                        pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
-                        for p in pages_beta:
-                            u = p.get("webUrl", "")
-                            if u not in seen_page_urls:
-                                seen_page_urls.add(u)
-                                pages.append(p)
-                    except Exception:
-                        pass
+                # Strategy 2: Modern Site Pages API beta
+                try:
+                    pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=3, timeout=20)
+                    for p in pages_beta:
+                        u = p.get("webUrl", "")
+                        if u and u not in seen_page_urls:
+                            seen_page_urls.add(u)
+                            pages.append(p)
+                except Exception:
+                    pass
 
-                if not pages:
-                    try:
-                        drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives", headers, max_retries=2, timeout=15)
-                        sp_drive = next((d for d in drives_list if d.get("name", "").lower().replace(" ", "") in ["sitepages", "pages"]), None)
-                        if sp_drive:
+                # Strategy 3: Direct crawl of Site Pages Document Libraries (.aspx files)
+                try:
+                    drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives", headers, max_retries=3, timeout=20)
+                    for sp_drive in drives_list:
+                        d_name = sp_drive.get("name", "").lower().replace(" ", "")
+                        if d_name in ["sitepages", "pages"] or "page" in d_name:
                             queue = deque([("root", "")])
                             while queue:
                                 curr_id, parent_path = queue.popleft()
                                 url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
                                 if curr_id == "root":
                                     url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
-                                items = graph_get_paginated(url, headers, max_retries=2, timeout=15)
+                                items = graph_get_paginated(url, headers, max_retries=3, timeout=20)
                                 for item in items:
                                     iname = item.get("name", "")
                                     if "folder" in item:
                                         queue.append((item.get("id"), f"{parent_path}{iname}/"))
                                     elif iname.lower().endswith(".aspx"):
                                         u = item.get("webUrl", "")
-                                        if u not in seen_page_urls:
+                                        if u and u not in seen_page_urls:
                                             seen_page_urls.add(u)
                                             pages.append(item)
-                    except Exception:
-                        pass
+                except Exception:
+                    pass
+
+                # Strategy 4: Query SharePoint Lists items API directly (/sites/{id}/lists/{list_id}/items)
+                try:
+                    lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists", headers, max_retries=3, timeout=20)
+                    for lst in lists:
+                        l_name = lst.get("name", "").lower().replace(" ", "")
+                        if l_name in ["sitepages", "pages"] or "page" in l_name:
+                            items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
+                            for itm in items:
+                                fields = itm.get("fields", {})
+                                iname = fields.get("FileLeafRef") or fields.get("LinkFilename") or ""
+                                if iname.lower().endswith(".aspx"):
+                                    u = itm.get("webUrl", "")
+                                    if u and u not in seen_page_urls:
+                                        seen_page_urls.add(u)
+                                        pages.append(itm)
+                except Exception:
+                    pass
 
                 for p in pages:
                     if max_items is not None and len(all_list) >= max_items:
                         break
                     page_id = p.get("id")
-                    page_name = p.get("name", "Page.aspx")
+                    page_name = p.get("name") or p.get("fields", {}).get("FileLeafRef") or "Page.aspx"
                     pdf_name = page_name.replace(".aspx", ".pdf")
                     rel_page_path = f"pages/{site_prefix}{pdf_name}"
                     

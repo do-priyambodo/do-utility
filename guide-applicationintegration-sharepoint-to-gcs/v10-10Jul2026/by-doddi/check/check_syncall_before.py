@@ -354,44 +354,66 @@ def run_fast_direct_check(params):
         discovered_pages = []
         seen_names = set()
 
-        # Strategy 1: Modern Site Pages API v1.0 (with retry resilience against HTTP 429)
+        # Strategy 1: Modern Site Pages API v1.0
         try:
-            pages = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/pages", headers, max_retries=5, timeout=25)
+            pages = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/pages", headers, max_retries=3, timeout=20)
             for p in pages:
                 pname = p.get("name", "Page.aspx")
-                if pname not in seen_names:
+                if pname and pname not in seen_names:
                     seen_names.add(pname)
                     discovered_pages.append((pname, p.get("lastModifiedDateTime")))
         except Exception:
             pass
 
         # Strategy 2: Modern Site Pages API beta
-        if not discovered_pages:
-            try:
-                pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers, max_retries=5, timeout=25)
-                for p in pages_beta:
-                    pname = p.get("name", "Page.aspx")
-                    if pname not in seen_names:
-                        seen_names.add(pname)
-                        discovered_pages.append((pname, p.get("lastModifiedDateTime")))
-            except Exception:
-                pass
+        try:
+            pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers, max_retries=3, timeout=20)
+            for p in pages_beta:
+                pname = p.get("name", "Page.aspx")
+                if pname and pname not in seen_names:
+                    seen_names.add(pname)
+                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
+        except Exception:
+            pass
 
         # Strategy 3: Query Site Pages SharePoint List Items directly (/sites/{id}/lists/{list_id}/items)
-        if not discovered_pages:
-            try:
-                lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists", headers, max_retries=3, timeout=20)
-                page_list = next((lst for lst in lists if lst.get("name", "").lower().replace(" ", "") in ["sitepages", "pages"]), None)
-                if page_list:
-                    items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{page_list['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
+        try:
+            lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists", headers, max_retries=3, timeout=20)
+            for lst in lists:
+                l_name = lst.get("name", "").lower().replace(" ", "")
+                if l_name in ["sitepages", "pages"] or "page" in l_name:
+                    items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
                     for itm in items:
                         fields = itm.get("fields", {})
                         iname = fields.get("FileLeafRef") or fields.get("LinkFilename") or ""
                         if iname.lower().endswith(".aspx") and iname not in seen_names:
                             seen_names.add(iname)
                             discovered_pages.append((iname, fields.get("Modified", itm.get("lastModifiedDateTime"))))
-            except Exception:
-                pass
+        except Exception:
+            pass
+
+        # Strategy 4: Direct BFS crawl of any Site Pages Drive on the subsite (.aspx files)
+        try:
+            drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives", headers, max_retries=3, timeout=20)
+            for sp_drive in drives_list:
+                d_name = sp_drive.get("name", "").lower().replace(" ", "")
+                if d_name in ["sitepages", "pages"] or "page" in d_name:
+                    queue = deque([("root", "")])
+                    while queue:
+                        curr_id, parent_path = queue.popleft()
+                        url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
+                        if curr_id == "root":
+                            url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
+                        items = graph_get_paginated(url, headers, max_retries=3, timeout=20)
+                        for item in items:
+                            iname = item.get("name", "")
+                            if "folder" in item:
+                                queue.append((item.get("id"), f"{parent_path}{iname}/"))
+                            elif iname.lower().endswith(".aspx") and iname not in seen_names:
+                                seen_names.add(iname)
+                                discovered_pages.append((iname, item.get("lastModifiedDateTime")))
+        except Exception:
+            pass
 
         for page_name, p_mod in discovered_pages:
             pdf_name = page_name.replace(".aspx", ".pdf")
