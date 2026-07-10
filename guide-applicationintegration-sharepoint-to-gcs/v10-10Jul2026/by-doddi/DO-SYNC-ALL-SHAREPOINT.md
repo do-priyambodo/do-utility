@@ -176,12 +176,9 @@ python3 sync/sync_sharepoint_to_gcs.py
 Compare your ingested GCS bucket items against live SharePoint repository counts:
 
 ```bash
-# 1. Perform automated multi-threaded GCS vs SharePoint audit
+# 1. Perform automated multi-threaded GCS vs SharePoint inventory audit
 python3 check/check_syncall_after.py
 
-# 2. Inspect generated metadata JSONL file info (size & modification time)
-gcloud storage ls -l "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', 'fullsharepoint-1stjuly'))")/config/metadata.jsonl"
-
-# 3. Verify total synchronized record count inside metadata.jsonl
-echo -n "Total metadata records in GCS: " && gcloud storage cat "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")/config/metadata.jsonl" | grep -c "^{"
+# 2. Inspect and classify synchronized GCS metadata catalog (config/metadata.jsonl)
+python3 check/check_metadata_jsonl.py
 ```
