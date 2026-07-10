@@ -127,7 +127,10 @@ Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that l
 Before initiating file synchronization, run our read-only pre-flight diagnostic checks to verify authentication and audit your SharePoint repository:
 
 ```bash
-# 1. Verify Azure AD / Microsoft Graph Authentication
+# 1. Execute instant offline unit tests (schema & discovery classification logic)
+python3 -m unittest discover tests -v
+
+# 2. Verify Azure AD / Microsoft Graph Authentication
 python3 check/check_entra_id_auth.py
 ```
 
