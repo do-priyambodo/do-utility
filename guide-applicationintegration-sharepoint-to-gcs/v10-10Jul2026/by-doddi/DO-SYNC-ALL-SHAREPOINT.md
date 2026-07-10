@@ -100,14 +100,25 @@ Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that l
 
 ## Step 6: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
 
-Before triggering file downloads, run our read-only diagnostic checks to verify Microsoft Entra ID authentication and simulate full SharePoint discovery (`$top=999` + iterative BFS queue, completes in ~3 to 5 seconds):
+Before triggering file downloads, run our read-only diagnostic checks to verify authentication and simulate full SharePoint discovery (`$top=999` + iterative BFS queue, completes in ~3 to 5 seconds):
 
 ```bash
 # 1. Verify Azure AD / Microsoft Graph Authentication
 python3 check/check_entra_id_auth.py
+```
 
-# 2. Simulate Full SharePoint Traversal (Dry-Run without triggering download batches)
+### Method A: Server-Side Cloud Run Verification (`Tests Deployed Container`)
+Sends `trigger_integration=false` to your deployed Cloud Run service (`doddi-sharepoint-list-files`) to verify that the container is healthy and can analyze live Graph API inventory vs GCS Delta Cache without starting sync workflows:
+
+```bash
 python3 check/check_sync_sharepoint_to_gcs.py --dry-run
+```
+
+### Method B: Direct Client-Side Discovery Check (`Tests Graph API Directly`)
+Runs directly from your local terminal (using 10 concurrent worker threads) to independently query Microsoft Graph API and GCS inventory (`gs://bucket/files/`) without invoking the server-side Cloud Run container:
+
+```bash
+python3 check/check_syncall_before.py
 ```
 
 ---
