@@ -118,7 +118,7 @@ def graph_get_paginated(url, headers, max_retries=10):
 
 from collections import deque
 
-def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock):
+def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock, subsite_name="Home"):
     queue = deque([("root", "")])
     headers = {
         "Authorization": f"Bearer {token}",
@@ -152,7 +152,7 @@ def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock):
                         if item_name.lower().endswith(".aspx"):
                             continue
                         rel_path = f"{parent_path}{item_name}"
-                        file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False}
+                        file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False, "Subsite": subsite_name}
                         needs_sync = True
                         gcs_path = f"files/{rel_path}"
                         if gcs_cache and gcs_path in gcs_cache:
@@ -291,10 +291,12 @@ def run_fast_direct_check(params):
 
     def crawl_files():
         for sid, d in all_target_drives:
-            crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock)
+            s_match = next((x["name"] for x in target_sites if x["id"] == sid), "Home") or "Home"
+            crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock, subsite_name=s_match)
 
     def crawl_pages():
         for s in target_sites:
+            s_name = s["name"] or "Home"
             pages_url = f"https://graph.microsoft.com/v1.0/sites/{s['id']}/pages"
             try:
                 pages = graph_get_paginated(pages_url, headers)
@@ -302,7 +304,7 @@ def run_fast_direct_check(params):
                     page_name = p.get("name", "Page.aspx")
                     pdf_name = page_name.replace(".aspx", ".pdf")
                     rel_page_path = f"pages/{pdf_name}"
-                    page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True}
+                    page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
                     needs_sync = True
                     if gcs_cache and rel_page_path in gcs_cache:
                         p_mod = p.get("lastModifiedDateTime")
@@ -395,6 +397,31 @@ def main():
     skipped_total = total_sp_items - delta_total
 
     print("\n================================================================================")
+    print("📊 SHAREPOINT SITE COLLECTION DEPARTMENT BREAKDOWN (ASSETS BY SUBSITE)")
+    print("================================================================================")
+    print(f"{'No.':<5}{'Subsite / Department Name':<40}{'Docs':<12}{'Site Pages':<12}{'Total':<10}")
+    print("-" * 80)
+    
+    from collections import defaultdict
+    sub_f = defaultdict(int)
+    sub_p = defaultdict(int)
+    for x in all_items:
+        sname = x.get("Subsite", "Home") or "Home"
+        if x.get("IsPage"):
+            sub_p[sname] += 1
+        else:
+            sub_f[sname] += 1
+            
+    all_subs = sorted(list(set(list(sub_f.keys()) + list(sub_p.keys()))))
+    for idx, sname in enumerate(all_subs, 1):
+        fc = sub_f[sname]
+        pc = sub_p[sname]
+        print(f"{idx:<5}{sname[:38]:<40}{fc:<12}{pc:<12}{fc + pc:<10}")
+        
+    print("-" * 80)
+    print(f"{'':<5}{'TOTAL INVENTORY ACROSS SITE':<40}{total_sp_files:<12}{total_sp_pages:<12}{total_sp_items:<10}")
+    print("================================================================================\n")
+    print("================================================================================")
     print("📊 PRE-SYNC VERIFICATION REPORT (BEFORE SYNC)")
     print("================================================================================")
     print(f"1️⃣  TOTAL SHAREPOINT TARGET INVENTORY:")
