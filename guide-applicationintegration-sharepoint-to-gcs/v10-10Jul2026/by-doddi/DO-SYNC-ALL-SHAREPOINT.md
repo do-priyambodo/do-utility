@@ -1,27 +1,51 @@
 # 🚀 Version 10 (`v10-10Jul2026`) Enterprise Complete SharePoint Synchronization Guide (`DO-SYNC-ALL-SHAREPOINT.md`)
 
-This comprehensive copy-paste production runbook covers the end-to-end workflow: validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 900s timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
+This comprehensive copy-paste production runbook covers the end-to-end workflow: authenticating your account to GCP, validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 900s timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
 
 ---
 
-## Step 1: Validate Environment & IAM Prerequisites
+## Step 1: Authenticate Your Account to GCP (`Pre-Requirement`)
 
-Before deploying services, verify that your service accounts and `parameters.json` values are configured correctly:
+Before running deployment or verification scripts, ensure your local terminal session is cleanly authenticated to Google Cloud SDK (`gcloud`) and Application Default Credentials (`ADC`):
 
 ```bash
 # 1. Navigate to Version 10 working directory
 cd /usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi
 
-# 2. (Optional) Run prerequisite IAM script if Service Accounts or bindings are not yet created:
+# 2. Ensure service account impersonation is disabled so commands run directly as your user:
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+
+# 3. Login to Google Cloud SDK with your user account (updates active user & ADC):
+gcloud auth login --update-adc
+
+# 4. Set your active target GCP Project ID from parameters.json:
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+gcloud config set project "${PROJECT_ID}"
+
+# 5. Verify your authentication status and active project:
+gcloud auth list
+echo "✅ Active Project: $(gcloud config get-value project)"
+echo "Testing Identity Token: $(gcloud auth print-identity-token | cut -c1-20)...✅ Valid"
+echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...✅ Valid"
+```
+
+---
+
+## Step 2: Validate Environment & IAM Prerequisites
+
+Verify that your service accounts and `parameters.json` values are configured correctly:
+
+```bash
+# 1. (Optional) Run prerequisite IAM script if Service Accounts or bindings are not yet created:
 ./util/prereq/sa-roles.sh
 
-# 3. Validate your parameters.json syntax and configuration completeness:
+# 2. Validate your parameters.json syntax and configuration completeness:
 python3 util/validate_params.py
 ```
 
 ---
 
-## Step 2: Export Shell Configuration Variables
+## Step 3: Export Shell Configuration Variables
 
 Copy and run the following block in your terminal to export active project parameters dynamically from `parameters.json`:
 
@@ -40,7 +64,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 
 ---
 
-## Step 3: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
+## Step 4: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
 
 Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service and apply Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **900s timeout**) so complex `.aspx` pages render without memory limits:
 
@@ -78,7 +102,7 @@ fi
 
 ---
 
-## Step 4: Deploy Application Integration Workflows
+## Step 5: Deploy Application Integration Workflows
 
 Compile the template files (`child_workflow.json` and `parent_workflow.json`), dynamically inject your environment placeholders, and publish the integration workflows to Google Cloud Application Integration:
 
@@ -88,7 +112,7 @@ python3 deploy/deploy_workflows.py
 
 ---
 
-## Step 5: Deploy Cloud Scheduler Automated Trigger Job
+## Step 6: Deploy Cloud Scheduler Automated Trigger Job
 
 Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that links your configured cron schedule (`CONFIG_Scheduler_Cron_Schedule`) to the deployed Cloud Run Playwright service with full OIDC authentication (`roles/run.invoker`):
 
@@ -98,7 +122,7 @@ Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that l
 
 ---
 
-## Step 6: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
+## Step 7: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
 
 Before triggering file downloads, run our read-only diagnostic checks to verify authentication and simulate full SharePoint discovery (`$top=999` + iterative BFS queue, completes in ~3 to 5 seconds):
 
@@ -123,7 +147,7 @@ python3 check/check_syncall_before.py
 
 ---
 
-## Step 7: Execute Complete Enterprise Synchronization (`Full Traversal`)
+## Step 8: Execute Complete Enterprise Synchronization (`Full Traversal`)
 
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
@@ -155,7 +179,7 @@ python3 sync/sync_sharepoint_to_gcs.py
 
 ---
 
-## Step 8: Post-Sync Inventory Verification
+## Step 9: Post-Sync Inventory Verification
 
 Compare your ingested GCS bucket items against live SharePoint repository counts:
 

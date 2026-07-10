@@ -1,27 +1,51 @@
 # 🎯 Version 10 (`v10-10Jul2026`) Enterprise Targeted Selected-URL SharePoint Synchronization Guide (`DO-SYNC-SELECTED-SHAREPOINT.md`)
 
-This detailed copy-paste runbook walks you through validating your environment, deploying the Playwright backend, deploying workflows and Cloud Scheduler, and synchronizing **specific selected SharePoint files or modern `.aspx` site pages** defined in your remote whitelist (`gs://bucket/config/target_urls.txt`).
+This detailed copy-paste runbook walks you through authenticating your account to GCP, validating your environment, deploying the Playwright backend, deploying workflows and Cloud Scheduler, and synchronizing **specific selected SharePoint files or modern `.aspx` site pages** defined in your remote whitelist (`gs://bucket/config/target_urls.txt`).
 
 ---
 
-## Step 1: Validate Environment & IAM Prerequisites
+## Step 1: Authenticate Your Account to GCP (`Pre-Requirement`)
 
-Verify that your service accounts and `parameters.json` values are configured correctly:
+Before running deployment or verification scripts, ensure your local terminal session is cleanly authenticated to Google Cloud SDK (`gcloud`) and Application Default Credentials (`ADC`):
 
 ```bash
 # 1. Navigate to Version 10 working directory
 cd /usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi
 
-# 2. (Optional) Run prerequisite IAM script if Service Accounts or bindings are not yet created:
+# 2. Ensure service account impersonation is disabled so commands run directly as your user:
+gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+
+# 3. Login to Google Cloud SDK with your user account (updates active user & ADC):
+gcloud auth login --update-adc
+
+# 4. Set your active target GCP Project ID from parameters.json:
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+gcloud config set project "${PROJECT_ID}"
+
+# 5. Verify your authentication status and active project:
+gcloud auth list
+echo "✅ Active Project: $(gcloud config get-value project)"
+echo "Testing Identity Token: $(gcloud auth print-identity-token | cut -c1-20)...✅ Valid"
+echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...✅ Valid"
+```
+
+---
+
+## Step 2: Validate Environment & IAM Prerequisites
+
+Verify that your service accounts and `parameters.json` values are configured correctly:
+
+```bash
+# 1. (Optional) Run prerequisite IAM script if Service Accounts or bindings are not yet created:
 ./util/prereq/sa-roles.sh
 
-# 3. Validate your parameters.json syntax and configuration completeness:
+# 2. Validate your parameters.json syntax and configuration completeness:
 python3 util/validate_params.py
 ```
 
 ---
 
-## Step 2: Export Shell Configuration Variables
+## Step 3: Export Shell Configuration Variables
 
 Copy and run the following block in your terminal to export active project parameters dynamically from `parameters.json`:
 
@@ -40,7 +64,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Location:
 
 ---
 
-## Step 3: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
+## Step 4: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
 
 Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service and apply Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **900s timeout**):
 
@@ -78,7 +102,7 @@ fi
 
 ---
 
-## Step 4: Deploy Application Integration Workflows
+## Step 5: Deploy Application Integration Workflows
 
 Publish the orchestrator pipelines (`child_workflow.json` and `parent_workflow.json`) to Google Cloud Application Integration:
 
@@ -88,7 +112,7 @@ python3 deploy/deploy_workflows.py
 
 ---
 
-## Step 5: Deploy Cloud Scheduler Targeted Trigger Job
+## Step 6: Deploy Cloud Scheduler Targeted Trigger Job
 
 Deploy the automated Cloud Scheduler targeted job (`doddi-sharepoint-sync-targeted`) that links to the deployed Cloud Run service configured for targeted URL synchronization (`trigger_integration=true`):
 
@@ -98,7 +122,7 @@ Deploy the automated Cloud Scheduler targeted job (`doddi-sharepoint-sync-target
 
 ---
 
-## Step 6: Upload Whitelist (`target_urls.txt`) & Execute Dry-Run Verification
+## Step 7: Upload Whitelist (`target_urls.txt`) & Execute Dry-Run Verification
 
 Upload your list of target SharePoint URLs (`target_urls.txt`) to GCS and run a read-only dry-run verification:
 
@@ -112,7 +136,7 @@ python3 check/check_sync_gcs_dynamic.py --dry-run
 
 ---
 
-## Step 7: Execute Targeted Selected Synchronization
+## Step 8: Execute Targeted Selected Synchronization
 
 Initiate the synchronization for your selected URLs:
 
@@ -133,7 +157,7 @@ python3 sync/sync_gcs_dynamic.py --force
 
 ---
 
-## Step 8: Post-Sync Verification
+## Step 9: Post-Sync Verification
 
 Verify that your targeted files and rendered high-fidelity Playwright PDFs have landed in GCS:
 
