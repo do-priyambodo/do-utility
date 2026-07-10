@@ -180,5 +180,5 @@ Compare your ingested GCS bucket items against live SharePoint repository counts
 python3 check/check_syncall_after.py
 
 # 2. Inspect generated metadata JSONL record
-gcloud storage ls -lh "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', 'fullsharepoint-1stjuly'))")/config/metadata.jsonl"
+gcloud storage ls -l "gs://$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', 'fullsharepoint-1stjuly'))")/config/metadata.jsonl"
 ```
