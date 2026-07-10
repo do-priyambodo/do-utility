@@ -1,6 +1,6 @@
 # 🎯 Version 10 (`v10-10Jul2026`) Enterprise Targeted Selected-URL SharePoint Synchronization Guide (`DO-SYNC-SELECTED-SHAREPOINT.md`)
 
-This detailed copy-paste runbook walks you through validating your environment, deploying the Playwright backend, and synchronizing **specific selected SharePoint files or modern `.aspx` site pages** defined in your remote whitelist (`gs://bucket/config/target_urls.txt`).
+This detailed copy-paste runbook walks you through validating your environment, deploying the Playwright backend, deploying workflows and Cloud Scheduler, and synchronizing **specific selected SharePoint files or modern `.aspx` site pages** defined in your remote whitelist (`gs://bucket/config/target_urls.txt`).
 
 ---
 
@@ -31,6 +31,7 @@ export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json
 export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
 export DEV_MEMBER=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
 export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")
+export SCHEDULER_TARGETED_JOB="doddi-sharepoint-sync-targeted"
 export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 
 gcloud config set project "${PROJECT_ID}"
@@ -87,7 +88,17 @@ python3 deploy/deploy_workflows.py
 
 ---
 
-## Step 5: Upload Whitelist (`target_urls.txt`) & Execute Dry-Run Verification
+## Step 5: Deploy Cloud Scheduler Targeted Trigger Job
+
+Deploy the automated Cloud Scheduler targeted job (`doddi-sharepoint-sync-targeted`) that links to the deployed Cloud Run service configured for targeted URL synchronization (`trigger_integration=true`):
+
+```bash
+./deploy/deploy_scheduler_targeted_gcs_sync.sh
+```
+
+---
+
+## Step 6: Upload Whitelist (`target_urls.txt`) & Execute Dry-Run Verification
 
 Upload your list of target SharePoint URLs (`target_urls.txt`) to GCS and run a read-only dry-run verification:
 
@@ -101,25 +112,25 @@ python3 check/check_sync_gcs_dynamic.py --dry-run
 
 ---
 
-## Step 6: Execute Targeted Selected Synchronization
+## Step 7: Execute Targeted Selected Synchronization
 
 Initiate the synchronization for your selected URLs:
 
-### Option A: Interactive Python Dynamic Orchestrator
+### Option A: Cloud Scheduler Targeted Job (Recommended Unattended Production Execution)
 ```bash
-python3 sync/sync_gcs_dynamic.py --force
-```
-
-### Option B: Trigger Existing Cloud Scheduler Targeted Job
-```bash
-gcloud scheduler jobs run doddi-sharepoint-sync-targeted \
+gcloud scheduler jobs run "${SCHEDULER_TARGETED_JOB}" \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 ```
 
+### Option B: Interactive Python Dynamic Orchestrator (Manual Debug & Console Tracking)
+```bash
+python3 sync/sync_gcs_dynamic.py --force
+```
+
 ---
 
-## Step 7: Post-Sync Verification
+## Step 8: Post-Sync Verification
 
 Verify that your targeted files and rendered high-fidelity Playwright PDFs have landed in GCS:
 

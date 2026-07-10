@@ -1,6 +1,6 @@
 # 🚀 Version 10 (`v10-10Jul2026`) Enterprise Complete SharePoint Synchronization Guide (`DO-SYNC-ALL-SHAREPOINT.md`)
 
-This comprehensive copy-paste production runbook covers the end-to-end workflow: validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 900s timeout`), deploying Google Cloud Application Integration orchestrator workflows, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
+This comprehensive copy-paste production runbook covers the end-to-end workflow: validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 900s timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
 
 ---
 
@@ -88,7 +88,17 @@ python3 deploy/deploy_workflows.py
 
 ---
 
-## Step 5: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
+## Step 5: Deploy Cloud Scheduler Automated Trigger Job
+
+Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that links your configured cron schedule (`CONFIG_Scheduler_Cron_Schedule`) to the deployed Cloud Run Playwright service with full OIDC authentication (`roles/run.invoker`):
+
+```bash
+./deploy/deploy_scheduler_full_sharepoint_sync.sh
+```
+
+---
+
+## Step 6: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
 
 Before triggering file downloads, run our read-only diagnostic checks to verify Microsoft Entra ID authentication and simulate full SharePoint discovery (`$top=999` + iterative BFS queue, completes in ~3 to 5 seconds):
 
@@ -102,12 +112,12 @@ python3 check/check_sync_sharepoint_to_gcs.py --dry-run
 
 ---
 
-## Step 6: Execute Complete Enterprise Synchronization (`Full Traversal`)
+## Step 7: Execute Complete Enterprise Synchronization (`Full Traversal`)
 
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
 ### Option A: Cloud Scheduler (Recommended Unattended Production Execution)
-Trigger your configured Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
+Trigger your newly deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
 
 ```bash
 gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" \
@@ -130,7 +140,7 @@ python3 sync/sync_sharepoint_to_gcs.py
 
 ---
 
-## Step 7: Post-Sync Inventory Verification
+## Step 8: Post-Sync Inventory Verification
 
 Compare your ingested GCS bucket items against live SharePoint repository counts:
 
