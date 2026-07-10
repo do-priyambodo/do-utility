@@ -38,17 +38,30 @@ def get_identity_token():
         sys.exit(1)
 
 def get_cf_url(function_name, location, project_id):
+    # First inspect as a custom container Cloud Run service
     try:
-        cmd = [
+        cmd_run = [
+            "gcloud", "run", "services", "describe", function_name,
+            "--region", location,
+            "--project", project_id,
+            "--format", "value(status.url)"
+        ]
+        url = subprocess.check_output(cmd_run, stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        if url and url.startswith("https://"):
+            return url
+    except Exception:
+        pass
+    # Fallback to standard Cloud Functions Gen2 describe
+    try:
+        cmd_cf = [
             "gcloud", "functions", "describe", function_name,
             "--gen2",
             "--region", location,
             "--project", project_id,
             "--format", "value(serviceConfig.uri)"
         ]
-        return subprocess.check_output(cmd).decode("utf-8").strip()
-    except Exception as e:
-        print(f"❌ Failed to retrieve Cloud Function URI: {e}")
+        return subprocess.check_output(cmd_cf, stderr=subprocess.DEVNULL).decode("utf-8").strip()
+    except Exception:
         return None
 
 def run_dynamic_gcs_sync():
