@@ -267,23 +267,43 @@ def run_fast_direct_check(params):
         site_data = json.loads(resp.read().decode("utf-8"))
         site_id = site_data.get("id")
 
-    drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
-    drives = graph_get_paginated(drives_url, headers)
+    def get_all_subsites_recursive(s_id, current_prefix=""):
+        subsites = []
+        url = f"https://graph.microsoft.com/v1.0/sites/{s_id}/sites"
+        try:
+            children = graph_get_paginated(url, headers)
+            for child in children:
+                child_id = child.get("id")
+                raw_name = child.get("name", "")
+                sub_prefix = f"{current_prefix}{raw_name}/" if raw_name else f"{current_prefix}subsite/"
+                subsites.append({"id": child_id, "name": raw_name, "prefix": sub_prefix})
+                subsites.extend(get_all_subsites_recursive(child_id, sub_prefix))
+        except Exception:
+            pass
+        return subsites
 
-    target_drives = []
-    for d in drives:
-        if not library_name or library_name.lower() in ["all", "*"] or d.get("name", "").lower() == library_name.lower():
-            target_drives.append(d)
-    if not target_drives and drives:
-        target_drives = [drives[0]]
+    target_sites = [{"id": site_id, "name": site_name_clean, "prefix": ""}]
+    target_sites.extend(get_all_subsites_recursive(site_id, ""))
+
+    all_target_drives = []
+    for s in target_sites:
+        s_id = s["id"]
+        drives_url = f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives"
+        s_drives = graph_get_paginated(drives_url, headers)
+        for d in s_drives:
+            d_name = d.get("name", "")
+            if not library_name or library_name.lower() in ["all", "*"] or d_name.lower() == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
+                all_target_drives.append((s_id, d))
+        if not all_target_drives and s_drives:
+            all_target_drives.append((s_id, s_drives[0]))
 
     print("--------------------------------------------------------------------------------")
-    print(f"🏢 SHAREPOINT SITE DISCOVERY (Subsite: '{site_name_clean}')")
-    print(f"   • Found {len(drives)} Document Libraries / Drives on Site:")
-    for idx, d in enumerate(drives, 1):
-        print(f"     {idx}. '{d.get('name')}' (Drive ID: {d.get('id', '')[:15]}...)")
+    print(f"🏢 SHAREPOINT SITE & SUBSITE COLLECTION DISCOVERY (Root: '{site_name_clean}')")
+    print(f"   • Total Site Collections / Subsites Scanned: {len(target_sites)}")
+    print(f"   • Total Document Libraries / Drives Found  : {len(all_target_drives)}")
+    for idx, (sid, d) in enumerate(all_target_drives, 1):
+        print(f"     {idx}. Library '{d.get('name')}' (Drive ID: {d.get('id', '')[:15]}...)")
     print(f"   • Active Configured Target ('CONFIG_Sharepoint_Library'): '{library_name}'")
-    print(f"   • Crawling ({len(target_drives)}) Library/Drive(s): {[d.get('name') for d in target_drives]}")
     print("--------------------------------------------------------------------------------\n")
 
     all_items = []
@@ -291,34 +311,35 @@ def run_fast_direct_check(params):
     lock = threading.Lock()
 
     def crawl_files():
-        for d in target_drives:
+        for sid, d in all_target_drives:
             crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock)
 
     def crawl_pages():
-        pages_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/pages"
-        try:
-            pages = graph_get_paginated(pages_url, headers)
-            for p in pages:
-                page_name = p.get("name", "Page.aspx")
-                pdf_name = page_name.replace(".aspx", ".pdf")
-                rel_page_path = f"pages/{pdf_name}"
-                page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True}
-                needs_sync = True
-                if gcs_cache and rel_page_path in gcs_cache:
-                    p_mod = p.get("lastModifiedDateTime")
-                    if p_mod:
-                        try:
-                            sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                            if gcs_cache[rel_page_path] >= sp_dt:
-                                needs_sync = False
-                        except Exception:
-                            pass
-                with lock:
-                    all_items.append(page_obj)
-                    if needs_sync:
-                        sync_items.append(page_obj)
-        except Exception:
-            pass
+        for s in target_sites:
+            pages_url = f"https://graph.microsoft.com/v1.0/sites/{s['id']}/pages"
+            try:
+                pages = graph_get_paginated(pages_url, headers)
+                for p in pages:
+                    page_name = p.get("name", "Page.aspx")
+                    pdf_name = page_name.replace(".aspx", ".pdf")
+                    rel_page_path = f"pages/{pdf_name}"
+                    page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True}
+                    needs_sync = True
+                    if gcs_cache and rel_page_path in gcs_cache:
+                        p_mod = p.get("lastModifiedDateTime")
+                        if p_mod:
+                            try:
+                                sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
+                                if gcs_cache[rel_page_path] >= sp_dt:
+                                    needs_sync = False
+                            except Exception:
+                                pass
+                    with lock:
+                        all_items.append(page_obj)
+                        if needs_sync:
+                            sync_items.append(page_obj)
+            except Exception:
+                pass
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         f_files = pool.submit(crawl_files)
