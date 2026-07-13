@@ -83,43 +83,81 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                         queue.append((child_id, f"{p_path}{item_name}/"))
                     else:
                         if item_name.lower().endswith(".aspx"):
-                            continue
-                        relative_path = f"{p_path}{item_name}"
-                        relative_path_encoded = "/".join([urllib.parse.quote(part) for part in relative_path.split("/")]) if "/" in relative_path else urllib.parse.quote(relative_path)
-                        direct_url = f"{base_file_url}{relative_path_encoded}"
-                        
-                        file_item = {
-                            "Name": item_name,
-                            "Url": direct_url,
-                            "RelativePath": relative_path,
-                            "IsPage": False
-                        }
-                        needs_sync = True
-                        gcs_check_path = f"files/{relative_path}"
-                        if gcs_cache is not None and gcs_check_path in gcs_cache:
-                            sp_mod = item.get("lastModifiedDateTime")
-                            if sp_mod:
+                            pdf_name = item_name.replace(".aspx", ".pdf")
+                            relative_path = f"pages/{p_path}{pdf_name}"
+                            page_item = {
+                                "Name": pdf_name,
+                                "Url": item.get("webUrl", ""),
+                                "RelativePath": relative_path,
+                                "IsPage": True,
+                                "_page_id": item.get("id"),
+                                "_raw_url": item.get("webUrl", ""),
+                                "_filename": pdf_name
+                            }
+                            needs_sync = True
+                            if gcs_cache is not None and relative_path in gcs_cache:
+                                sp_mod = item.get("lastModifiedDateTime")
+                                if sp_mod:
+                                    try:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if gcs_cache[relative_path] >= sp_dt:
+                                            needs_sync = False
+                                    except Exception:
+                                        pass
+                            elif bucket_obj and gcs_cache is None:
                                 try:
-                                    sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                    if gcs_cache[gcs_check_path] >= sp_dt:
-                                        needs_sync = False
+                                    blob = bucket_obj.get_blob(relative_path)
+                                    sp_mod = item.get("lastModifiedDateTime")
+                                    if blob and blob.updated and sp_mod:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if blob.updated >= sp_dt:
+                                            needs_sync = False
                                 except Exception:
                                     pass
-                        elif bucket_obj and gcs_cache is None:
-                            try:
-                                blob = bucket_obj.get_blob(gcs_check_path)
-                                sp_mod = item.get("lastModifiedDateTime")
-                                if blob and blob.updated and sp_mod:
-                                    sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                    if blob.updated >= sp_dt:
-                                        needs_sync = False
-                            except Exception:
-                                pass
 
-                        with lock:
-                            all_results.append(file_item)
-                            if needs_sync:
-                                sync_results.append(file_item)
+                            with lock:
+                                # Ensure no duplicate relative paths
+                                if not any(x.get("RelativePath") == relative_path for x in all_results):
+                                    all_results.append(page_item)
+                                    if needs_sync:
+                                        sync_results.append(page_item)
+                        else:
+                            relative_path = f"{p_path}{item_name}"
+                            relative_path_encoded = "/".join([urllib.parse.quote(part) for part in relative_path.split("/")]) if "/" in relative_path else urllib.parse.quote(relative_path)
+                            direct_url = f"{base_file_url}{relative_path_encoded}"
+                            
+                            file_item = {
+                                "Name": item_name,
+                                "Url": direct_url,
+                                "RelativePath": relative_path,
+                                "IsPage": False
+                            }
+                            needs_sync = True
+                            gcs_check_path = f"files/{relative_path}"
+                            if gcs_cache is not None and gcs_check_path in gcs_cache:
+                                sp_mod = item.get("lastModifiedDateTime")
+                                if sp_mod:
+                                    try:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if gcs_cache[gcs_check_path] >= sp_dt:
+                                            needs_sync = False
+                                    except Exception:
+                                        pass
+                            elif bucket_obj and gcs_cache is None:
+                                try:
+                                    blob = bucket_obj.get_blob(gcs_check_path)
+                                    sp_mod = item.get("lastModifiedDateTime")
+                                    if blob and blob.updated and sp_mod:
+                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
+                                        if blob.updated >= sp_dt:
+                                            needs_sync = False
+                                except Exception:
+                                    pass
+
+                            with lock:
+                                all_results.append(file_item)
+                                if needs_sync:
+                                    sync_results.append(file_item)
                 
     return all_results, sync_results
 
