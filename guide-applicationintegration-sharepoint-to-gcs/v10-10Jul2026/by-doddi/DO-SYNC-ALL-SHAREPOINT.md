@@ -225,3 +225,38 @@ python3 check/check_syncall_after.py
 # 2. Inspect and classify synchronized GCS metadata catalog (config/metadata.jsonl)
 python3 check/check_metadata_jsonl.py
 ```
+
+---
+
+## 🛠️ Troubleshooting & Exporting Diagnostic Log Bundles (`If Errors Occur`)
+
+If you encounter any synchronization failures, container timeouts, or OData rate-limiting (`HTTP 429 / 500 / 504`) during the pipeline run, export your diagnostic logs and send them to your support engineer (**Doddi Priyambodo**) using **either of these two options**:
+
+### Option 1: Export Logs from GCP Console (`JSON Format`)
+1. Navigate to **Logging > Logs Explorer** in the Google Cloud Console (`https://console.cloud.google.com/logs/query`).
+2. Run this quick command in your terminal to print your exact error query dynamically:
+   ```bash
+   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this query into GCP Logs Explorer:\n\nresource.type=\"cloud_run_revision\"\nresource.labels.service_name=\"{fn}\"\nseverity>=ERROR\n")'
+   ```
+3. Paste the generated query into the Logs Explorer search bar and click **Run Query**.
+4. Click the **Download / Export** icon (top right above the log results pane) and select **Download JSON**.
+5. Save the `.json` file and email or attach it to your support ticket.
+
+### Option 2: Create a Complete Diagnostic Log Bundle via Command Line (`Tar/Gz Bundle`)
+Run this single automated command inside your Cloud Shell or terminal. It collects all local execution logs (`log/*.log`), fetches the last 500 Cloud Run container error logs from GCP directly in JSON format, includes a copy of your configuration, and compresses everything into a timestamped `.tar.gz` diagnostic bundle ready for sharing:
+
+```bash
+export BUNDLE_NAME="sharepoint_sync_diagnostic_bundle_$(date +%Y%m%d_%H%M%S).tar.gz"
+mkdir -p log/diagnostic_export && \
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))") && \
+export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))") && \
+echo "📥 Fetching recent Cloud Run error logs from GCP Logs Explorer..." && \
+gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="'"${FUNCTION_NAME}"'" AND severity>=ERROR' \
+  --project="${PROJECT_ID}" --limit=500 --format=json > log/diagnostic_export/cloud_run_errors.json 2>/dev/null || true && \
+cp -r log/*.log log/diagnostic_export/ 2>/dev/null || true && \
+cp parameters.json log/diagnostic_export/parameters.json.copy 2>/dev/null || true && \
+tar -czf "${BUNDLE_NAME}" -C log diagnostic_export && \
+rm -rf log/diagnostic_export && \
+echo "✅ Complete diagnostic log bundle successfully created: ${BUNDLE_NAME}" && \
+echo "📧 Please attach ${BUNDLE_NAME} and send it to your support engineer for immediate analysis!"
+```
