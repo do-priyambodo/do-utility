@@ -72,12 +72,13 @@ Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend 
 # 1. Build & Deploy the high-fidelity Playwright container service
 ./deploy/deploy_cloud_run.sh
 
-# 2. Apply Enterprise 8 GiB Memory / 4 vCPUs / 15-Minute Timeout Sizing
+# 2. Apply Enterprise 8 GiB Memory / 4 vCPUs / 15-Minute Timeout / Startup CPU Boost Sizing
 gcloud run services update "${FUNCTION_NAME}" \
   --region="${LOCATION}" \
   --memory=8192Mi \
   --cpu=4 \
-  --timeout=900
+  --timeout=900 \
+  --cpu-boost
 
 # 3. Grant invoker IAM permissions (with auto-retry fallback for Google Cloud Identity groups vs users)
 if [[ "${DEV_MEMBER}" == "group:"* ]]; then

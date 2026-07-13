@@ -30,8 +30,10 @@ fi
 echo "🚀 Setting project to ${PROJECT_ID}..."
 gcloud config set project "${PROJECT_ID}"
 
-echo "📦 Copying parameters.json to cf-sharepoint for Docker build context..."
+echo "📦 Copying parameters.json and dependencies to cf-sharepoint for Docker build context..."
 cp parameters.json cf-sharepoint/
+[ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true
+[ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
 
 echo "🐳 Building and Deploying Custom Docker Cloud Run Service: ${SERVICE_NAME}..."
 gcloud run deploy "${SERVICE_NAME}" \
@@ -53,6 +55,8 @@ gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
   --project="${PROJECT_ID}"
 
 echo "🧹 Cleaning up deployment context copy..."
-rm cf-sharepoint/parameters.json
+rm -f cf-sharepoint/parameters.json
+[ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true
+[ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
 
 echo "🎉 Cloud Run service successfully deployed with custom Docker container!"
