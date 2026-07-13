@@ -7,6 +7,13 @@ import re
 import time
 from collections import deque
 import threading
+import concurrent.futures
+import traceback
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import google.auth
+from google.auth.transport.requests import Request
 import functions_framework
 from google.cloud import storage
 
@@ -575,12 +582,6 @@ def main(request):
             except Exception as ex_meta:
                 print(f"Warning: Failed to generate or upload config/metadata.jsonl: {ex_meta}")
 
-        # 8. Parallel Pipelined Chunk Rendering & Micro-Batch Orchestration
-        import concurrent.futures
-        import requests
-        from requests.adapters import HTTPAdapter
-        from urllib3.util.retry import Retry
-
         integration_triggered = False
         execution_ids = []
         raw_batch_size = params.get("CONFIG_Batch_Size", 5)
@@ -614,8 +615,6 @@ def main(request):
             return item
 
         if trigger_integration and len(sync_list) > 0:
-            import google.auth
-            from google.auth.transport.requests import Request
             print(f"⚡ Pipelined Execution: Processing {len(sync_list)} items (File Batch: {file_batch_size}, Page Batch: {page_batch_size}, Workers: {max_workers})...")
             credentials, credentials_project_id = google.auth.default()
             project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
@@ -714,7 +713,6 @@ def main(request):
         return (json.dumps(response_payload, indent=2), 200, {"Content-Type": "application/json"})
         
     except Exception as e:
-        import traceback
         err_msg = f"Error executing SharePoint traversal Cloud Function: {e}\n{traceback.format_exc()}"
         print(err_msg)
         return (err_msg, 500)
