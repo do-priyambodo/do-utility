@@ -16,64 +16,66 @@ from config_schema import validate_parameters
 # Cloud Function entrypoint
 @functions_framework.http
 def main(request):
+    if request.path == "/health":
+        return ("OK", 200)
+
     start_time = time.time()
     max_execution_seconds = 800  # 13.3 minutes Wall-Clock safety circuit breaker (< 900s limit)
-    # 1. Parse JSON payload or query parameters
-    req_data = request.get_json(silent=True) or {}
-    
-    # Load parameters.json if it exists in local context
-    params = {}
-    if os.path.exists("parameters.json"):
-        try:
-            with open("parameters.json", "r") as f:
-                params = json.load(f)
-            params = validate_parameters(params)
-        except Exception as e:
-            print(f"Warning: Failed to load or validate parameters.json: {e}")
-
-    # Default configuration fallback
-    site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
-    library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
-    
-    # Optional integration automatic trigger parameters
-    trigger_integration = req_data.get("trigger_integration", False)
-    integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
-    location = req_data.get("location") or params.get("CONFIG_Location")
-    project_id_override = req_data.get("project_id") or params.get("CONFIG_ProjectId")
-
-    # Option 1: Incremental sync bucket client init
-    bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
-    force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
-    conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "playwright")
-    
-    bucket_obj = None
-    gcs_cache = {}
-    if bucket_name and not force_full_sync:
-        try:
-            storage_client = storage.Client()
-            bucket_obj = storage_client.bucket(bucket_name)
-            print("🔍 Pre-fetching GCS blobs metadata for O(1) incremental comparison...")
-            for b in storage_client.list_blobs(bucket_name, prefix="files/"):
-                if b.updated:
-                    gcs_cache[b.name] = b.updated
-            for b in storage_client.list_blobs(bucket_name, prefix="pages/"):
-                if b.updated:
-                    gcs_cache[b.name] = b.updated
-            print(f"✅ Cached {len(gcs_cache)} GCS blob timestamps in memory.")
-        except Exception as e:
-            print(f"Warning: Could not init GCS bucket client or pre-fetch cache: {e}")
-
-    # M365 Tenant Details
-    tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id")
-    client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id")
-    secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name")
-    site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
-
-    if not all([tenant_id, client_id, secret_name, site_hostname]):
-        raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
-
-    
     try:
+        # 1. Parse JSON payload or query parameters
+        req_data = request.get_json(silent=True) or {}
+        
+        # Load parameters.json if it exists in local context
+        params = {}
+        if os.path.exists("parameters.json"):
+            try:
+                with open("parameters.json", "r") as f:
+                    params = json.load(f)
+                params = validate_parameters(params)
+            except Exception as e:
+                print(f"Warning: Failed to load or validate parameters.json: {e}")
+
+        # Default configuration fallback
+        site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
+        library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
+        
+        # Optional integration automatic trigger parameters
+        trigger_integration = req_data.get("trigger_integration", False)
+        integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
+        location = req_data.get("location") or params.get("CONFIG_Location")
+        project_id_override = req_data.get("project_id") or params.get("CONFIG_ProjectId")
+
+        # Option 1: Incremental sync bucket client init
+        bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
+        force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
+        conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "playwright")
+        
+        bucket_obj = None
+        gcs_cache = {}
+        if bucket_name and not force_full_sync:
+            try:
+                storage_client = storage.Client()
+                bucket_obj = storage_client.bucket(bucket_name)
+                print("🔍 Pre-fetching GCS blobs metadata for O(1) incremental comparison...")
+                for b in storage_client.list_blobs(bucket_name, prefix="files/"):
+                    if b.updated:
+                        gcs_cache[b.name] = b.updated
+                for b in storage_client.list_blobs(bucket_name, prefix="pages/"):
+                    if b.updated:
+                        gcs_cache[b.name] = b.updated
+                print(f"✅ Cached {len(gcs_cache)} GCS blob timestamps in memory.")
+            except Exception as e:
+                print(f"Warning: Could not init GCS bucket client or pre-fetch cache: {e}")
+
+        # M365 Tenant Details
+        tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id")
+        client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id")
+        secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name")
+        site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
+
+        if not all([tenant_id, client_id, secret_name, site_hostname]):
+            raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
+
         # 2. Fetch Azure AD Client Secret dynamically via GCP Secret Manager
         client_secret = get_secret(secret_name)
         

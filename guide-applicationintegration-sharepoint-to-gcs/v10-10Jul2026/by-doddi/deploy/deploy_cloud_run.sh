@@ -42,6 +42,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --timeout=3600 \
   --memory=8Gi \
   --cpu=4 \
+  --cpu-boost \
   --clear-base-image
 
 echo "🔐 Granting Cloud Run Invoker role (roles/run.invoker) to ${SERVICE_ACCOUNT}..."

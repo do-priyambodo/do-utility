@@ -24,4 +24,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Run the Functions Framework server targeting our 'main' entrypoint
-CMD ["functions-framework", "--target=main", "--port=8080"]
+CMD functions-framework --target=main --host=0.0.0.0 --port=${PORT:-8080}
