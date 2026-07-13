@@ -18,16 +18,17 @@ To prevent duplication and keep instructions authoritative, all deployment, oper
 ### 🚀 1. Production Full Enterprise Synchronization (`Start Here`)
 👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/DO-SYNC-ALL-SHAREPOINT.md)
 
-Follow the comprehensive **Complete 9-Step Operations Runbook** for end-to-end deployment and full site collection synchronization:
+Follow the comprehensive **Complete 10-Step Operations Runbook** for end-to-end deployment and full site collection synchronization:
 1. Validate & configure [`parameters.json`](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/parameters.json).
 2. Deploy or verify IAM Prerequisite service accounts & GCP Secret Manager M365 credentials.
 3. Deploy Application Integration Parent (`Orchestrator`) and Child (`Worker`) pipelines.
-4. Deploy the multi-threaded Traversal Cloud Run Service (`cf-sharepoint/main.py`) with `--timeout=3600`.
+4. Deploy the multi-threaded Traversal Cloud Run Service (`cf-sharepoint/main.py`) with `--timeout=3600 --cpu-boost`.
 5. Verify container invoker permissions (`roles/run.invoker`).
 6. Deploy automated Cloud Scheduler cron job (`CONFIG_Scheduler_Cron_Schedule`).
 7. **Pre-Flight Verification**: Execute high-speed pre-sync multi-threaded discovery (`check/check_syncall_before.py`).
 8. **Execute Enterprise Sync**: Trigger interactive or scheduler synchronization (`sync/sync_sharepoint_to_gcs.py`).
-9. **Post-Sync Verification**: Verify 100% GCS inventory completion (`check/check_syncall_after.py`) and inspect GCS metadata catalog (`check/check_metadata_jsonl.py`).
+9. **Active Real-Time Monitoring**: Monitor live batch processing and storage progress (`Logs Explorer` / `watch gcloud storage ls`).
+10. **Post-Sync Verification**: Verify 100% GCS inventory completion (`check/check_syncall_after.py`) and inspect GCS metadata catalog (`check/check_metadata_jsonl.py`).
 
 ---
 
