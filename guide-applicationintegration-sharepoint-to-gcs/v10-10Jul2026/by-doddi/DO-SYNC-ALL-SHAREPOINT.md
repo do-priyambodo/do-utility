@@ -142,6 +142,48 @@ Runs directly from your local terminal session using **20 concurrent worker thre
 python3 check/check_syncall_before.py
 ```
 
+### 📡 Active Real-Time Monitoring While Running (`During Step 8 Sync`)
+
+Because a full 13,000+ asset enterprise synchronization runs asynchronously over multiple hours via Cloud Scheduler and Application Integration, use either of these **2 real-time monitoring options** to track progress and verify health while the sync is running:
+
+#### Option 1: Log Explorer (GCP Console UI)
+Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in real time from the **Google Cloud Console**:
+1. Navigate to **Logging > Logs Explorer** (`https://console.cloud.google.com/logs/query`).
+2. Paste the following structured query into the query editor:
+   ```text
+   resource.type="cloud_run_revision"
+   resource.labels.service_name="doddi-sharepoint-list-files"
+   (textPayload:"Processing Pipelined Chunk" OR textPayload:"Rendering pages in parallel" OR jsonPayload.event="DISCOVERY_COMPLETE" OR textPayload:"Batch scheduling")
+   ```
+3. Click **Stream Logs** (top right) to watch live processing chunks (`e.g., Processing Pipelined Chunk 1 to 20 of 13000...`) and batch dispatches.
+
+#### Option 2: Command Line (Real-Time Storage & Log Tracking)
+Run these commands in your Cloud Shell or local terminal to track live objects landing in Google Cloud Storage or stream Cloud Run logs directly:
+
+**A. Live GCS Bucket Counter (Automated Watch Loop - updates every 30s):**
+Track exactly how many `.pdf` reports and document files have landed in your destination GCS bucket:
+```bash
+watch -n 30 'export GCS_BUCKET=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_GCS_Bucket\", \"\"))") && \
+echo "=== 📊 LIVE SHAREPOINT -> GCS SYNC MONITOR ===" && \
+echo "Timestamp    : $(date)" && \
+echo "Target Bucket: gs://${GCS_BUCKET}" && \
+echo "------------------------------------------------------------" && \
+echo -n "Total Synced Files/Pages Landed in GCS : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" 2>/dev/null | wc -l && \
+echo -n "Total Bucket Storage Footprint         : " && \
+gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes 2>/dev/null | cut -f1 && \
+echo "------------------------------------------------------------"'
+```
+
+**B. Live Cloud Run Terminal Log Stream:**
+Stream live container logs directly from your terminal session without opening the browser:
+```bash
+gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="'"${FUNCTION_NAME}"'"' \
+  --project="${PROJECT_ID}" \
+  --limit=25 \
+  --format="table(timestamp, textPayload, jsonPayload.message)"
+```
+
 ---
 
 ## Step 8: Execute Complete Enterprise Synchronization (`Full Traversal`)
