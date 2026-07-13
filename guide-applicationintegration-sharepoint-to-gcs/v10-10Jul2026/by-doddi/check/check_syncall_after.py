@@ -91,9 +91,9 @@ def graph_get_paginated(url, headers, max_retries=10, timeout=30):
     results = []
     if "/pages" in url.lower():
         if "?" in url and "$top=" not in url:
-            url += "&$top=50"
+            url += "&$top=25"
         elif "?" not in url:
-            url += "?$top=50"
+            url += "?$top=25"
         timeout = max(timeout, 90)
     elif "/children" in url or "/sites" in url or "/drives" in url:
         if "?" in url and "$top=" not in url:
