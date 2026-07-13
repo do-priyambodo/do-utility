@@ -83,9 +83,13 @@ import random
 # Helper to handle OData paginated Microsoft Graph API requests with automatic 429 backoff & $top=999 maximization
 def graph_get_paginated(url, headers, max_retries=3, timeout=20):
     results = []
-    
-    # Ensure maximum page size ($top=999) to cut Graph API calls by 80% on 10,000-100,000 assets
-    if "/children" in url or "/sites" in url or "/drives" in url:
+    if "/pages" in url.lower():
+        if "?" in url and "$top=" not in url:
+            url += "&$top=50"
+        elif "?" not in url:
+            url += "?$top=50"
+        timeout = max(timeout, 90)
+    elif "/children" in url or "/sites" in url or "/drives" in url:
         if "?" in url and "$top=" not in url:
             url += "&$top=999"
         elif "?" not in url:
@@ -108,8 +112,9 @@ def graph_get_paginated(url, headers, max_retries=3, timeout=20):
             except Exception as e_net:
                 if attempt + 1 >= max_retries:
                     raise e_net
+                timeout = min(300, int(timeout * 1.5))
                 wait_time = min(5, (2 ** attempt) + random.uniform(0, 1))
-                print(f"⏳ Graph API network retry on {url[:60]}... ({e_net}). Retrying in {wait_time:.1f}s...")
+                print(f"⏳ Graph API network retry on {url[:60]}... ({e_net}). Retrying in {wait_time:.1f}s with adaptive timeout {timeout}s...")
                 time.sleep(wait_time)
         else:
             raise Exception(f"Graph API request failed after {max_retries} retry attempts: {url}")

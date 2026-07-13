@@ -89,7 +89,13 @@ _CHECK_SESSION = requests.Session()
 
 def graph_get_paginated(url, headers, max_retries=10, timeout=30):
     results = []
-    if "/children" in url or "/sites" in url or "/drives" in url:
+    if "/pages" in url.lower():
+        if "?" in url and "$top=" not in url:
+            url += "&$top=50"
+        elif "?" not in url:
+            url += "?$top=50"
+        timeout = max(timeout, 90)
+    elif "/children" in url or "/sites" in url or "/drives" in url:
         if "?" in url and "$top=" not in url:
             url += "&$top=999"
         elif "?" not in url:
@@ -97,16 +103,23 @@ def graph_get_paginated(url, headers, max_retries=10, timeout=30):
 
     while url:
         for attempt in range(max_retries):
-            response = _CHECK_SESSION.get(url, headers=headers, timeout=timeout)
-            if response.status_code == 200:
-                break
-            elif response.status_code in [429, 502, 503, 504]:
-                retry_after = response.headers.get("Retry-After")
-                wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(60, (2 ** attempt) + random.uniform(0, 1))
+            try:
+                response = _CHECK_SESSION.get(url, headers=headers, timeout=timeout)
+                if response.status_code == 200:
+                    break
+                elif response.status_code in [429, 502, 503, 504]:
+                    retry_after = response.headers.get("Retry-After")
+                    wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(60, (2 ** attempt) + random.uniform(0, 1))
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise Exception(f"Graph API returned fatal status {response.status_code}: {response.text}")
+            except Exception as e_net:
+                if attempt + 1 >= max_retries:
+                    raise e_net
+                timeout = min(300, int(timeout * 1.5))
+                wait_time = min(60, (2 ** attempt) + random.uniform(0, 1))
                 time.sleep(wait_time)
-                continue
-            else:
-                raise Exception(f"Graph API returned fatal status {response.status_code}: {response.text}")
         else:
             raise Exception(f"Graph API request failed after {max_retries} attempts: {url}")
 
