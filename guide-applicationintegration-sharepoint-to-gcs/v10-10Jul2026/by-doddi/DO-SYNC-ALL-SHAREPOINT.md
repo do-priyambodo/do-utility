@@ -149,13 +149,11 @@ Because a full 13,000+ asset enterprise synchronization runs asynchronously over
 #### Option 1: Log Explorer (GCP Console UI)
 Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in real time from the **Google Cloud Console**:
 1. Navigate to **Logging > Logs Explorer** (`https://console.cloud.google.com/logs/query`).
-2. Paste the following structured query into the query editor:
-   ```text
-   resource.type="cloud_run_revision"
-   resource.labels.service_name="doddi-sharepoint-list-files"
-   (textPayload:"Processing Pipelined Chunk" OR textPayload:"Rendering pages in parallel" OR jsonPayload.event="DISCOVERY_COMPLETE" OR textPayload:"Batch scheduling")
+2. Run this quick command in your terminal to generate your exact Log Explorer query dynamically from `parameters.json`:
+   ```bash
+   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\nresource.type=\"cloud_run_revision\"\nresource.labels.service_name=\"{fn}\"\n(textPayload:\"Processing Pipelined Chunk\" OR textPayload:\"Rendering pages in parallel\" OR jsonPayload.event=\"DISCOVERY_COMPLETE\" OR textPayload:\"Batch scheduling\")\n")'
    ```
-3. Click **Stream Logs** (top right) to watch live processing chunks (`e.g., Processing Pipelined Chunk 1 to 20 of 13000...`) and batch dispatches.
+3. Paste the generated query into the Logs Explorer search bar and click **Stream Logs** (top right) to watch live processing chunks (`e.g., Processing Pipelined Chunk 1 to 20 of 13000...`) and batch dispatches.
 
 #### Option 2: Command Line (Real-Time Storage & Log Tracking)
 Run these commands in your Cloud Shell or local terminal to track live objects landing in Google Cloud Storage or stream Cloud Run logs directly:
