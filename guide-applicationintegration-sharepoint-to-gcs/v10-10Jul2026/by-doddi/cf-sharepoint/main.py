@@ -5,6 +5,7 @@ import urllib.parse
 import datetime
 import re
 import time
+from collections import deque
 import threading
 import functions_framework
 from google.cloud import storage
