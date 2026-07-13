@@ -410,6 +410,17 @@ def run_fast_direct_check(params):
         except Exception:
             pass
 
+        # Strategy 1.5: Modern Site Pages API via /sitePages/pages endpoint (for departmental sub-hubs)
+        try:
+            pages_sp = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/sitePages/pages", headers, max_retries=3, timeout=20)
+            for p in pages_sp:
+                pname = p.get("name", "Page.aspx")
+                if pname and pname not in seen_names:
+                    seen_names.add(pname)
+                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
+        except Exception:
+            pass
+
         # Strategy 2: Modern Site Pages API beta
         try:
             pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers, max_retries=3, timeout=20)
@@ -434,7 +445,30 @@ def run_fast_direct_check(params):
                             seen_names.add(iname)
                             discovered_pages.append((iname, fields.get("Modified", itm.get("lastModifiedDateTime"))))
                 except Exception:
-                    pass
+                    # Fallback when expand=fields fails (common for SitePages canvas layout items)
+                    try:
+                        raw_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items", headers, max_retries=3, timeout=20)
+                        for itm in raw_items:
+                            web_url = itm.get("webUrl", "")
+                            if web_url.lower().endswith(".aspx"):
+                                iname = os.path.basename(urllib.parse.urlsplit(web_url).path)
+                                if iname and iname not in seen_names:
+                                    seen_names.add(iname)
+                                    discovered_pages.append((iname, itm.get("lastModifiedDateTime")))
+                    except Exception:
+                        pass
+
+                # Strategy 4.5: Direct Drive query for lists named SitePages / Site Pages / Pages
+                if any(k in lst.get("name", "").lower() for k in ["sitepages", "site pages", "pages"]):
+                    try:
+                        drive_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/drive/root/children", headers, max_retries=3, timeout=20)
+                        for di in drive_items:
+                            iname = di.get("name", "")
+                            if iname.lower().endswith(".aspx") and iname not in seen_names:
+                                seen_names.add(iname)
+                                discovered_pages.append((iname, di.get("lastModifiedDateTime")))
+                    except Exception:
+                        pass
         except Exception:
             pass
 

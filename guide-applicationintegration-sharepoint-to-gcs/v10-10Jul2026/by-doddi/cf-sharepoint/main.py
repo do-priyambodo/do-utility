@@ -300,6 +300,18 @@ def main(request):
                     except Exception:
                         pass
 
+                def _strat1_5_pages():
+                    try:
+                        p_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/sitePages/pages", headers, max_retries=2, timeout=15)
+                        with page_lock:
+                            for p in p_list:
+                                u = p.get("webUrl", "")
+                                if u and u not in seen_page_urls:
+                                    seen_page_urls.add(u)
+                                    pages.append(p)
+                    except Exception:
+                        pass
+
                 def _strat2_pages():
                     try:
                         p_list = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
@@ -361,16 +373,43 @@ def main(request):
                                                 seen_page_urls.add(u)
                                                 pages.append(itm)
                             except Exception:
-                                pass
+                                # Fallback when expand=fields fails (common for SitePages canvas layout items)
+                                try:
+                                    raw_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items", headers, max_retries=2, timeout=15)
+                                    for itm in raw_items:
+                                        web_url = itm.get("webUrl", "")
+                                        if web_url.lower().endswith(".aspx"):
+                                            with page_lock:
+                                                if web_url and web_url not in seen_page_urls:
+                                                    seen_page_urls.add(web_url)
+                                                    pages.append(itm)
+                                except Exception:
+                                    pass
+
+                            # Strategy 4.5: Direct Drive query for lists named SitePages / Site Pages / Pages
+                            if any(k in lst.get("name", "").lower() for k in ["sitepages", "site pages", "pages"]):
+                                try:
+                                    drive_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/drive/root/children", headers, max_retries=2, timeout=15)
+                                    for di in drive_items:
+                                        iname = di.get("name", "")
+                                        if iname.lower().endswith(".aspx"):
+                                            u = di.get("webUrl", "")
+                                            with page_lock:
+                                                if u and u not in seen_page_urls:
+                                                    seen_page_urls.add(u)
+                                                    pages.append(di)
+                                except Exception:
+                                    pass
                     except Exception:
                         pass
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
                     futures = [
                         executor.submit(_strat1_pages),
+                        executor.submit(_strat1_5_pages),
                         executor.submit(_strat2_pages),
                         executor.submit(_strat3_pages),
-                        executor.submit(_strat4_pages)
+                        executor.submit(_strat4_pages),
                     ]
                     concurrent.futures.wait(futures, timeout=120)
 
