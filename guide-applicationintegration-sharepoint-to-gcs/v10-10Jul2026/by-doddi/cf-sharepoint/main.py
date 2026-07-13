@@ -16,66 +16,64 @@ from config_schema import validate_parameters
 # Cloud Function entrypoint
 @functions_framework.http
 def main(request):
-    if request.path == "/health":
-        return ("OK", 200)
-
     start_time = time.time()
     max_execution_seconds = 800  # 13.3 minutes Wall-Clock safety circuit breaker (< 900s limit)
+    # 1. Parse JSON payload or query parameters
+    req_data = request.get_json(silent=True) or {}
+    
+    # Load parameters.json if it exists in local context
+    params = {}
+    if os.path.exists("parameters.json"):
+        try:
+            with open("parameters.json", "r") as f:
+                params = json.load(f)
+            params = validate_parameters(params)
+        except Exception as e:
+            print(f"Warning: Failed to load or validate parameters.json: {e}")
+
+    # Default configuration fallback
+    site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
+    library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
+    
+    # Optional integration automatic trigger parameters
+    trigger_integration = req_data.get("trigger_integration", False)
+    integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
+    location = req_data.get("location") or params.get("CONFIG_Location")
+    project_id_override = req_data.get("project_id") or params.get("CONFIG_ProjectId")
+
+    # Option 1: Incremental sync bucket client init
+    bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
+    force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
+    conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "playwright")
+    
+    bucket_obj = None
+    gcs_cache = {}
+    if bucket_name and not force_full_sync:
+        try:
+            storage_client = storage.Client()
+            bucket_obj = storage_client.bucket(bucket_name)
+            print("🔍 Pre-fetching GCS blobs metadata for O(1) incremental comparison...")
+            for b in storage_client.list_blobs(bucket_name, prefix="files/"):
+                if b.updated:
+                    gcs_cache[b.name] = b.updated
+            for b in storage_client.list_blobs(bucket_name, prefix="pages/"):
+                if b.updated:
+                    gcs_cache[b.name] = b.updated
+            print(f"✅ Cached {len(gcs_cache)} GCS blob timestamps in memory.")
+        except Exception as e:
+            print(f"Warning: Could not init GCS bucket client or pre-fetch cache: {e}")
+
+    # M365 Tenant Details
+    tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id")
+    client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id")
+    secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name")
+    site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
+
+    if not all([tenant_id, client_id, secret_name, site_hostname]):
+        raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
+
+    
     try:
-        # 1. Parse JSON payload or query parameters
-        req_data = request.get_json(silent=True) or {}
-        
-        # Load parameters.json if it exists in local context
-        params = {}
-        if os.path.exists("parameters.json"):
-            try:
-                with open("parameters.json", "r") as f:
-                    params = json.load(f)
-                params = validate_parameters(params)
-            except Exception as e:
-                print(f"Warning: Failed to load or validate parameters.json: {e}")
-
-        # Default configuration fallback
-        site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
-        library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
-        
-        # Optional integration automatic trigger parameters
-        trigger_integration = req_data.get("trigger_integration", False)
-        integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
-        location = req_data.get("location") or params.get("CONFIG_Location")
-        project_id_override = req_data.get("project_id") or params.get("CONFIG_ProjectId")
-
-        # Option 1: Incremental sync bucket client init
-        bucket_name = req_data.get("bucket_name") or params.get("CONFIG_GCS_Bucket")
-        force_full_sync = req_data.get("force_full_sync", False) or params.get("CONFIG_Force_Full_Sync", False)
-        conv_engine = req_data.get("pdf_conversion_engine") or params.get("CONFIG_PDF_Conversion_Engine", "playwright")
-        
-        bucket_obj = None
-        gcs_cache = {}
-        if bucket_name and not force_full_sync:
-            try:
-                storage_client = storage.Client()
-                bucket_obj = storage_client.bucket(bucket_name)
-                print("🔍 Pre-fetching GCS blobs metadata for O(1) incremental comparison...")
-                for b in storage_client.list_blobs(bucket_name, prefix="files/"):
-                    if b.updated:
-                        gcs_cache[b.name] = b.updated
-                for b in storage_client.list_blobs(bucket_name, prefix="pages/"):
-                    if b.updated:
-                        gcs_cache[b.name] = b.updated
-                print(f"✅ Cached {len(gcs_cache)} GCS blob timestamps in memory.")
-            except Exception as e:
-                print(f"Warning: Could not init GCS bucket client or pre-fetch cache: {e}")
-
-        # M365 Tenant Details
-        tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id")
-        client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id")
-        secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name")
-        site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
-
-        if not all([tenant_id, client_id, secret_name, site_hostname]):
-            raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
-
         # 2. Fetch Azure AD Client Secret dynamically via GCP Secret Manager
         client_secret = get_secret(secret_name)
         
@@ -246,35 +244,35 @@ def main(request):
                 print(f"Warning: Failed to list drives for site {curr_site_id}: {e}")
                 continue
                 
-            target_drive_id = None
-            target_drive_url = None
+            drives_to_scan = []
+            system_libraries = {"style library", "form templates", "site assets", "sitepages", "pages", "site pages"}
             for d in drives:
                 d_name = d.get("name", "")
-                if d_name == library_name or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
-                    target_drive_id = d.get("id")
-                    target_drive_url = d.get("webUrl")
-                    break
-                    
-            if not target_drive_id and drives:
+                d_lower = d_name.lower().replace(" ", "")
+                if d.get("driveType") == "documentLibrary" and d_lower not in system_libraries:
+                    if not library_name or library_name.lower() in ["all", "*"] or d_name.lower() == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
+                        drives_to_scan.append(d)
+            if not drives_to_scan and drives and library_name.lower() not in ["all", "*"]:
                 for d in drives:
-                    if d.get("driveType") == "documentLibrary" and d.get("name") not in ["Site Pages", "Style Library", "Form Templates", "Site Assets"]:
-                        target_drive_id = d.get("id")
-                        target_drive_url = d.get("webUrl")
+                    if d.get("driveType") == "documentLibrary" and d.get("name", "").lower() not in system_libraries:
+                        drives_to_scan.append(d)
                         break
-                if not target_drive_id:
-                    target_drive_id = drives[0].get("id")
-                    target_drive_url = drives[0].get("webUrl")
-                
-            # 6. Recursively list all files inside the target Document Library
+
+            # 6. Recursively list all files inside every matching Document Library
             max_items = req_data.get("max_items")
-            if target_drive_id and sync_files_flag:
-                if target_drive_url:
-                    base_file_url = f"{target_drive_url.rstrip('/')}/"
-                else:
-                    library_encoded = urllib.parse.quote(library_name)
-                    sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
-                    base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+            if drives_to_scan and sync_files_flag:
+                for target_drive in drives_to_scan:
+                    if max_items is not None and len(all_list) >= max_items:
+                        break
+                    td_id = target_drive.get("id")
+                    td_url = target_drive.get("webUrl")
+                    if td_url:
+                        base_file_url = f"{td_url.rstrip('/')}/"
+                    else:
+                        library_encoded = urllib.parse.quote(target_drive.get("name", library_name))
+                        sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
+                        base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
+                    list_drive_items_recursive(token, td_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
                 
