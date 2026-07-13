@@ -318,8 +318,7 @@ def main(request):
                         for sp_drive in drives_list:
                             if time.time() - discovery_start_time > 2100:
                                 break
-                            d_name = sp_drive.get("name", "").lower().replace(" ", "")
-                            if d_name in ["sitepages", "pages"] or "page" in d_name:
+                            try:
                                 queue = deque([("root", "")])
                                 while queue:
                                     if time.time() - discovery_start_time > 2100:
@@ -339,6 +338,8 @@ def main(request):
                                                 if u and u not in seen_page_urls:
                                                     seen_page_urls.add(u)
                                                     pages.append(item)
+                            except Exception:
+                                pass
                     except Exception:
                         pass
 
@@ -348,10 +349,7 @@ def main(request):
                         for lst in lists:
                             if time.time() - discovery_start_time > 2100:
                                 break
-                            l_name = lst.get("name", "").lower()
-                            l_display = lst.get("displayName", "").lower()
-                            l_tmpl = lst.get("list", {}).get("template", "").lower()
-                            if any(k in l_name or k in l_display for k in ["page", "sitepages", "faq", "article", "kb", "wiki"]) or l_tmpl in ["sitepages", "sitepage", "wikipage"]:
+                            try:
                                 items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=2, timeout=15)
                                 for itm in items:
                                     fields = itm.get("fields", {})
@@ -362,6 +360,8 @@ def main(request):
                                             if u and u not in seen_page_urls:
                                                 seen_page_urls.add(u)
                                                 pages.append(itm)
+                            except Exception:
+                                pass
                     except Exception:
                         pass
 

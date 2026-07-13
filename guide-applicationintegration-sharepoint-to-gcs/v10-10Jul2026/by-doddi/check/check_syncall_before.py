@@ -394,14 +394,11 @@ def run_fast_direct_check(params):
         except Exception:
             pass
 
-        # Strategy 3: Query Site Pages SharePoint List Items directly (/sites/{id}/lists/{list_id}/items)
+        # Strategy 3: Query SharePoint List Items directly across all lists (/sites/{id}/lists/{list_id}/items)
         try:
             lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists", headers, max_retries=3, timeout=20)
             for lst in lists:
-                l_name = lst.get("name", "").lower()
-                l_display = lst.get("displayName", "").lower()
-                l_tmpl = lst.get("list", {}).get("template", "").lower()
-                if any(k in l_name or k in l_display for k in ["page", "sitepages", "faq", "article", "kb", "wiki"]) or l_tmpl in ["sitepages", "sitepage", "wikipage"]:
+                try:
                     items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
                     for itm in items:
                         fields = itm.get("fields", {})
@@ -409,15 +406,16 @@ def run_fast_direct_check(params):
                         if iname.lower().endswith(".aspx") and iname not in seen_names:
                             seen_names.add(iname)
                             discovered_pages.append((iname, fields.get("Modified", itm.get("lastModifiedDateTime"))))
+                except Exception:
+                    pass
         except Exception:
             pass
 
-        # Strategy 4: Direct BFS crawl of any Site Pages Drive on the subsite (.aspx files)
+        # Strategy 4: Direct BFS crawl across all Drives on the subsite (.aspx files)
         try:
             drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives", headers, max_retries=3, timeout=20)
             for sp_drive in drives_list:
-                d_name = sp_drive.get("name", "").lower().replace(" ", "")
-                if d_name in ["sitepages", "pages"] or "page" in d_name:
+                try:
                     queue = deque([("root", "")])
                     while queue:
                         curr_id, parent_path = queue.popleft()
@@ -432,6 +430,8 @@ def run_fast_direct_check(params):
                             elif iname.lower().endswith(".aspx") and iname not in seen_names:
                                 seen_names.add(iname)
                                 discovered_pages.append((iname, item.get("lastModifiedDateTime")))
+                except Exception:
+                    pass
         except Exception:
             pass
 
