@@ -683,7 +683,9 @@ def main(request):
                         scheduler_session.headers["Authorization"] = f"Bearer {access_token}"
                         continue
                     elif resp.status_code == 200:
-                        return resp.json().get("executionId")
+                        data = resp.json()
+                        eids = data.get("executionInfoIds", [])
+                        return data.get("executionId") or (eids[0] if isinstance(eids, list) and len(eids) > 0 else "triggered")
                     elif resp.status_code in [429, 500, 502, 503, 504]:
                         time.sleep(2 ** attempt)
                 raise Exception(f"Failed to schedule batch after retries: {resp.text}")
