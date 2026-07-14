@@ -30,12 +30,14 @@ fi
 echo "🚀 Setting project to ${PROJECT_ID}..."
 gcloud config set project "${PROJECT_ID}"
 
-echo "📦 Copying parameters.json and dependencies to cf-sharepoint for Docker build context..."
+echo "📦 Copying parameters.json, sites-sync.json, and utilities to cf-sharepoint for Docker build context..."
 cp parameters.json cf-sharepoint/
 [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true
+[ -d config ] && cp -r config cf-sharepoint/ || true
+[ -d util ] && cp -r util cf-sharepoint/ || true
 [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
 
-echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME}..."
+echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME} (V11 Category Pipeline)..."
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
 echo "📦 Submitting source to Cloud Build asynchronously (--async) to bypass VPC-SC log streaming perimeters (${IMAGE_NAME})..."
 BUILD_ID=$(gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --async --format="value(id)")
@@ -62,6 +64,7 @@ gcloud run jobs create "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=config/sites-sync.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}" || \
 gcloud run jobs update "${SERVICE_NAME}" \
@@ -72,6 +75,7 @@ gcloud run jobs update "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=config/sites-sync.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}"
 
@@ -108,7 +112,8 @@ fi
 echo "🧹 Cleaning up deployment context copy..."
 rm -f cf-sharepoint/parameters.json
 [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true
+[ -d cf-sharepoint/config ] && rm -rf cf-sharepoint/config || true
+[ -d cf-sharepoint/util ] && rm -rf cf-sharepoint/util || true
 [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
 
-echo "🎉 Cloud Run Job successfully deployed with custom 24-hour continuous Docker container!"
-
+echo "🎉 Cloud Run Job successfully deployed with custom 24-hour continuous Docker container and V11 Category Matrix!"
