@@ -137,6 +137,8 @@ Modify the discovery logic inside `cf-sharepoint/main.py` to support `Option 1 M
        
    for category in categories_to_sync:
        process_category_sync(category, params, headers)
+       # Clear inventory from memory and close session before proceeding to next category
+       clear_category_memory_buffer()
    ```
 
 2. **Duplicate Prevention (`include_subsites: false` Check):**
@@ -193,14 +195,13 @@ Modify the discovery logic inside `cf-sharepoint/main.py` to support `Option 1 M
 
 ---
 
-### [Component 3: Verification & Runbook Hygiene]
-Ensure all operational scripts support Option 1 Master Loop dispatching.
+### [Component 3: Verification & Runbook Hygiene (`check_syncall_before/after`)]
+Ensure all operational scripts and diagnostic checks (`check_syncall_before.py` and `check_syncall_after.py`) support Category-Based dispatching and serial memory isolation.
 
-#### [NEW] `deploy/deploy_category_scheduler.sh`
-Helper script to deploy or check the single Option 1 Cloud Scheduler job (`yourorg-sharepoint-sync-daily`) pointing to the universal Cloud Run container URL.
-
-#### [NEW] `DO-SYNC-SELECTED-CATEGORY.md`
-Standardized copy-pasteable runbook for Option 1 master loop execution, single-category overrides (`--update-env-vars="TARGET_CATEGORY_ID=tier1-business"`), monitoring, and verification.
+#### [MODIFY] `check/check_syncall_before.py` & `check/check_syncall_after.py`
+Update both verification scripts to load `sites-sync.json` and support two execution modes:
+* **Mode A (Targeted Single Category Audit):** `python3 check/check_syncall_before.py --category=tier1-business` $\rightarrow$ Audits ONLY the Business subsite and its GCS prefix in <15 seconds.
+* **Mode B (Master Serial Category-by-Category Loop):** `python3 check/check_syncall_before.py` $\rightarrow$ Loops through each category in `sites-sync.json` sequentially, clearing memory after each category, and prints a unified summary table across all 38,823 items.
 
 ---
 

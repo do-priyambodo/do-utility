@@ -131,7 +131,7 @@ If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites
 
 To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v11-percategory`** to support a new parameter/flag: `"include_subsites"` (or `"recursive"`), defaulting to `true` for backward compatibility, but allowing `false` when targeting root site collections that have separate child category jobs.
 
-#### How It Works in `sites-sync.json` (Notice zero `cron_schedule` needed per Option 1):
+#### How It Works in `sites-sync.json`:
 ```json
 {
   "categories": [
@@ -181,10 +181,10 @@ else:
     target_sites_to_scan = get_all_subsites_recursive(CONFIG_Sharepoint_Sites, headers)
 ```
 
-#### The Operational Result with `include_subsites: false`:
-1. When Category 1 (`sites/DEN` with `include_subsites: false`) runs: It scans only the libraries directly attached to `sites/DEN` (exactly those **4,076 root items**). It **never** crawls `Consumer` or `Business`. $\rightarrow$ **0 Duplicates!**
-2. When Category 2 (`sites/DEN/Consumer` with `include_subsites: true`) runs: It scans only `Consumer` (and its sub-teams, exactly those **8,256 items**). $\rightarrow$ **0 Duplicates!**
-3. When Category 3 (`sites/DEN/Business` with `include_subsites: true`) runs: It scans only `Business` (exactly those **9,599 items**). $\rightarrow$ **0 Duplicates!**
+#### The Operational Guarantee:
+* At any given second during the Option 1 Master Loop, the container's RAM and the Microsoft Graph API connection **ONLY discover and process the exact items belonging to that single category**!
+* When Category 1 finishes its 4,076 items, `main.py` **clears the discovery inventory from memory (`target_sites_to_scan.clear()`) and closes the session** before moving to Category 2.
+* **We NEVER discover or process all 38,823 items at the same time in memory or in one single OData discovery burst again!**
 
 ---
 
@@ -236,7 +236,40 @@ At the very end of `main.py` inside `v11-percategory` (after the loop finishes a
 2. **In-Memory Merge & Deduplication:** Streams and combines all lines into a single master dictionary in memory (`O(1)` deduplication by `id` / `source_url`).
 3. **Atomic Master Upload:** Uploads the combined master file directly to **`gs://<bucket>/config/metadata.jsonl`**!
 
-#### 🚀 Why This Master Aggregator Strategy Is Perfect for Vertex AI:
-* **One Single Source of Truth:** Your Vertex AI Data Store (`gcs_store`) points strictly to `gs://<bucket>/config/metadata.jsonl`. Whenever the loop finishes, `metadata.jsonl` is immediately refreshed containing **100% of all items across every department**!
-* **100% Citation Link Preservation:** Both `source_url` (where Vertex AI reads the PDF content in GCS) and `sharepoint_url` (where the `AgentAssist` chatbot generates clickable M365 URLs for human agents) are perfectly preserved for every single item!
-* **Zero Race Conditions:** Because each category writes strictly to its own `metadata_part.jsonl` shard during the loop, category writes are 100% isolated and safe!
+---
+
+## 7. 🔍 DIAGNOSTIC MECHANISMS: `check_syncall_before.py` & `check_syncall_after.py` in V11
+
+In V11, our pre-flight and post-flight verification scripts (`check/check_syncall_before.py` and `check/check_syncall_after.py`) are updated to mirror the exact same `sites-sync.json` Category Matrix and support **two execution modes**:
+
+### Mode A: Targeted Single-Category Check (`Fast Audit Mode`) ⭐
+If an operator wants to check only the status of one specific department right before or right after a sync:
+```bash
+python3 check/check_syncall_before.py --category=tier1-business
+```
+* **Behavior:** Opens `sites-sync.json`, finds `tier1-business`, connects strictly to `sites/DEN/Business`, evaluates timestamps against `gs://<bucket>/categories/business/`, and outputs that single category's exact report in **<15 seconds**!
+
+### Mode B: Master Serial Category-by-Category Loop (`Full Tenant Audit Mode`)
+If run without `--category`:
+```bash
+python3 check/check_syncall_before.py
+```
+* **Behavior:** Instead of running one massive 20-minute discovery burst across 59 libraries simultaneously, the diagnostic script loops through `sites-sync.json` sequentially (or with parallel category workers), cleans up memory after each category, and prints a **Unified Category Summary Report Table**:
+
+```
+================================================================================
+📊 V11 PRE-SYNC AUDIT: CATEGORY BY CATEGORY INVENTORY & DELTA SUMMARY
+================================================================================
+No.  Category ID                Display Name                Target   Delta  Skipped
+--------------------------------------------------------------------------------
+1    tier1-den-root-only        DEN Root Portal ONLY        4076     0      4076   
+2    tier1-business             Business Department         9599     12     9587   
+3    tier1-consumer             Consumer Department         8256     0      8256   
+4    tier1-hotlink              Hotlink Department          5265     0      5265   
+5    tier1-system-procedure     System & Procedure          4320     5      4315   
+6    tier2-medium-departments   Channels, Solutions & QA    4887     0      4887   
+7    tier3-specialized-teams    MEPS, Credit, BCP, FAQ...   2420     0      2420   
+--------------------------------------------------------------------------------
+     TOTAL INVENTORY ACROSS ALL CATEGORIES                  38823    17     38806  
+================================================================================
+```
