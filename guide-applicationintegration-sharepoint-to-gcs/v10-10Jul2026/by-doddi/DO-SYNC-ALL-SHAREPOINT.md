@@ -77,7 +77,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 Before deploying to Cloud Run, run this exact dynamic one-liner in your terminal to pull the latest release tag and verify in 2 seconds that your local repository and `pdf_renderer.py` have 100% parity with our verified Playwright-exclusive release:
 
 ```bash
-git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, subprocess; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and '_THREAD_LOCAL = threading.local()' in open('cf-sharepoint/pdf_renderer.py').read(); tag = subprocess.getoutput('git describe --tags --abbrev=0 2>/dev/null') or 'latest'; commit = subprocess.getoutput('git rev-parse --short HEAD 2>/dev/null') or 'unknown'; print(f'✅ VERIFIED: Your local app is 100% identical to {tag} (Commit {commit}) with thread-local greenlet isolation and 0 syntax errors.')"
+git fetch origin && git checkout -f origin/main -- deploy/deploy_cloud_run.sh cf-sharepoint/pdf_renderer.py DO-SYNC-ALL-SHAREPOINT.md && chmod +x deploy/deploy_cloud_run.sh && python3 -c "assert '--async' in open('deploy/deploy_cloud_run.sh').read() and '_THREAD_LOCAL = threading.local()' in open('cf-sharepoint/pdf_renderer.py').read(); print('VERIFIED: You are on Revision 00033 with VPC-SC immune async build and greenlet isolation.')"
 ```
 
 ---
@@ -85,8 +85,8 @@ git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, s
 ## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
 
 > [!IMPORTANT]
-> **Revision 00028 Architectural Sizing (`Thread-Local Playwright Greenlet Isolation & 24-Hour Cloud Run Job`)**
-> Our backend runs as a **Google Cloud Run Job** (`batch processing engine`) rather than a Web Service, completely bypassing Google's 60-minute HTTP timeout ceiling so that large-scale enterprise traversals (**100,000+ assets**) can run continuously inside a single container for up to **24 hours (`86,400s`)** straight. Furthermore, it enforces **Thread-Local Greenlet Isolation (`_THREAD_LOCAL = threading.local()`)** across all 10 worker threads (`ThreadPoolExecutor`), eliminating `greenlet.error: cannot switch to a different thread` and keeping Chromium contexts 100% stable across thousands of `.aspx` pages without any PID wraparound (`SIGTRAP`) or cross-thread collisions.
+> **Revision 00033 Architectural Sizing (`VPC-SC Immune Async Build & Thread-Local Greenlet Isolation`)**
+> Our backend runs as a **Google Cloud Run Job** (`batch processing engine`) rather than a Web Service, completely bypassing Google's 60-minute HTTP timeout ceiling so that large-scale enterprise traversals (**100,000+ assets**) can run continuously inside a single container for up to **24 hours (`86,400s`)** straight. Furthermore, it enforces **Thread-Local Greenlet Isolation (`_THREAD_LOCAL = threading.local()`)** across all 10 worker threads (`ThreadPoolExecutor`), eliminating `greenlet.error: cannot switch to a different thread` and keeping Chromium contexts 100% stable across thousands of `.aspx` pages without any PID wraparound (`SIGTRAP`) or cross-thread collisions. The deployment script also uses **asynchronous Cloud Build (`--async`)** to completely bypass VPC-SC GCS log streaming blocks.
 
 Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **86,400s timeout**). 
 
@@ -254,12 +254,12 @@ Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in
 2. **Set Time Range Filter (IMPORTANT):** In the top-right time picker of Logs Explorer, filter the start time to the **exact timestamp when you executed the Cloud Scheduler job in Step 8**. This ensures you only see active logs from the current execution without noise from prior runs.
 3. Paste the following universal query into the search bar (replace `your-service-name` with your actual service name from `parameters.json`, e.g., `july1st-sharepoint-list-files`):
    ```text
-   (resource.type="cloud_run_revision" OR resource.type="cloud_function")
-   (resource.labels.service_name="your-service-name" OR resource.labels.function_name="your-service-name")
+   (resource.type="cloud_run_job" OR resource.type="cloud_run_revision" OR resource.type="cloud_function")
+   (resource.labels.job_name="your-service-name" OR resource.labels.service_name="your-service-name" OR resource.labels.function_name="your-service-name")
    ```
    *(Optional)* To generate this exact query dynamically with your `parameters.json` service name already inserted, run:
    ```bash
-   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_revision\" OR resource.type=\"cloud_function\")\n(resource.labels.service_name=\"{fn}\" OR resource.labels.function_name=\"{fn}\")\n")'
+   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\" OR resource.type=\"cloud_function\")\n(resource.labels.job_name=\"{fn}\" OR resource.labels.service_name=\"{fn}\" OR resource.labels.function_name=\"{fn}\")\n")'
    ```
 4. Click **Stream Logs** (top right) to watch live batch processing and Playwright rendering in real time.
 
@@ -284,10 +284,10 @@ echo "------------------------------------------------------------"'
 **B. Live Cloud Run Terminal Log Stream:**
 Stream live container logs directly from your terminal session without opening the browser:
 ```bash
-gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="'"${FUNCTION_NAME}"'"' \
+gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\")" \
   --project="${PROJECT_ID}" \
   --limit=25 \
-  --format="table(timestamp, textPayload, jsonPayload.message)"
+  --format="table(timestamp,severity,textPayload)"
 ```
 
 ---
@@ -314,7 +314,7 @@ If you encounter any synchronization failures, container timeouts, or OData rate
 1. Navigate to **Logging > Logs Explorer** in the Google Cloud Console (`https://console.cloud.google.com/logs/query`).
 2. Run this quick command in your terminal to print your exact error query dynamically:
    ```bash
-   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this query into GCP Logs Explorer:\n\nresource.type=\"cloud_run_revision\"\nresource.labels.service_name=\"{fn}\"\nseverity>=ERROR\n")'
+   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\")\n(resource.labels.job_name=\"{fn}\" OR resource.labels.service_name=\"{fn}\")\nseverity>=ERROR\n")'
    ```
 3. Paste the generated query into the Logs Explorer search bar and click **Run Query**.
 4. Click the **Download / Export** icon (top right above the log results pane) and select **Download JSON**.
@@ -329,7 +329,7 @@ mkdir -p log/diagnostic_export && \
 export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))") && \
 export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))") && \
 echo "📥 Fetching recent Cloud Run error logs from GCP Logs Explorer..." && \
-gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="'"${FUNCTION_NAME}"'" AND severity>=ERROR' \
+gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\") AND severity>=ERROR" \
   --project="${PROJECT_ID}" --limit=500 --format=json > log/diagnostic_export/cloud_run_errors.json 2>/dev/null || true && \
 cp -r log/*.log log/diagnostic_export/ 2>/dev/null || true && \
 cp parameters.json log/diagnostic_export/parameters.json.copy 2>/dev/null || true && \
