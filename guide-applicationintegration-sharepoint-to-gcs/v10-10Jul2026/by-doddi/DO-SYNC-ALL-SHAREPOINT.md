@@ -214,6 +214,9 @@ gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('param
   --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") \
   --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
+> [!TIP]
+> **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
+> This command sends an asynchronous trigger and exits in `~2 seconds`. The 24-hour traversal runs unattended inside Google Cloud's infrastructure. **You can safely close your terminal or shut down your laptop right after running this command!**
 
 ### Option B: Direct Cloud Run Job Execution (`Recommended for On-Demand Sync`)
 Use this option when you want to bypass Cloud Scheduler and launch the 24-Hour Cloud Run Job directly from your terminal immediately. This is the fastest, cleanest way for an administrator or engineer to start a one-shot sync on-demand right after deployment or after updating configurations:
@@ -223,6 +226,9 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
   --region="${LOCATION}" \
   --project="${PROJECT_ID}"
 ```
+> [!TIP]
+> **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
+> Just like Option A, `gcloud run jobs execute` sends the execution trigger to Google Cloud and returns immediately (`Execution [job-id] has started`). **You can safely close your terminal or shut down your laptop right after running this command** without interrupting the 24-hour cloud job (unless you explicitly attach the `--wait` flag).
 
 ### Option C: Interactive Python Runner (`Manual Debug & Local Terminal Tracking`)
 Runs the complete synchronization interactively right on your local machine/terminal shell:
@@ -230,6 +236,9 @@ Runs the complete synchronization interactively right on your local machine/term
 ```bash
 python3 sync/sync_sharepoint_to_gcs.py
 ```
+> [!CAUTION]
+> **💻 Laptop / Terminal Closure Safety: DO NOT CLOSE YOUR LAPTOP OR TERMINAL**  
+> Unlike Options A & B, Option C runs locally right inside your active shell session on your computer. **If you close your terminal window, lose Wi-Fi, or put your laptop to sleep, the process (`SIGHUP`) will be killed instantly and the sync will abort!** Use this only for local interactive debugging or when running inside a persistent screen/tmux session.
 
 > [!TIP]
 > **Realistic Enterprise Timeline Expectations (`38,000+ Items / 23 Subsites`)**:
