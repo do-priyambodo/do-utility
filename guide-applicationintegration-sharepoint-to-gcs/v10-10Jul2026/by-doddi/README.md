@@ -16,10 +16,10 @@ Features **Rugged Enterprise Best Practices (`awesome-agv v3.6.0`)**, including:
 To prevent duplication and keep instructions authoritative, all deployment, operational, and architectural procedures are maintained in dedicated topic documents. **Select your operational task below:**
 
 ### 🚀 1. Production Full Enterprise Synchronization (`Start Here`)
-👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/DO-SYNC-ALL-SHAREPOINT.md)
+👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT.md](parameters.json)
 
 Follow the comprehensive **Complete 10-Step Operations Runbook** for end-to-end deployment and full site collection synchronization:
-1. Validate & configure [`parameters.json`](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/parameters.json).
+1. Validate & configure [`parameters.json`](parameters.json).
 2. Deploy or verify IAM Prerequisite service accounts & GCP Secret Manager M365 credentials.
 3. Deploy Application Integration Parent (`Orchestrator`) and Child (`Worker`) pipelines.
 4. Deploy the multi-threaded Traversal Cloud Run Service (`cf-sharepoint/main.py`) with `--timeout=3600 --cpu-boost`.
@@ -33,28 +33,28 @@ Follow the comprehensive **Complete 10-Step Operations Runbook** for end-to-end 
 ---
 
 ### 🎯 2. Selective & Incremental Synchronization (`Scoped Workloads`)
-👉 **Open Runbook:** [DO-SYNC-SELECTED-SHAREPOINT.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/DO-SYNC-SELECTED-SHAREPOINT.md)
+👉 **Open Runbook:** [DO-SYNC-SELECTED-SHAREPOINT.md](parameters.json)
 
 Dedicated playbook for scoping synchronization to a specific subsite department, specific document library, or specific URL list (`target_urls.txt`). Ideal for targeted refreshes or departmental onboarding.
 
 ---
 
 ### 🏗️ 3. Architecture & Technical Topology
-👉 **Open Technical Reference:** [ARCHITECTURE.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/ARCHITECTURE.md)
+👉 **Open Technical Reference:** [ARCHITECTURE.md](parameters.json)
 
 Detailed system architecture diagrams (`Mermaid`), component interaction flows (Cloud Scheduler $\rightarrow$ Cloud Run $\rightarrow$ Application Integration $\rightarrow$ SharePoint / GCS), micro-batching design, and O(1) Delta Cache mathematical guarantees.
 
 ---
 
 ### 🔧 4. Troubleshooting & Operations Guide
-👉 **Open Operations Guide:** [TROUBLESHOOTING.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/TROUBLESHOOTING.md)
+👉 **Open Operations Guide:** [TROUBLESHOOTING.md](parameters.json)
 
 Diagnostic playbooks, common OData rate-limiting solutions (`HTTP 429`), Azure AD / Entra ID OAuth token diagnostics, Cloud Run container timeout sizing (`--timeout=3600`), and GCS metadata verification errors.
 
 ---
 
 ### 🤖 5. Google Knowledge Agents (GKA) & Agent Builder Live Integration
-👉 **Open GKA Guide:** [docs/GUIDE_GKA_Live_SharePoint_Links.md](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi/docs/GUIDE_GKA_Live_SharePoint_Links.md)
+👉 **Open GKA Guide:** [docs/GUIDE_GKA_Live_SharePoint_Links.md](parameters.json)
 
 How to connect synchronized GCS files (`files/`), rendered page snapshots (`pages/`), and live SharePoint deep links (`structData.sharepoint_url`) to Google Knowledge Catalog and Vertex AI Agent Builder.
 
