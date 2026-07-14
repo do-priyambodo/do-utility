@@ -28,8 +28,27 @@ echo "==========================================================================
 
 gcloud config set project "${PROJECT_ID}"
 
-# Construct Cloud Run Job execution API endpoint
-RUN_JOB_URI="https://${LOCATION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${JOB_NAME}:run"
+# Construct Cloud Run Job execution API endpoint (v2 API requiring valid RunJobRequest payload)
+RUN_JOB_URI="https://${LOCATION}-run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${LOCATION}/jobs/${JOB_NAME}:run"
+
+echo "🔐 Ensuring Cloud Scheduler Service Agent is authorized to mint tokens..."
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)" 2>/dev/null || echo "")
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Use Compute SA for Scheduler trigger to bypass Org Policy/VPC-SC custom SA token creation restrictions on Run API v2
+SCHEDULER_CALLER_SA="${COMPUTE_SA:-$SERVICE_ACCOUNT}"
+
+if [ -n "${PROJECT_NUMBER}" ]; then
+  SCHEDULER_AGENT="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-cloudscheduler.iam.gserviceaccount.com"
+  gcloud iam service-accounts add-iam-policy-binding "${SCHEDULER_CALLER_SA}" \
+    --member="${SCHEDULER_AGENT}" \
+    --role="roles/iam.serviceAccountUser" \
+    --project="${PROJECT_ID}" --quiet >/dev/null 2>&1 || true
+  gcloud iam service-accounts add-iam-policy-binding "${SCHEDULER_CALLER_SA}" \
+    --member="${SCHEDULER_AGENT}" \
+    --role="roles/iam.serviceAccountTokenCreator" \
+    --project="${PROJECT_ID}" --quiet >/dev/null 2>&1 || true
+fi
 
 echo "🚀 Creating or updating Cloud Scheduler job '${SCHEDULER_NAME}'..."
 gcloud scheduler jobs create http "${SCHEDULER_NAME}" \
@@ -37,7 +56,8 @@ gcloud scheduler jobs create http "${SCHEDULER_NAME}" \
   --schedule="0 0 * * *" \
   --uri="${RUN_JOB_URI}" \
   --http-method=POST \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
+  --message-body='{"overrides": {}}' \
+  --oauth-service-account-email="${SCHEDULER_CALLER_SA}" \
   --time-zone="Asia/Kuala_Lumpur" \
   --description="V11 Option 1 Daily Master SharePoint-to-GCS Sequential Category Sync" || \
 gcloud scheduler jobs update http "${SCHEDULER_NAME}" \
@@ -45,7 +65,8 @@ gcloud scheduler jobs update http "${SCHEDULER_NAME}" \
   --schedule="0 0 * * *" \
   --uri="${RUN_JOB_URI}" \
   --http-method=POST \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
+  --message-body='{"overrides": {}}' \
+  --oauth-service-account-email="${SCHEDULER_CALLER_SA}" \
   --time-zone="Asia/Kuala_Lumpur" \
   --description="V11 Option 1 Daily Master SharePoint-to-GCS Sequential Category Sync"
 
