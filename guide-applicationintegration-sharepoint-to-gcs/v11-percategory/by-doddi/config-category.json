@@ -1,80 +1,13 @@
 {
-  "root_portal_site": "sites/DEN",
+  "root_portal_site": "sites/doddi-sharepoint-to-gcs",
   "categories": [
     {
-      "category_id": "tier1-den-root-only",
-      "display_name": "DEN Root Portal Documents & Guides ONLY",
-      "sharepoint_site": "sites/DEN",
+      "category_id": "tier1-root-only",
+      "display_name": "Root Portal Documents & Pages ONLY",
+      "sharepoint_site": "sites/doddi-sharepoint-to-gcs",
       "include_subsites": false,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/den-root/"
-    },
-    {
-      "category_id": "tier1-business",
-      "display_name": "Business Department Policies & Documents",
-      "sharepoint_site": "sites/DEN/Business",
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/business/"
-    },
-    {
-      "category_id": "tier1-consumer",
-      "display_name": "Consumer Department SOPs & Guides",
-      "sharepoint_site": "sites/DEN/Consumer",
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/consumer/"
-    },
-    {
-      "category_id": "tier1-hotlink",
-      "display_name": "Hotlink Department Documents",
-      "sharepoint_site": "sites/DEN/Hotlink",
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/hotlink/"
-    },
-    {
-      "category_id": "tier1-system-procedure",
-      "display_name": "System & Procedure Standard Guidelines",
-      "sharepoint_site": "sites/DEN/System-Procedure",
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/system-procedure/"
-    },
-    {
-      "category_id": "tier2-medium-departments",
-      "display_name": "Channels, Enterprise Solutions & QA",
-      "sharepoint_site": [
-        "sites/DEN/Channels",
-        "sites/DEN/Enterprise-Solutions",
-        "sites/DEN/ChannelMarketing",
-        "sites/DEN/Quality-Assurance"
-      ],
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/medium-departments/"
-    },
-    {
-      "category_id": "tier3-specialized-teams",
-      "display_name": "MEPS, Credit, BCP, FAQ & Specialized Teams",
-      "sharepoint_site": [
-        "sites/DEN/MEPS",
-        "sites/DEN/Credit-Operations",
-        "sites/DEN/BCP",
-        "sites/DEN/FAQ",
-        "sites/DEN/Assisted",
-        "sites/DEN/CDPU",
-        "sites/DEN/Customer-Support",
-        "sites/DEN/Customer_First",
-        "sites/DEN/DistributionMgmt",
-        "sites/DEN/Quicklinks",
-        "sites/DEN/Self_Serve",
-        "sites/DEN/Service-Insights",
-        "sites/DEN/Training"
-      ],
-      "include_subsites": true,
-      "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/specialized-teams/"
+      "gcs_destination_prefix": "categories/root/"
     }
   ]
 }
