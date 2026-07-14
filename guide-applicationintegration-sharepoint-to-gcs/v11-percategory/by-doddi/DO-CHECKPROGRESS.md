@@ -104,3 +104,53 @@ gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name=
   --limit=25 \
   --format="table(timestamp, severity, textPayload, jsonPayload.message)"
 ```
+
+---
+
+## Step 7: Interactive Timezone-Aware Log Inspector (`check_all_logging.py`)
+
+To streamline troubleshooting across all serverless components without running individual `gcloud logging read` commands manually, use our automated diagnostic inspector script: `check/check_all_logging.py`.
+
+This script automatically pulls your Project ID, Function Name, Scheduler Job, and GCS Bucket from `config-parameters.json`, formats all timestamps in your selected time zone, and allows you to define custom lookback windows or start timestamps:
+
+### Method A: Interactive Mode (Recommended)
+```bash
+python3 check/check_all_logging.py --interactive
+```
+
+### Method B: One-Line Non-Interactive Execution
+```bash
+# Example 1: Look back over the last 30 minutes formatted in Singapore/Kuala Lumpur time (+08)
+python3 check/check_all_logging.py --tz "Asia/Singapore" --since "30m" --limit 10
+
+# Example 2: Query logs starting from a specific timestamp formatted in local system timezone
+python3 check/check_all_logging.py --tz "LOCAL" --start-time "2026-07-07T05:00:00Z" --limit 15
+```
+
+---
+
+## Step 8: Deep-Dive: SharePoint Throttling, DDoS Protection & Root Cause Checklist
+
+When synchronizing thousands of SharePoint files or harvesting modern site pages (`.aspx`), Microsoft 365 monitors API request concurrency and volume. If rate limits are exceeded, Microsoft returns HTTP `429 Too Many Requests`, `503 Service Unavailable`, or `504 Gateway Timeout`.
+
+### Diagnostic Command: Check for SharePoint Throttling & DDoS Blocks
+Run this command to search your container logs specifically for throttling rejections, rate limits, and `Retry-After` headers:
+
+```bash
+gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\") AND (textPayload=~\"429\" OR textPayload=~\"503\" OR textPayload=~\"504\" OR textPayload=~\"Too Many Requests\" OR textPayload=~\"Retry-After\" OR textPayload=~\"Server Busy\" OR textPayload=~\"ECONNRESET\")" \
+    --project="${PROJECT_ID}" \
+    --limit=25 \
+    --order=desc \
+    --format="table(timestamp.date('%Y-%m-%d %H:%M:%S %Z', tz=LOCAL):label=TIMESTAMP, severity, textPayload)"
+```
+
+### Root Cause Analysis Checklist
+
+| Check | Potential Root Cause | Component to Inspect | How to Diagnose & Resolve |
+| :---: | :--- | :--- | :--- |
+| 🔲 1 | **SharePoint Throttling / Anti-DDoS Rejection** | Microsoft Graph API / SharePoint | **Diagnose**: Check logs above for HTTP `429 Too Many Requests`, `503 Server Busy`, or `504 Gateway Timeout`.<br>**Resolve**: Reduce `CONFIG_Max_Parallel_Workers` to `5` or `8` in `config-parameters.json`, and ensure exponential backoff with jitter is active. |
+| 🔲 2 | **Entra ID Conditional Access Block / Expired Secret** | Azure AD / M365 Graph API | **Diagnose**: Check logs for HTTP `401`/`403`.<br>**Resolve**: Verify in Azure Portal that `CONFIG_M365_Secret_Name` has not expired and that no Conditional Access policy requires interactive MFA for headless client-credentials flows. |
+| 🔲 3 | **Playwright Chromium Out-of-Memory (OOM)** | Cloud Run Container | **Diagnose**: Check logs for `Memory limit exceeded` or container crash code `500` during `.aspx` page conversion.<br>**Resolve**: In `config-parameters.json` / deployment flags, verify Cloud Run memory allocation is set to **8GiB (`8192Mi`)**. |
+| 🔲 4 | **VPC Service Controls (VPC-SC) Egress Block** | Network Security / Connectors | **Diagnose**: Check audit logs for `VpcServiceControlAuditMetadata` violation.<br>**Resolve**: Add an egress rule in perimeter settings allowing traffic to `connectors.googleapis.com` and `*.sharepoint.com`. |
+| 🔲 5 | **Missing IAM Invoker or Storage Creator Roles** | IAM & Admin | **Diagnose**: Check logs for `PERMISSION_DENIED`.<br>**Resolve**: Ensure service account `CONFIG_Service_Account` has `roles/run.invoker`, `roles/storage.objectAdmin`, and `roles/secretmanager.secretAccessor`. |
+| 🔲 6 | **Micro-Batch Payload Serialization Timeout** | Batch Processing | **Diagnose**: Check logs for execution timeouts or payload size errors.<br>**Resolve**: Ensure `CONFIG_Batch_Size` in `config-parameters.json` is set appropriately (`100` for files, `5` for `.aspx` pages). |

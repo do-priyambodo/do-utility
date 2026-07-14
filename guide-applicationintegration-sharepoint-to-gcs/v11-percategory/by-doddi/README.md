@@ -57,7 +57,7 @@ Detailed system architecture diagrams (`Mermaid`), component interaction flows (
 ---
 
 ### 🔧 5. Troubleshooting & Operations Guide
-👉 **Open Operations Guide:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+👉 **Open Operations Guide:** [DO-CHECKPROGRESS.md](DO-CHECKPROGRESS.md)
 
 Comprehensive remediation playbook covering M365 authentication failures, Graph API rate throttling (`HTTP 429`), Cloud Run timeouts, and Playwright PDF rendering diagnostics.
 
