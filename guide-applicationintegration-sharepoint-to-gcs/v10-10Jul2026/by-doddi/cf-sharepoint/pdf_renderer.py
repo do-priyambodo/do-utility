@@ -178,6 +178,7 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
                     simplified_html = strip_complex_css_for_pdf(cleaned_html, fallback_title)
                     page.set_content(simplified_html, wait_until="domcontentloaded", timeout=10000)
                     pdf_bytes = page.pdf(format="A4", print_background=True)
+                    print(f"✅ Stage 4 Recovery: Successfully rendered '{fallback_title}' via auto-recycled Playwright Chromium engine.", flush=True)
                     return base64.b64encode(pdf_bytes).decode("utf-8")
                 finally:
                     page.close()

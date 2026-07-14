@@ -54,9 +54,13 @@ def main(request):
     site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
     library_name = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "Documents")
     
-    # Optional integration automatic trigger parameters
-    trigger_integration = req_data.get("trigger_integration", False)
+    # Optional integration automatic trigger parameters (auto-trigger when configured in parameters.json unless explicitly disabled in request body)
     integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
+    raw_trigger = req_data.get("trigger_integration")
+    if raw_trigger is not None:
+        trigger_integration = str(raw_trigger).lower() == "true"
+    else:
+        trigger_integration = bool(integration_name)
     location = req_data.get("location") or params.get("CONFIG_Location")
     project_id_override = req_data.get("project_id") or params.get("CONFIG_ProjectId")
 
@@ -711,8 +715,9 @@ def main(request):
                             if eid:
                                 execution_ids.append(eid)
                                 integration_triggered = True
+                                print(f"✅ Status Log: Successfully dispatched batch to Application Integration -> Execution ID: {eid}", flush=True)
                         except Exception as ex_sched:
-                            print(f"❌ Batch scheduling error: {ex_sched}")
+                            print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
 
                 # Immediate memory eviction after dispatching chunk
                 for item in chunk:
