@@ -23,5 +23,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source code
 COPY . .
 
-# Run the Functions Framework server targeting our 'main' entrypoint
-CMD functions-framework --target=main --host=0.0.0.0 --port=${PORT:-8080}
+# Run our Python script directly (for Cloud Run Jobs / continuous background execution)
+CMD ["python3", "main.py"]
