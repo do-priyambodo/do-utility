@@ -155,9 +155,35 @@ gcloud run jobs update "${FUNCTION_NAME}-job" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}"
 
-# 3. Clean up local Docker context copy
+# 3. Grant Job Execution IAM permissions (roles/run.invoker) to Cloud Scheduler Service Account & Developer Member
+gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
+  --region="${LOCATION}" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/run.invoker" \
+  --project="${PROJECT_ID}"
+
+if [[ "${DEV_MEMBER}" == "group:"* ]]; then
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
+    --region="${LOCATION}" \
+    --member="${DEV_MEMBER}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}" || \
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
+    --region="${LOCATION}" \
+    --member="user:${DEV_MEMBER#group:}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}"
+else
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
+    --region="${LOCATION}" \
+    --member="${DEV_MEMBER}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}"
+fi
+
+# 4. Clean up local Docker context copy
 rm -f cf-sharepoint/parameters.json && [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true && [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
-echo "✅ Cloud Run Job (${FUNCTION_NAME}-job) deployed with 24-hour continuous timeout!"
+echo "✅ Cloud Run Job (${FUNCTION_NAME}-job) deployed with 24-hour continuous timeout and full IAM execution permissions!"
 ```
 
 ---
