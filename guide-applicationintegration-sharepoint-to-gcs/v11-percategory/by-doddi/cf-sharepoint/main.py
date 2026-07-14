@@ -92,7 +92,6 @@ def main(request):
     except Exception:
         pass
     start_time = time.time()
-    max_execution_seconds = params.get("CONFIG_Max_Execution_Seconds", 86400)  # Exactly 24.0 hours Wall-Clock safety circuit breaker (= 86400s Cloud Run Job ceiling)
     
     # 1. Parse JSON payload or query parameters (null-safe for direct Cloud Run Job invocation where request=None)
     req_data = {}
@@ -111,6 +110,8 @@ def main(request):
             params = validate_parameters(params)
         except Exception as e:
             print(f"Warning: Failed to load or validate config-parameters.json: {e}", flush=True)
+
+    max_execution_seconds = params.get("CONFIG_Max_Execution_Seconds", 86400)  # Exactly 24.0 hours Wall-Clock safety circuit breaker (= 86400s Cloud Run Job ceiling)
 
     # Load dynamic category config
     sites_sync = load_sites_sync_config(params)
