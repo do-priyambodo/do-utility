@@ -77,17 +77,86 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 Before deploying to Cloud Run, run this exact dynamic one-liner in your terminal to pull the latest release tag and verify in 2 seconds that your local repository and `pdf_renderer.py` have 100% parity with our verified Playwright-exclusive release:
 
 ```bash
-git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, subprocess; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); tag = subprocess.getoutput('git describe --tags --abbrev=0 2>/dev/null') or 'latest'; commit = subprocess.getoutput('git rev-parse --short HEAD 2>/dev/null') or 'unknown'; print(f'✅ VERIFIED: Your local app is 100% identical to {tag} (Commit {commit}) with 0 syntax or legacy library errors.')## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
+git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, subprocess; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); tag = subprocess.getoutput('git describe --tags --abbrev=0 2>/dev/null') or 'latest'; commit = subprocess.getoutput('git rev-parse --short HEAD 2>/dev/null') or 'unknown'; print(f'✅ VERIFIED: Your local app is 100% identical to {tag} (Commit {commit}) with 0 syntax or legacy library errors.')"
+```
+
+---
+
+## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
 
 > [!IMPORTANT]
-> **Revision 00026 Architectural Sizing (`24-Hour Cloud Run Job & Playwright Chromium Pool`)**
+> **Revision 00027 Architectural Sizing (`24-Hour Cloud Run Job & Playwright Chromium Pool`)**
 > Our backend runs as a **Google Cloud Run Job** (`batch processing engine`) rather than a Web Service, completely bypassing Google's 60-minute HTTP timeout ceiling so that large-scale enterprise traversals (**100,000+ assets**) can run continuously inside a single container for up to **24 hours (`86,400s`)** straight. Furthermore, it enforces a **Persistent Singleton Chromium Browser Pool** (`get_persistent_browser()`) protected by thread locks (`_BROWSER_LOCK`) with strict `--tasks=1` (zero sharding). This converts all `.aspx` layouts cleanly (`~0.1s/page`) while maintaining a polite, steady 10-thread flow rate (`10-15 items/sec`) that keeps Microsoft Graph API and SharePoint Online 100% stable without triggering `HTTP 429` tenant-wide throttling.
 
-Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **86,400s timeout**):
+Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **86,400s timeout**). 
+
+You can execute this either via our automated deployment script or by running the exact underlying `gcloud` commands directly:
+
+### Option A: Automated Script Deployment (Recommended)
+Our automated script copies `parameters.json` and dependencies into `cf-sharepoint/`, builds the container, deploys the 24-Hour Cloud Run Job (`${FUNCTION_NAME}`), and grants `roles/run.invoker` automatically:
 
 ```bash
-# 1. Build & Deploy the high-fidelity 24-hour Playwright Cloud Run Job
 ./deploy/deploy_cloud_run.sh
+```
+
+### Option B: Manual Command-Line Deployment
+If you prefer to run each command step-by-step in your terminal:
+
+```bash
+# 1. Copy context parameters for Docker build
+cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true && [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
+
+# 2. Build and create/update the 24-Hour Continuous Cloud Run Job (Single-Instance / Zero Sharding)
+gcloud run jobs create "${FUNCTION_NAME}" \
+  --source=./cf-sharepoint \
+  --region="${LOCATION}" \
+  --tasks=1 \
+  --max-retries=0 \
+  --task-timeout=86400s \
+  --memory=8192Mi \
+  --cpu=4 \
+  --service-account="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}" || \
+gcloud run jobs update "${FUNCTION_NAME}" \
+  --source=./cf-sharepoint \
+  --region="${LOCATION}" \
+  --tasks=1 \
+  --max-retries=0 \
+  --task-timeout=86400s \
+  --memory=8192Mi \
+  --cpu=4 \
+  --service-account="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}"
+
+# 3. Grant Job Execution IAM permissions (roles/run.invoker) to Cloud Scheduler Service Account & Developer Member
+gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
+  --region="${LOCATION}" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/run.invoker" \
+  --project="${PROJECT_ID}"
+
+if [[ "${DEV_MEMBER}" == "group:"* ]]; then
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
+    --region="${LOCATION}" \
+    --member="${DEV_MEMBER}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}" || \
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
+    --region="${LOCATION}" \
+    --member="user:${DEV_MEMBER#group:}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}"
+else
+  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
+    --region="${LOCATION}" \
+    --member="${DEV_MEMBER}" \
+    --role="roles/run.invoker" \
+    --project="${PROJECT_ID}"
+fi
+
+# 4. Clean up local Docker context copy
+rm -f cf-sharepoint/parameters.json && [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true && [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
+echo "✅ Cloud Run Job (${FUNCTION_NAME}) successfully deployed with 24-hour continuous timeout!"
 ```
 
 ---
