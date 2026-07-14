@@ -72,6 +72,8 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                 if max_items is not None and len(all_results) >= max_items:
                     break
                 p_path, items = future.result()
+                if len(all_results) > 0 and (len(all_results) + len(items)) // 2000 > len(all_results) // 2000:
+                    print(f"📁 Phase 1 Discovery Heartbeat: Scanned folder '{p_path or 'root'}' -> Total items discovered across this drive so far: {len(all_results) + len(items)}...", flush=True)
                 
                 for item in items:
                     if max_items is not None and len(all_results) >= max_items:

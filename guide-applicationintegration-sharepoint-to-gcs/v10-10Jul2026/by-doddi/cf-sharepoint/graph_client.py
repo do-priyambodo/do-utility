@@ -95,7 +95,9 @@ def graph_get_paginated(url, headers, max_retries=3, timeout=20):
         elif "?" not in url:
             url += "?$top=999"
 
+    page_count = 0
     while url:
+        page_count += 1
         for attempt in range(max_retries):
             try:
                 response = http.get(url, headers=headers, timeout=timeout)
@@ -104,7 +106,7 @@ def graph_get_paginated(url, headers, max_retries=3, timeout=20):
                 elif response.status_code in [429, 502, 503, 504]:
                     retry_after = response.headers.get("Retry-After")
                     wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(10, (2 ** attempt) + random.uniform(0, 1))
-                    print(f"⏳ Microsoft Graph API throttled/delayed (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...")
+                    print(f"⏳ Microsoft Graph API throttled/delayed (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait_time)
                     continue
                 else:
@@ -114,12 +116,14 @@ def graph_get_paginated(url, headers, max_retries=3, timeout=20):
                     raise e_net
                 timeout = min(300, int(timeout * 1.5))
                 wait_time = min(5, (2 ** attempt) + random.uniform(0, 1))
-                print(f"⏳ Graph API network retry on {url[:60]}... ({e_net}). Retrying in {wait_time:.1f}s with adaptive timeout {timeout}s...")
+                print(f"⏳ Graph API network retry on {url[:60]}... ({e_net}). Retrying in {wait_time:.1f}s with adaptive timeout {timeout}s...", flush=True)
                 time.sleep(wait_time)
         else:
             raise Exception(f"Graph API request failed after {max_retries} retry attempts: {url}")
 
         data = response.json()
         results.extend(data.get("value", []))
+        if page_count > 1 and (page_count % 5 == 0 or page_count in [10, 25, 50, 100]):
+            print(f"🔄 Phase 1 OData Paging Heartbeat: Fetched {page_count} pages ({len(results)} items so far in this folder/site query)...", flush=True)
         url = data.get("@odata.nextLink")
     return results

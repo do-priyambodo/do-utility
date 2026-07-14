@@ -25,6 +25,11 @@ from config_schema import validate_parameters
 # Cloud Function entrypoint
 @functions_framework.http
 def main(request):
+    import sys
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
     start_time = time.time()
     max_execution_seconds = 3300  # 55 minutes Wall-Clock safety circuit breaker (< 3600s Cloud Run ceiling)
     # 1. Parse JSON payload or query parameters
@@ -38,7 +43,7 @@ def main(request):
                 params = json.load(f)
             params = validate_parameters(params)
         except Exception as e:
-            print(f"Warning: Failed to load or validate parameters.json: {e}")
+            print(f"Warning: Failed to load or validate parameters.json: {e}", flush=True)
 
     # Default configuration fallback
     site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
@@ -239,11 +244,13 @@ def main(request):
         discovery_start_time = time.time()
         for site_info in target_sites_to_scan:
             if time.time() - discovery_start_time > 2100:
-                print(f"⏱️ Wall-Clock Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Finalizing discovered inventory ({len(sync_list)} delta items) and initiating processing/upload pipeline immediately...")
+                print(f"⏱️ Wall-Clock Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Finalizing discovered inventory ({len(sync_list)} delta items) and initiating processing/upload pipeline immediately...", flush=True)
                 break
 
             curr_site_id = site_info["id"]
             site_prefix = site_info["prefix"] # e.g. "Consumer/" or "Business/"
+            site_label = site_info.get("name") or curr_site_id
+            print(f"📡 Phase 1 Discovery [{target_sites_to_scan.index(site_info) + 1}/{len(target_sites_to_scan)}]: Scanning site/subsite '{site_label}' (Prefix: '{site_prefix}')...", flush=True)
             
             # 5. Traverse Document Libraries (Drives) in the site
             drives_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives"
@@ -470,8 +477,11 @@ def main(request):
                     all_list.append(page_obj)
                     sync_list.append(page_obj)
             elif not sync_pages_flag:
-                print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.")
+                print(f"⏭️ CONFIG_Sync_SharePoint_Pages disabled. Skipping Modern Site Pages traversal for site.", flush=True)
                 
+            site_label = site_info.get("name") or curr_site_id
+            print(f"✅ Phase 1 Discovery: Completed site/subsite '{site_label}' -> Total Inventory So Far: {len(all_list)} items ({len(sync_list)} pending delta sync)", flush=True)
+
         # [BEST PRACTICE] Structured JSON Observability for Google Cloud Logging / Logs Explorer
         structured_metric = {
             "severity": "INFO",
@@ -481,7 +491,7 @@ def main(request):
             "delta_to_sync": len(sync_list),
             "delta_skipped": len(all_list) - len(sync_list),
         }
-        print(json.dumps(structured_metric))
+        print(json.dumps(structured_metric), flush=True)
 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
         # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages and integration is triggered
@@ -615,7 +625,7 @@ def main(request):
             return item
 
         if trigger_integration and len(sync_list) > 0:
-            print(f"⚡ Pipelined Execution: Processing {len(sync_list)} items (File Batch: {file_batch_size}, Page Batch: {page_batch_size}, Workers: {max_workers})...")
+            print(f"⚡ Pipelined Execution: Processing {len(sync_list)} items (File Batch: {file_batch_size}, Page Batch: {page_batch_size}, Workers: {max_workers})...", flush=True)
             credentials, credentials_project_id = google.auth.default()
             project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
             if not project_id:
@@ -660,11 +670,11 @@ def main(request):
             for c_start in range(0, len(sync_list), chunk_size):
                 # Layer 6: Wall-Clock Circuit Breaker Guard (completes cleanly under 900s Cloud Run ceiling)
                 if time.time() - start_time > max_execution_seconds:
-                    print(f"⏱️ Wall-Clock Time Guard triggered after {time.time() - start_time:.1f}s. Completing gracefully within execution budget.")
+                    print(f"⏱️ Wall-Clock Time Guard triggered after {time.time() - start_time:.1f}s. Completing gracefully within execution budget.", flush=True)
                     break
 
                 chunk = sync_list[c_start : c_start + chunk_size]
-                print(f"🚀 Processing Pipelined Chunk {c_start + 1} to {min(c_start + chunk_size, len(sync_list))} of {len(sync_list)}...")
+                print(f"🚀 Processing Pipelined Chunk {c_start + 1} to {min(c_start + chunk_size, len(sync_list))} of {len(sync_list)}...", flush=True)
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     list(executor.map(_render_lazy_page, chunk))
 
