@@ -51,9 +51,27 @@ def get_graph_token(tenant_id: str, client_id: str, client_secret: str) -> str:
         data = json.loads(resp.read().decode("utf-8"))
         return data.get("access_token")
 
+import requests
+_DISCOVER_SESSION = requests.Session()
+
+def graph_get_safe(url: str, headers: Dict[str, str]) -> List[Dict[str, Any]]:
+    results = []
+    while url:
+        try:
+            resp = _DISCOVER_SESSION.get(url, headers=headers, timeout=20)
+            if resp.status_code == 200:
+                data = resp.json()
+                results.extend(data.get("value", []))
+                url = data.get("@odata.nextLink")
+            else:
+                break
+        except Exception:
+            break
+    return results
+
 def main():
     parser = argparse.ArgumentParser(description="V11 Fast SharePoint Subsite Category Discovery")
-    parser.add_argument("--root", help="Override root portal site path (e.g. 'sites/DEN')", default=None)
+    parser.add_argument("--root", help="Override root portal site path (e.g. 'sites/doddi-sharepoint-to-gcs')", default=None)
     args = parser.parse_args()
 
     start_t = time.time()
@@ -105,19 +123,20 @@ def main():
     print(f"✅ Root Site Resolved! ID: {root_id.split(',')[1] if ',' in root_id else root_id}")
     print("⚡ Discovering direct child subsites (categories)...")
 
-    subsites_url = f"https://graph.microsoft.com/v1.0/sites/{root_id}/subsites?$top=100"
     categories_found = []
-    
-    while subsites_url:
-        sub_req = urllib.request.Request(subsites_url, headers=headers)
-        with urllib.request.urlopen(sub_req, timeout=20) as resp:
-            sub_data = json.loads(resp.read().decode("utf-8"))
-            for site in sub_data.get("value", []):
+    seen_ids = set()
+
+    # Query both /sites and /subsites endpoints safely
+    for endpoint in [f"https://graph.microsoft.com/v1.0/sites/{root_id}/sites", f"https://graph.microsoft.com/v1.0/sites/{root_id}/subsites"]:
+        items = graph_get_safe(endpoint, headers)
+        for site in items:
+            s_id = site.get("id")
+            if s_id and s_id not in seen_ids:
+                seen_ids.add(s_id)
                 name = site.get("name") or site.get("displayName")
                 web_url = site.get("webUrl")
                 if name and web_url:
-                    categories_found.append({"name": name, "web_url": web_url, "id": site.get("id")})
-            subsites_url = sub_data.get("@odata.nextLink")
+                    categories_found.append({"name": name, "web_url": web_url, "id": s_id})
 
     elapsed = round(time.time() - start_t, 2)
     print("\n--------------------------------------------------------------------------------")
@@ -128,6 +147,9 @@ def main():
 
     for idx, c in enumerate(sorted(categories_found, key=lambda x: x["name"]), 1):
         print(f"{idx:<5}{c['name'][:33]:<35}{c['web_url']:<40}")
+
+    if not categories_found:
+        print(f"{'1':<5}{'(Root Portal Only — No child subsites)':<35}{root_web_url:<40}")
 
     print("================================================================================")
     print("💡 TIP: Copy any Category Name above directly into your 'sites-sync.json' to onboard it!")
