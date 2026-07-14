@@ -33,13 +33,21 @@ echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...â
 
 ## Step 2: Validate Environment & IAM Prerequisites
 
-Verify that your service accounts and `parameters.json` values are configured correctly:
+### Step 2.1: (Optional) Create Service Accounts & Grant IAM Role Bindings
+
+> [!WARNING]
+> **Administrator IAM Permissions Required**
+> **ONLY** run `./util/prereq/sa-roles.sh` if your active user account holds elevated **GCP Project Owner or IAM Administrator** permissions (`roles/resourcemanager.projectIamAdmin` / `roles/iam.serviceAccountAdmin`). If your Cloud Administrator already provisioned your Service Accounts, or if you do not have permission to modify project-level IAM policies, **DO NOT run this command**, as it will fail with `HTTP 403 Permission Denied`. Skip directly to **Step 2.2** below.
 
 ```bash
-# 1. (Optional) Run prerequisite IAM script if Service Accounts or bindings are not yet created:
 ./util/prereq/sa-roles.sh
+```
 
-# 2. Validate your parameters.json syntax and configuration completeness:
+### Step 2.2: Validate Configuration Syntax & Completeness (`parameters.json`)
+
+Verify that all required configuration keys, service account names, and Microsoft Graph credentials inside `parameters.json` are populated and structurally valid:
+
+```bash
 python3 util/validate_params.py
 ```
 
