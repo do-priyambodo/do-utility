@@ -213,9 +213,7 @@ Initiate the full enterprise synchronization (`100,000+ assets`). Standard regul
 Use this option to test your Cloud Scheduler connection and initiate the full 24-hour synchronization. When you run this command, you force Cloud Scheduler to trigger on-demand as if the scheduled time (e.g., 11:00 PM or hourly cron) has arrived. This verifies that your automated cron trigger has the correct OAuth IAM permissions and payload headers to successfully wake up and run the Cloud Run Job:
 
 ```bash
-gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))") \
-  --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") \
-  --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))") --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
 > [!TIP]
 > **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
