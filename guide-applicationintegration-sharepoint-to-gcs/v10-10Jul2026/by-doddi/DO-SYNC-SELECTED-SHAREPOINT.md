@@ -10,7 +10,7 @@ Before running deployment or verification scripts, ensure your local terminal se
 
 ```bash
 # 1. Navigate to Version 10 working directory
-cd /usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026/by-doddi
+cd /path/to/your/repo/v10-10Jul2026/by-yourorg
 
 # 2. Ensure service account impersonation is disabled so commands run directly as your user:
 gcloud config unset auth/impersonate_service_account 2>/dev/null || true
