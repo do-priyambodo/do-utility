@@ -157,12 +157,6 @@ python3 check/check_syncall_before.py --category=tier1-business
 
 ## Step 9: Execute Per-Category Synchronization
 
-> [!IMPORTANT]
-> **CUSTOMER DEMO & CLOUD SCHEDULER ARCHITECTURAL MANDATE (`Why code: 3 and code: 7 occurred during setup and how they are permanently resolved`):**  
-> When triggering the V11 Cloud Run Job via Cloud Scheduler in enterprise customer environments, two specific Google Cloud API v2 constraints must be satisfied to prevent execution errors:
-> 1. **`INVALID_ARGUMENT (status code 3)` Resolution:** The modern Cloud Run v2 REST API (`run.googleapis.com/v2/.../jobs/...:run`) strictly requires that any HTTP POST request body adheres to the `RunJobRequest` protobuf schema. Sending arbitrary custom JSON causes the Cloud Run API gateway to reject the call with `INVALID_ARGUMENT`. Our `deploy/deploy_category_scheduler.sh` script permanently bakes `--message-body='{"overrides": {}}'` into the scheduler job definition to guarantee 100% schema compliance.
-> 2. **`PERMISSION_DENIED (status code 7)` Resolution:** When Cloud Scheduler invokes `jobs.run` via OAuth (`oauthToken`), the calling service account must possess both **`roles/run.invoker`** (to call the API) and **`roles/iam.serviceAccountUser`** (to act as the container's execution identity). In customer tenants with strict Organization Policies or VPC Service Controls (VPC-SC), custom service accounts may face cross-namespace token generation restrictions when called from Cloud Scheduler. To guarantee zero-friction execution, our `deploy/deploy_category_scheduler.sh` script automatically detects and utilizes the pre-authorized **Compute Engine Default Service Account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`)** as the `oauthToken` identity while explicitly verifying all required IAM bindings.
-
 Initiate the synchronization across your categories. Standard regular files scale automatically to **100 items/batch**, `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
 
 > [!RECOMMENDED]
