@@ -12,13 +12,15 @@ from typing import Dict, Any, Optional
 def load_sites_sync_config(params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Loads sites-sync.json category configuration.
-    1. Checks local paths ('config/sites-sync.json', 'sites-sync.json', '../config/sites-sync.json').
+    1. Checks local paths ('sites-sync.json', 'config/sites-sync.json', '../sites-sync.json').
     2. If running inside Cloud Run or GCS override specified, attempts to download from GCS bucket.
     """
     local_paths = [
-        "config/sites-sync.json",
         "sites-sync.json",
+        "config/sites-sync.json",
+        os.path.join(os.path.dirname(__file__), "../sites-sync.json"),
         os.path.join(os.path.dirname(__file__), "../config/sites-sync.json"),
+        os.path.join(os.path.dirname(__file__), "sites-sync.json"),
         os.path.join(os.path.dirname(__file__), "config/sites-sync.json")
     ]
 
@@ -40,14 +42,15 @@ def load_sites_sync_config(params: Optional[Dict[str, Any]] = None) -> Dict[str,
                 from google.cloud import storage
                 client = storage.Client()
                 bucket = client.bucket(bucket_name)
-                blob = bucket.blob("config/sites-sync.json")
-                if blob.exists():
-                    content = blob.download_as_text()
-                    data = json.loads(content)
-                    print(f"✅ Loaded sites-sync.json from gs://{bucket_name}/config/sites-sync.json")
-                    return data
+                for gcs_path in ["sites-sync.json", "config/sites-sync.json"]:
+                    blob = bucket.blob(gcs_path)
+                    if blob.exists():
+                        content = blob.download_as_text()
+                        data = json.loads(content)
+                        print(f"✅ Loaded sites-sync.json from gs://{bucket_name}/{gcs_path}")
+                        return data
             except Exception as e:
-                print(f"Warning: Could not fetch config/sites-sync.json from GCS bucket {bucket_name}: {e}")
+                print(f"Warning: Could not fetch sites-sync.json from GCS bucket {bucket_name}: {e}")
 
     # Return default empty structure if none found
     print("Warning: sites-sync.json not found locally or in GCS. Returning empty category matrix.")

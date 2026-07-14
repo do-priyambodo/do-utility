@@ -25,9 +25,10 @@ try:
     from util.config_loader import load_sites_sync_config
 except ImportError:
     def load_sites_sync_config(params=None):
-        if os.path.exists("config/sites-sync.json"):
-            with open("config/sites-sync.json", "r", encoding="utf-8") as f:
-                return json.load(f)
+        for p in ["sites-sync.json", "config/sites-sync.json", "../sites-sync.json"]:
+            if os.path.exists(p):
+                with open(p, "r", encoding="utf-8") as f:
+                    return json.load(f)
         return {"root_portal_site": "sites/DEN", "categories": []}
 
 def get_secret_gcloud(secret_name: str) -> str:

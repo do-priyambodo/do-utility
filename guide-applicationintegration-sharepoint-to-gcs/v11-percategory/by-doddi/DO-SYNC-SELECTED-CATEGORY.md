@@ -41,11 +41,11 @@ echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...�
 
 ### Step 2.2: Validate Configuration Syntax (`parameters.json` & `sites-sync.json`)
 
-Verify that all required infrastructure keys and M365 credentials inside `parameters.json` and your category matrix inside `config/sites-sync.json` are structurally valid:
+Verify that all required infrastructure keys and M365 credentials inside `parameters.json` and your category matrix inside `sites-sync.json` are structurally valid:
 
 ```bash
 python3 -m json.tool parameters.json > /dev/null && echo "✅ parameters.json valid"
-python3 -m json.tool config/sites-sync.json > /dev/null && echo "✅ sites-sync.json valid"
+python3 -m json.tool sites-sync.json > /dev/null && echo "✅ sites-sync.json valid"
 ```
 
 ---
@@ -58,7 +58,7 @@ To discover all available child subsites/departments under your target root port
 python3 check/discover_categories.py --root="sites/CHANGETHISTOYOURROOTSITE"
 ```
 
-Copy the output category names and paths directly into `config/sites-sync.json` under your desired `categories[]` matrix.
+Copy the output category names and paths directly into `sites-sync.json` under your desired `categories[]` matrix.
 
 ---
 
@@ -83,7 +83,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Job: ${FUNCTION_NAME} | Scheduler: ${S
 
 ## Step 5: Deploy Cloud Run Job with Category Config (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
 
-Deploy the containerized high-fidelity Playwright backend service as a 24-hour Cloud Run Job (`${FUNCTION_NAME}`). Our automated script copies `parameters.json`, `config/sites-sync.json`, and utilities into the container build context and sets `--set-env-vars="CONFIG_SITES_SYNC_PATH=config/sites-sync.json"`:
+Deploy the containerized high-fidelity Playwright backend service as a 24-hour Cloud Run Job (`${FUNCTION_NAME}`). Our automated script copies `parameters.json`, `sites-sync.json`, and utilities into the container build context and sets `--set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json"`:
 
 ```bash
 ./deploy/deploy_cloud_run.sh

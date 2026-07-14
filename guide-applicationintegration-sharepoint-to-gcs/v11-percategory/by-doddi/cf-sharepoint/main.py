@@ -37,7 +37,7 @@ except ImportError:
         from config_loader import load_sites_sync_config
     except ImportError:
         def load_sites_sync_config(params=None):
-            for p in ["config/sites-sync.json", "sites-sync.json", "../config/sites-sync.json"]:
+            for p in ["sites-sync.json", "config/sites-sync.json", "../sites-sync.json", "../config/sites-sync.json"]:
                 if os.path.exists(p):
                     with open(p, "r", encoding="utf-8") as f:
                         return json.load(f)

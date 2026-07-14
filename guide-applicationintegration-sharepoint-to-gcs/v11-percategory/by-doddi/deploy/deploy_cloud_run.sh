@@ -32,6 +32,7 @@ gcloud config set project "${PROJECT_ID}"
 
 echo "📦 Copying parameters.json, sites-sync.json, and utilities to cf-sharepoint for Docker build context..."
 cp parameters.json cf-sharepoint/
+[ -f sites-sync.json ] && cp sites-sync.json cf-sharepoint/ || true
 [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true
 [ -d config ] && cp -r config cf-sharepoint/ || true
 [ -d util ] && cp -r util cf-sharepoint/ || true
@@ -64,7 +65,7 @@ gcloud run jobs create "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
-  --set-env-vars="CONFIG_SITES_SYNC_PATH=config/sites-sync.json" \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}" || \
 gcloud run jobs update "${SERVICE_NAME}" \
@@ -75,7 +76,7 @@ gcloud run jobs update "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
-  --set-env-vars="CONFIG_SITES_SYNC_PATH=config/sites-sync.json" \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}"
 
@@ -111,6 +112,7 @@ fi
 
 echo "🧹 Cleaning up deployment context copy..."
 rm -f cf-sharepoint/parameters.json
+[ -f cf-sharepoint/sites-sync.json ] && rm -f cf-sharepoint/sites-sync.json || true
 [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true
 [ -d cf-sharepoint/config ] && rm -rf cf-sharepoint/config || true
 [ -d cf-sharepoint/util ] && rm -rf cf-sharepoint/util || true
