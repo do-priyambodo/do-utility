@@ -28,10 +28,10 @@ Follow the comprehensive **10-Step Per-Category Operations Runbook** for end-to-
 
 ---
 
-### 🏛️ 2. Legacy Monolithic Full Site Collection Synchronization (`Single Target Traversal`)
-👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT.md](DO-SYNC-ALL-SHAREPOINT.md)
+### 🏛️ 2. Legacy Monolithic Full Site Collection Synchronization (`Single Target Traversal - DO NOT USE IN V11`)
+👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT-DONOTUSE.md](DO-SYNC-ALL-SHAREPOINT-DONOTUSE.md)
 
-Our classical monolithic 10-step operations guide that synchronizes an entire SharePoint site collection (`CONFIG_Sharepoint_Sites`) in a single continuous 24-hour Cloud Run traversal without per-category subsite sharding.
+Our classical monolithic 10-step operations guide that synchronizes an entire SharePoint site collection (`CONFIG_Sharepoint_Sites`) in a single continuous 24-hour Cloud Run traversal without per-category subsite sharding. Note: In V11, please use `DO-SYNC-SELECTED-CATEGORY.md` above instead.
 
 ---
 
