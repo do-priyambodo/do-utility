@@ -7,7 +7,8 @@
       "sharepoint_site": "sites/DEN",
       "include_subsites": false,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/den-root/"
+      "gcs_destination_prefix": "categories/den-root/",
+      "order_to_sync": 1
     },
     {
       "category_id": "tier1-business",
@@ -15,7 +16,8 @@
       "sharepoint_site": "sites/DEN/Business",
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/business/"
+      "gcs_destination_prefix": "categories/business/",
+      "order_to_sync": 2
     },
     {
       "category_id": "tier1-consumer",
@@ -23,7 +25,8 @@
       "sharepoint_site": "sites/DEN/Consumer",
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/consumer/"
+      "gcs_destination_prefix": "categories/consumer/",
+      "order_to_sync": 3
     },
     {
       "category_id": "tier1-hotlink",
@@ -31,7 +34,8 @@
       "sharepoint_site": "sites/DEN/Hotlink",
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/hotlink/"
+      "gcs_destination_prefix": "categories/hotlink/",
+      "order_to_sync": 4
     },
     {
       "category_id": "tier1-system-procedure",
@@ -39,7 +43,8 @@
       "sharepoint_site": "sites/DEN/System-Procedure",
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/system-procedure/"
+      "gcs_destination_prefix": "categories/system-procedure/",
+      "order_to_sync": 5
     },
     {
       "category_id": "tier2-medium-departments",
@@ -52,7 +57,8 @@
       ],
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/medium-departments/"
+      "gcs_destination_prefix": "categories/medium-departments/",
+      "order_to_sync": 6
     },
     {
       "category_id": "tier3-specialized-teams",
@@ -74,7 +80,8 @@
       ],
       "include_subsites": true,
       "sharepoint_library": "all",
-      "gcs_destination_prefix": "categories/specialized-teams/"
+      "gcs_destination_prefix": "categories/specialized-teams/",
+      "order_to_sync": 7
     }
   ]
 }
