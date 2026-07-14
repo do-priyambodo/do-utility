@@ -273,11 +273,11 @@ Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in
 ### Option 2: Command Line (Real-Time Storage & Log Tracking)
 Run these commands in your Cloud Shell or local terminal to track live objects landing in Google Cloud Storage or stream Cloud Run logs directly:
 
-**A. Live GCS Bucket Counter (Automated Watch Loop - updates every 30s):**
-Track exactly how many `.pdf` reports and document files have landed in your destination GCS bucket:
+**A. Ad-Hoc GCS Bucket Snapshot (One-Shot Instant Check):**
+Check exactly how many files and `.aspx` pages have landed in your destination GCS bucket without locking up your terminal in a watch loop:
 ```bash
-watch -n 30 'export GCS_BUCKET=$(python3 -c "import json; print(json.load(open(\"parameters.json\")).get(\"CONFIG_GCS_Bucket\", \"\"))") && \
-echo "=== 📊 LIVE SHAREPOINT -> GCS SYNC MONITOR ===" && \
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
+echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
 echo "Timestamp    : $(date)" && \
 echo "Target Bucket: gs://${GCS_BUCKET}" && \
 echo "------------------------------------------------------------" && \
@@ -285,16 +285,24 @@ echo -n "Total Synced Files/Pages Landed in GCS : " && \
 gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" 2>/dev/null | wc -l && \
 echo -n "Total Bucket Storage Footprint         : " && \
 gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes 2>/dev/null | cut -f1 && \
-echo "------------------------------------------------------------"'
+echo "------------------------------------------------------------"
 ```
 
 **B. Live Cloud Run Terminal Log Stream:**
-Stream live container logs directly from your terminal session without opening the browser:
+Stream live container heartbeats directly from your terminal session without opening the browser:
 ```bash
-gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\")" \
-  --project="${PROJECT_ID}" \
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'july1st-sharepoint-list-files'))")"'" AND textPayload:*' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
   --limit=25 \
-  --format="table(timestamp,severity,textPayload)"
+  --format="table(timestamp, textPayload)"
+```
+
+To filter strictly for **Errors & Exceptions only**, append `AND severity>=ERROR`:
+```bash
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'july1st-sharepoint-list-files'))")"'" AND severity>=ERROR' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+  --limit=25 \
+  --format="table(timestamp, severity, textPayload, jsonPayload.message)"
 ```
 
 ---
