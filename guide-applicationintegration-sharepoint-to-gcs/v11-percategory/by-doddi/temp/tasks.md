@@ -21,11 +21,11 @@ This checklist tracks our step-by-step engineering progression across the V11 Pe
 ---
 
 ### Phase 3: Core Synchronization Engine & Vertex AI Master Aggregator (`cf-sharepoint/main.py`)
-- [ ] **Task 3.1:** Update `cf-sharepoint/main.py` entry point to execute Option 1 Master Category Loop across `categories[]` from `sites-sync.json`, plus supporting optional single-category on-demand overrides via `--update-env-vars="TARGET_CATEGORY_ID=..."`.
-- [ ] **Task 3.2:** Implement Duplicate Crawl Prevention (`include_subsites: false`) inside `main.py`: wrapping `get_all_subsites_recursive()` so root collections (`sites/DEN`) scan only root libraries without descending into child departments (`Consumer`, `Business`).
-- [ ] **Task 3.3:** Implement Sharded Metadata Output inside `main.py`: directing every category to write its local metadata strictly to its shard (`gs://<bucket>/<prefix>/config/metadata_part.jsonl`) preserving 100% of `source_url` and `sharepoint_url`.
-- [ ] **Task 3.4:** Implement `combine_metadata_shards(bucket_name)` at the very end of `main.py`: atomically aggregating all category shards into `gs://<bucket>/config/metadata.jsonl` for Vertex AI Search (`AgentAssist`), followed by RAM reclamation (`target_sites_to_scan.clear()`).
-- [ ] **Task 3.5:** Run Python syntax check and unit/regression tests (`python3 -m py_compile cf-sharepoint/main.py && python3 -m unittest discover tests -v`) across both repositories.
+- [x] **Task 3.1:** Update `cf-sharepoint/main.py` entry point to execute Option 1 Master Category Loop across `categories[]` from `sites-sync.json`, plus supporting optional single-category on-demand overrides via `--update-env-vars="TARGET_CATEGORY_ID=..."`.
+- [x] **Task 3.2:** Implement Duplicate Crawl Prevention (`include_subsites: false`) inside `main.py`: wrapping `get_all_subsites_recursive()` so root collections (`sites/DEN`) scan only root libraries without descending into child departments (`Consumer`, `Business`).
+- [x] **Task 3.3:** Implement Sharded Metadata Output inside `main.py`: directing every category to write its local metadata strictly to its shard (`gs://<bucket>/<prefix>/config/metadata_part.jsonl`) preserving 100% of `source_url` and `sharepoint_url`.
+- [x] **Task 3.4:** Implement `combine_metadata_shards(bucket_name)` at the very end of `main.py`: atomically aggregating all category shards into `gs://<bucket>/config/metadata.jsonl` for Vertex AI Search (`AgentAssist`), followed by RAM reclamation (`target_sites_to_scan.clear()`).
+- [x] **Task 3.5:** Run Python syntax check and unit/regression tests (`python3 -m py_compile cf-sharepoint/main.py && python3 -m unittest discover tests -v`) across both repositories.
 
 ---
 
