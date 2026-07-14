@@ -94,6 +94,10 @@ gcloud run jobs execute yourorg-sharepoint-list-files \
 >   --remove-env-vars="TARGET_CATEGORY_ID"
 > ```
 
+### Mode 3: Selective URL List Bypass (`target_urls.txt`)
+If you need to bypass folder traversal entirely and instantly sync only a specific list of URL files or `.aspx` pages in `<15 seconds`, see the dedicated operator runbook:
+👉 **[DO-SYNC-TARGET-URLS.md](DO-SYNC-TARGET-URLS.md)**
+
 ---
 
 ## 5. Post-Sync Verification (`check_syncall_after.py`)

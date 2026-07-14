@@ -28,7 +28,14 @@ Follow the comprehensive **Per-Category Operations Runbook** for end-to-end depl
 
 ---
 
-### 🏗️ 2. Architecture & Technical Topology
+### 🎯 2. Selective & On-Demand URL List Synchronization (`target_urls.txt`)
+👉 **Open Runbook:** [DO-SYNC-TARGET-URLS.md](DO-SYNC-TARGET-URLS.md)
+
+Dedicated playbook for bypassing folder traversal and instantly syncing or re-rendering a precise list of specific SharePoint file URLs or Modern Site Page (`.aspx`) URLs in seconds via `gs://<bucket>/config/target_urls.txt` or JSON request payloads.
+
+---
+
+### 🏗️ 3. Architecture & Technical Topology
 👉 **Open Technical Reference:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Detailed system architecture diagrams (`Mermaid`), component interaction flows (Cloud Scheduler $\rightarrow$ Cloud Run $\rightarrow$ Application Integration $\rightarrow$ SharePoint / GCS), micro-batching design, and O(1) Delta Cache mathematical guarantees.
