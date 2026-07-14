@@ -123,6 +123,43 @@ else
 fi
 ```
 
+### Step 4.B: (Alternative for 100,000+ Assets) Deploy as a Google Cloud Run Job (`24-Hour Continuous One-Shot Sync`)
+
+If you have a massive enterprise repository (**100,000+ to 500,000+ assets**) and want the entire traversal to run continuously inside a single container **from start to finish without waiting 1 hour for the next scheduled cron cycle**, deploy our exact same codebase as a **Google Cloud Run Job** instead of a Web Service. 
+
+Cloud Run Jobs (`batch processing engines`) are not subject to the 60-minute HTTP handler ceiling and can run continuously for up to **24 hours (`86,400 seconds`)**. We strictly set `--tasks=1` (`zero sharding`) to ensure our 10-thread connection pool converts assets steadily (`~10-15 items/sec`), keeping Microsoft Graph API and SharePoint Online 100% stable without triggering `HTTP 429` tenant-wide throttling:
+
+```bash
+# 1. Copy context parameters for Docker build
+cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true && [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
+
+# 2. Build and create the 24-Hour Continuous Cloud Run Job (Single-Instance / Zero Sharding)
+gcloud run jobs create "${FUNCTION_NAME}-job" \
+  --source=./cf-sharepoint \
+  --region="${LOCATION}" \
+  --tasks=1 \
+  --max-retries=0 \
+  --task-timeout=86400s \
+  --memory=8192Mi \
+  --cpu=4 \
+  --service-account="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}" || \
+gcloud run jobs update "${FUNCTION_NAME}-job" \
+  --source=./cf-sharepoint \
+  --region="${LOCATION}" \
+  --tasks=1 \
+  --max-retries=0 \
+  --task-timeout=86400s \
+  --memory=8192Mi \
+  --cpu=4 \
+  --service-account="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}"
+
+# 3. Clean up local Docker context copy
+rm -f cf-sharepoint/parameters.json && [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true && [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
+echo "✅ Cloud Run Job (${FUNCTION_NAME}-job) deployed with 24-hour continuous timeout!"
+```
+
 ---
 
 ## Step 5: Deploy Application Integration Workflows
@@ -184,6 +221,15 @@ Runs the complete synchronization interactively in your terminal shell:
 
 ```bash
 python3 sync/sync_sharepoint_to_gcs.py
+```
+
+### Option C: Cloud Run Job Execution (`24-Hour Continuous One-Shot Traversal`)
+If you deployed the alternative Cloud Run Job in **Step 4.B**, trigger the job to run continuously in the background right now for up to 24 hours without any 60-minute HTTP timeout limit:
+
+```bash
+gcloud run jobs execute "${FUNCTION_NAME}-job" \
+  --region="${LOCATION}" \
+  --project="${PROJECT_ID}"
 ```
 
 > [!TIP]
