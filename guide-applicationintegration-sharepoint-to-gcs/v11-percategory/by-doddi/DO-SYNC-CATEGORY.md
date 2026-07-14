@@ -158,6 +158,19 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
 >   --remove-env-vars="TARGET_CATEGORY_ID"
 > ```
 
+### Option C: Direct On-Demand All-Categories Master Sequential Sync (`Cloud Run Job Execution`)
+If you want to directly trigger the Cloud Run Job to run **all categories sequentially** without going through Cloud Scheduler (and ensure any previous single-category override is cleanly cleared), execute:
+
+```bash
+gcloud run jobs execute "${FUNCTION_NAME}" \
+  --region="${LOCATION}" \
+  --remove-env-vars="TARGET_CATEGORY_ID" 2>/dev/null || \
+gcloud run jobs execute "${FUNCTION_NAME}" \
+  --region="${LOCATION}"
+```
+> [!NOTE]
+> When `TARGET_CATEGORY_ID` is removed or unset, the V11 engine automatically runs in **Mode B (Master Serial Loop)**, executing every category listed in `config-category.json` sequentially with strict RAM garbage collection between categories.
+
 ---
 
 ## Step 9.5: Active Real-Time Monitoring While Running (`During Step 9 Sync`)
