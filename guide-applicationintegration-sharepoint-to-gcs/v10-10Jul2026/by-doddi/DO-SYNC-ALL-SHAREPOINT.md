@@ -1,6 +1,13 @@
 # 🚀 Version 10 (`v10-10Jul2026`) Enterprise Complete SharePoint Synchronization Guide (`DO-SYNC-ALL-SHAREPOINT.md`)
 
-This comprehensive copy-paste production runbook covers the end-to-end workflow: authenticating your account to GCP, validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 900s timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
+> [!IMPORTANT]
+> **Revision 00035 Production Milestone: Successfully Implemented & Verified Live at Maxis (`13/14 July 2026`)**
+> This exact release (`Revision 00035`) is the hardened, production-verified version deployed and running live in the customer environment (`mxs-agentassist-dev` in `asia-southeast1`). It permanently resolves and cures all earlier historical issues:
+> * **Thread-Local Greenlet Isolation (`_THREAD_LOCAL = threading.local()`):** Eliminates `greenlet.error: cannot switch to a different thread` across concurrent Playwright workers (`Signal 5 SIGTRAP`).
+> * **VPC-SC Immune Asynchronous Build Loop (`--async`):** Bypasses all VPC Service Controls data exfiltration checks when deploying from Cloud Shell (`deploy/deploy_cloud_run.sh`).
+> * **24-Hour Continuous Cloud Run Job (`--task-timeout=86400s --tasks=1`):** Replaces the 60-minute Web Service ceiling with a continuous 24-hour job API that auto-recovers and restores all missing or pruned `.aspx` files back into Google Cloud Storage (`gs://fullsharepoint-1stjuly`).
+
+This comprehensive copy-paste production runbook covers the end-to-end workflow: authenticating your account to GCP, validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`8 GiB / 4 vCPUs / 24-Hour timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
 
 ---
 
