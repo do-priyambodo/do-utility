@@ -160,13 +160,13 @@ python3 check/check_syncall_before.py --category=tier1-business
 Initiate the synchronization across your categories. Standard regular files scale automatically to **100 items/batch**, `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
 
 > [!RECOMMENDED]
-> **What to run with your Customer (And for Tomorrow's Demo): Run Option A**  
-> For 99% of customer executions, **you should only run Option A (`Cloud Scheduler Trigger`)**. It executes all active categories sequentially across your 24-hour timeout and allows you to safely close your laptop within 2 seconds.
+> **What to run with your Customer (And for Tomorrow's Demo): Run Option A or Option B**  
+> Both options below automatically load your `config-category.json`, iterate in `order_to_sync` sequence across all `"active": "yes"` categories, and run asynchronously inside Google Cloud for up to 24 hours. **Both options are 100% safe for you to close your terminal or shut down your laptop right after executing!**
 
 ---
 
-### Option A (RECOMMENDED FOR CUSTOMERS): Unattended 24-Hour Master Loop (`Cloud Scheduler Trigger`)
-Run this single command to trigger the complete per-category synchronization across all `"active": "yes"` categories in your `config-category.json`:
+### Option A (RECOMMENDED PRIMARY): Unattended 24-Hour Master Loop via Cloud Scheduler
+Run this single command to trigger the automated Cloud Scheduler job to iterate sequentially across all `"active": "yes"` categories:
 
 ```bash
 gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}"
@@ -177,38 +177,16 @@ gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --pro
 
 ---
 
-### Alternative / Advanced CLI Commands (For Troubleshooting Only)
-
-<details>
-<summary><b>Click to expand Advanced CLI Overrides (Only use if directly troubleshooting without Cloud Scheduler)</b></summary>
-
-#### Alternative 1: Direct Cloud Run Job Execution (`Bypasses Cloud Scheduler`)
-If you want to directly trigger the Cloud Run Job via CLI instead of Cloud Scheduler (and ensure any previous single-category override is cleanly cleared), execute:
+### Option B (DIRECT MANUAL BACKUP): Unattended 24-Hour Master Loop via Cloud Run Job
+If you prefer to trigger the Cloud Run Job directly without invoking Cloud Scheduler, execute this direct manual command:
 
 ```bash
-gcloud run jobs execute "${FUNCTION_NAME}" \
-  --region="${LOCATION}" \
-  --remove-env-vars="TARGET_CATEGORY_ID" 2>/dev/null || \
 gcloud run jobs execute "${FUNCTION_NAME}" \
   --region="${LOCATION}"
 ```
-
-#### Alternative 2: Single-Category Emergency Override (`Targeted Sync`)
-If a specific department (e.g. `tier1-business`) needs immediate synchronization without running all other categories, set `TARGET_CATEGORY_ID` via `--update-env-vars`:
-
-```bash
-gcloud run jobs execute "${FUNCTION_NAME}" \
-  --region="${LOCATION}" \
-  --update-env-vars="TARGET_CATEGORY_ID=tier1-business"
-```
-> [!IMPORTANT]
-> When the single-category sync completes, remember to remove the override environment variable before the next nightly master run:
-> ```bash
-> gcloud run jobs update "${FUNCTION_NAME}" \
->   --region="${LOCATION}" \
->   --remove-env-vars="TARGET_CATEGORY_ID"
-> ```
-</details>
+> [!TIP]
+> **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
+> Just like Option A, `gcloud run jobs execute` dispatches the execution directly to Cloud Run's serverless infrastructure and exits your terminal in `~2 seconds`. **You can safely close your terminal or shut down your laptop right after running this command!**
 
 ---
 
