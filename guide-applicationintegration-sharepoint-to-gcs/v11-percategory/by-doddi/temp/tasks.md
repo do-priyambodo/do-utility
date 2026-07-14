@@ -5,10 +5,10 @@ This checklist tracks our step-by-step engineering progression across the V11 Pe
 ---
 
 ### Phase 1: Configuration Decoupling (`sites-sync.json` & `parameters.json`)
-- [ ] **Task 1.1:** Create `config/sites-sync.json` with top-level `"root_portal_site"` (`sites/DEN`) and 3-Tier Sharding Matrix (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier1-hotlink`, `tier1-system-procedure`, `tier2-medium-departments`, `tier3-specialized-teams`), standardizing on `"sharepoint_library": "all"`.
-- [ ] **Task 1.2:** Clean up `parameters.json` by removing target scopes (`CONFIG_Sharepoint_Sites` and `CONFIG_Sharepoint_Library`), preserving only cloud infrastructure variables, Secret Manager path, and `CONFIG_SharePoint_Hostname`.
-- [ ] **Task 1.3:** Create/update configuration loader logic (`util/config_loader.py` or helper in `main.py`) to seamlessly read both `parameters.json` and `sites-sync.json` (from local disk or GCS bucket).
-- [ ] **Task 1.4:** Run JSON validation (`python3 -m json.tool config/sites-sync.json`) and confirm clean syntax across both repositories.
+- [x] **Task 1.1:** Create `config/sites-sync.json` with top-level `"root_portal_site"` (`sites/DEN`) and 3-Tier Sharding Matrix (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier1-hotlink`, `tier1-system-procedure`, `tier2-medium-departments`, `tier3-specialized-teams`), standardizing on `"sharepoint_library": "all"`.
+- [x] **Task 1.2:** Clean up `parameters.json` by removing target scopes (`CONFIG_Sharepoint_Sites` and `CONFIG_Sharepoint_Library`), preserving only cloud infrastructure variables, Secret Manager path, and `CONFIG_SharePoint_Hostname`.
+- [x] **Task 1.3:** Create/update configuration loader logic (`util/config_loader.py` or helper in `main.py`) to seamlessly read both `parameters.json` and `sites-sync.json` (from local disk or GCS bucket).
+- [x] **Task 1.4:** Run JSON validation (`python3 -m json.tool config/sites-sync.json`) and confirm clean syntax across both repositories.
 
 ---
 
