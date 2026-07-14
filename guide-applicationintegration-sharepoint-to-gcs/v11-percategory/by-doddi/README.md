@@ -42,7 +42,14 @@ Dedicated playbook for bypassing folder traversal and instantly syncing or re-re
 
 ---
 
-### 🏗️ 4. Architecture & Technical Topology
+### 🔍 4. Real-Time Progress Monitoring & Log Tracking Guide
+👉 **Open Monitoring Guide:** [DO-CHECKPROGRESS.md](DO-CHECKPROGRESS.md)
+
+Dedicated operational tracking playbook for streaming live Cloud Run container heartbeats, running instant ad-hoc GCS bucket snapshots (`du -s`), and filtering directly for rate-limiting or exception logs (`severity>=ERROR`).
+
+---
+
+### 🏗️ 5. Architecture & Technical Topology
 👉 **Open Technical Reference:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Detailed system architecture diagrams (`Mermaid`), component interaction flows (Cloud Scheduler $\rightarrow$ Cloud Run $\rightarrow$ Application Integration $\rightarrow$ SharePoint / GCS), micro-batching design, and O(1) Delta Cache mathematical guarantees.
