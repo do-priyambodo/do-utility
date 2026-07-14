@@ -17,7 +17,7 @@ from config_schema import validate_parameters
 @functions_framework.http
 def main(request):
     start_time = time.time()
-    max_execution_seconds = 800  # 13.3 minutes Wall-Clock safety circuit breaker (< 900s limit)
+    max_execution_seconds = 86400  # Exactly 24.0 hours Wall-Clock safety circuit breaker (= 86400s Cloud Run Job ceiling)
     # 1. Parse JSON payload or query parameters
     req_data = request.get_json(silent=True) or {}
     

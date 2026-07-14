@@ -31,7 +31,7 @@ def main(request):
     except Exception:
         pass
     start_time = time.time()
-    max_execution_seconds = 3300  # 55 minutes Wall-Clock safety circuit breaker (< 3600s Cloud Run ceiling)
+    max_execution_seconds = 86400  # Exactly 24.0 hours Wall-Clock safety circuit breaker (= 86400s Cloud Run Job ceiling)
     # 1. Parse JSON payload or query parameters (null-safe for direct Cloud Run Job invocation where request=None)
     req_data = {}
     if request is not None and hasattr(request, "get_json"):
