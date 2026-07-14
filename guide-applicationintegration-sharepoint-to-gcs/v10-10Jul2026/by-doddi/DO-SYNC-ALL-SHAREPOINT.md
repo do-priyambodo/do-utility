@@ -180,6 +180,31 @@ Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that l
 ./deploy/deploy_scheduler_full_sharepoint_sync.sh
 ```
 
+### Step 6.B: (Alternative for Step 4.B Cloud Run Job) Deploy Daily 11 PM Malaysia Time Scheduler Trigger
+
+If you deployed the alternative 24-Hour Cloud Run Job in **Step 4.B** and want it to run automatically **once every day at exactly 11:00 PM Malaysia Time (`Asia/Kuala_Lumpur`)**, deploy this dedicated Cloud Scheduler trigger pointing to the Job execution API (`jobs/...:run`):
+
+```bash
+gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}-job" \
+  --location="${LOCATION}" \
+  --schedule="0 23 * * *" \
+  --time-zone="Asia/Kuala_Lumpur" \
+  --uri="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}-job:run" \
+  --http-method=POST \
+  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}" || \
+gcloud scheduler jobs update http "${SCHEDULER_JOB_NAME}-job" \
+  --location="${LOCATION}" \
+  --schedule="0 23 * * *" \
+  --time-zone="Asia/Kuala_Lumpur" \
+  --uri="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}-job:run" \
+  --http-method=POST \
+  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
+  --project="${PROJECT_ID}"
+
+echo "✅ Cloud Scheduler Job (${SCHEDULER_JOB_NAME}-job) scheduled for every day at 11:00 PM Malaysia Time!"
+```
+
 ---
 
 ## Step 7: Execute Read-Only Pre-Flight Verification (`Dry-Run`)
