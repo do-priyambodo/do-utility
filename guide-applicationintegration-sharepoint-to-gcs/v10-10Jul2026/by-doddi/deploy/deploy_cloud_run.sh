@@ -37,8 +37,21 @@ cp parameters.json cf-sharepoint/
 
 echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME}..."
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
-echo "📦 Submitting source to Cloud Build (${IMAGE_NAME})..."
-gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --suppress-logs
+echo "📦 Submitting source to Cloud Build asynchronously (--async) to bypass VPC-SC log streaming perimeters (${IMAGE_NAME})..."
+BUILD_ID=$(gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --async --format="value(id)")
+echo "⏳ Build ID: ${BUILD_ID}. Polling status directly via API (every 10s)..."
+while :; do
+  STATUS=$(gcloud builds describe "${BUILD_ID}" --project="${PROJECT_ID}" --format="value(status)" 2>/dev/null || echo "WORKING")
+  echo "⏳ Current Cloud Build status: ${STATUS}..."
+  if [ "$STATUS" = "SUCCESS" ]; then
+    echo "✅ Cloud Build finished successfully!"
+    break
+  elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "INTERNAL_ERROR" ] || [ "$STATUS" = "TIMEOUT" ]; then
+    echo "❌ Cloud Build failed with status: ${STATUS}"
+    exit 1
+  fi
+  sleep 10
+done
 
 echo "🚀 Creating or updating Cloud Run Job (${SERVICE_NAME}) with image ${IMAGE_NAME}..."
 gcloud run jobs create "${SERVICE_NAME}" \

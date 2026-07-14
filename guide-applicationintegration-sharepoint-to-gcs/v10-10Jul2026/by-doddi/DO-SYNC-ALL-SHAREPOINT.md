@@ -106,9 +106,14 @@ If you prefer to run each command step-by-step in your terminal:
 # 1. Copy context parameters for Docker build
 cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true && [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
 
-# 2. Build and deploy/update the 24-Hour Continuous Cloud Run Job (Universal SDK Support)
+# 2. Build and deploy/update the 24-Hour Continuous Cloud Run Job (VPC-SC Immune Async Build)
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${FUNCTION_NAME}:latest"
-gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --suppress-logs
+BUILD_ID=$(gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --async --format="value(id)")
+while :; do
+  STATUS=$(gcloud builds describe "${BUILD_ID}" --project="${PROJECT_ID}" --format="value(status)" 2>/dev/null || echo "WORKING")
+  if [ "$STATUS" = "SUCCESS" ]; then break; elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "TIMEOUT" ]; then exit 1; fi
+  sleep 10
+done
 
 gcloud run jobs create "${FUNCTION_NAME}" \
   --image="${IMAGE_NAME}" \
