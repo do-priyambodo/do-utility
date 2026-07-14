@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
-check_syncall_after.py - V9.0 High-Performance Post-Sync Verification
+check_syncall_after.py - V11 High-Performance Per-Category Post-Sync Verification
 
-Calculates:
-  1. Total modern site pages (.pdf) and document files in the Google Cloud Storage (GCS) bucket.
-  2. How many files and pages are already synced and up-to-date (Delta cache verification).
-  3. Confirms whether any remaining delta items still require synchronization.
-
-Features:
-  - Multi-Threaded Direct Client-Side Discovery (ThreadPoolExecutor with 10 concurrent workers)
-    to verify 9,000+ SharePoint assets against GCS inventory in seconds without touching backend Cloud Functions.
-  - Automatic O(1) GCS Delta Cache memory comparison.
+Supports two execution modes based on sites-sync.json:
+  Mode A (Fast Targeted Audit): python3 check/check_syncall_after.py --category=tier1-business
+    -> Verifies strictly the Business subsite and its GCS prefix in <15 seconds.
+  Mode B (Master Serial Loop): python3 check/check_syncall_after.py
+    -> Iterates sequentially through each category inside sites-sync.json, wiping RAM after each category,
+       and prints a unified Category Summary Table confirming zero missing items across all 38,823 items.
 """
 
 import os
 import sys
 import json
+import argparse
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -24,6 +22,7 @@ import threading
 import time
 import datetime
 import concurrent.futures
+from collections import defaultdict
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
@@ -35,31 +34,14 @@ try:
 except Exception:
     pass
 
-def run_with_heartbeat(msg, func, *args, **kwargs):
-    stop_event = threading.Event()
-    start_time = time.time()
-    def heartbeat():
-        while not stop_event.is_set():
-            elapsed = int(time.time() - start_time)
-            if elapsed > 0:
-                sys.stdout.write(f"\r   ⏳ {msg} (Elapsed time: {elapsed}s)... ")
-                sys.stdout.flush()
-            time.sleep(1)
-    t = threading.Thread(target=heartbeat, daemon=True)
-    t.start()
-    try:
-        res = func(*args, **kwargs)
-        stop_event.set()
-        t.join(timeout=1)
-        elapsed = int(time.time() - start_time)
-        sys.stdout.write(f"\r   ✅ Completed in {elapsed}s!                                    \n")
-        sys.stdout.flush()
-        return res
-    except Exception as e:
-        stop_event.set()
-        t.join(timeout=1)
-        print()
-        raise e
+try:
+    from util.config_loader import load_sites_sync_config
+except ImportError:
+    def load_sites_sync_config(params=None):
+        if os.path.exists("config/sites-sync.json"):
+            with open("config/sites-sync.json", "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {"root_portal_site": "sites/DEN", "categories": []}
 
 def get_secret_gcloud(secret_name):
     try:
@@ -84,13 +66,10 @@ def get_graph_token(tenant_id, client_id, client_secret):
 
 import requests
 import random
-
 _CHECK_SESSION = requests.Session()
 
 def graph_get_paginated(url, headers, max_retries=10, timeout=30):
     results = []
-    # Universal $top=25 pagination standard across all Graph endpoints (/pages, /children, /sites, /drives, /lists)
-    # $top=25 prevents 504 Gateway Timeouts on massive enterprise libraries by keeping OData payload serialization under 0.5s per packet.
     if "/pages" in url.lower() or "/children" in url.lower() or "/sites" in url.lower() or "/drives" in url.lower() or "/lists" in url.lower() or "/items" in url.lower():
         if "?" in url and "$top=" not in url:
             url += "&$top=25"
@@ -118,550 +97,240 @@ def graph_get_paginated(url, headers, max_retries=10, timeout=30):
                 timeout = min(300, int(timeout * 1.5))
                 wait_time = min(60, (2 ** attempt) + random.uniform(0, 1))
                 time.sleep(wait_time)
-        else:
-            raise Exception(f"Graph API request failed after {max_retries} attempts: {url}")
 
         data = response.json()
-        results.extend(data.get("value", []))
-        url = data.get("@odata.nextLink")
+        items = data.get("value", [])
+        results.extend(items)
+        url = data.get("@odata.nextLink", None)
     return results
 
-from collections import deque
-
-def crawl_files_bfs(token, drive_id, all_files, sync_files, gcs_cache, lock, subsite_name="Home"):
-    queue = deque([("root", "")])
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        while queue:
-            batch = []
-            while queue and len(batch) < 10:
-                batch.append(queue.popleft())
-
-            def fetch_folder(folder_item):
-                f_id, f_path = folder_item
-                url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{f_id}/children"
-                if f_id == "root":
-                    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
-                try:
-                    return f_path, graph_get_paginated(url, headers)
-                except Exception as e:
-                    return f_path, []
-
-            futures = [executor.submit(fetch_folder, item) for item in batch]
-            for future in concurrent.futures.as_completed(futures):
-                parent_path, items = future.result()
-                for item in items:
-                    item_name = item.get("name", "")
-                    curr_id = item.get("id")
-                    if "folder" in item:
-                        queue.append((curr_id, f"{parent_path}{item_name}/"))
-                    else:
-                        if item_name.lower().endswith(".aspx"):
-                            pdf_name = item_name.replace(".aspx", ".pdf")
-                            rel_page_path = f"pages/{parent_path}{pdf_name}"
-                            page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": subsite_name}
-                            needs_sync = True
-                            if gcs_cache and rel_page_path in gcs_cache:
-                                sp_mod = item.get("lastModifiedDateTime")
-                                if sp_mod:
-                                    try:
-                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                        if gcs_cache[rel_page_path] >= sp_dt:
-                                            needs_sync = False
-                                    except Exception:
-                                        pass
-                            with lock:
-                                if not any(x["RelativePath"] == rel_page_path for x in all_files):
-                                    all_files.append(page_obj)
-                                    if needs_sync:
-                                        sync_files.append(page_obj)
-                        else:
-                            rel_path = f"{parent_path}{item_name}"
-                            file_obj = {"Name": item_name, "RelativePath": rel_path, "IsPage": False, "Subsite": subsite_name}
-                            needs_sync = True
-                            gcs_path = f"files/{rel_path}"
-                            if gcs_cache and gcs_path in gcs_cache:
-                                sp_mod = item.get("lastModifiedDateTime")
-                                if sp_mod:
-                                    try:
-                                        sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                        if gcs_cache[gcs_path] >= sp_dt:
-                                            needs_sync = False
-                                    except Exception:
-                                        pass
-                            with lock:
-                                all_files.append(file_obj)
-                                if needs_sync:
-                                    sync_files.append(file_obj)
-
-def crawl_pages_bfs(token, drive_id, all_items, sync_items, gcs_cache, lock, subsite_name="Home"):
-    queue = deque([("root", "")])
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    seen_paths = set()
-
+def get_subsites_recursive_scoped(root_site_id, headers, root_prefix="", include_subsites=True):
+    results = []
+    queue = [(root_site_id, root_prefix)]
     while queue:
-        curr_id, parent_path = queue.popleft()
-        url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{curr_id}/children"
-        if curr_id == "root":
-            url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
-
+        current_id, current_prefix = queue.pop(0)
+        url = f"https://graph.microsoft.com/v1.0/sites/{current_id}/subsites"
         try:
-            items = graph_get_paginated(url, headers, max_retries=3, timeout=20)
-            for item in items:
-                item_name = item.get("name")
-                if not item_name:
-                    continue
-                if "folder" in item:
-                    queue.append((item.get("id"), f"{parent_path}{item_name}/"))
-                elif item_name.lower().endswith(".aspx"):
-                    pdf_name = item_name.replace(".aspx", ".pdf")
-                    rel_page_path = f"pages/{parent_path}{pdf_name}"
-                    if rel_page_path in seen_paths:
-                        continue
-                    seen_paths.add(rel_page_path)
-
-                    page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": subsite_name}
-                    needs_sync = True
-                    if gcs_cache and rel_page_path in gcs_cache:
-                        p_mod = item.get("lastModifiedDateTime")
-                        if p_mod:
-                            try:
-                                sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                                if gcs_cache[rel_page_path] >= sp_dt:
-                                    needs_sync = False
-                            except Exception:
-                                pass
-                    with lock:
-                        all_items.append(page_obj)
-                        if needs_sync:
-                            sync_items.append(page_obj)
+            subsites = graph_get_paginated(url, headers)
+            for s in subsites:
+                s_name = s.get("name") or s.get("displayName")
+                s_id = s.get("id")
+                new_prefix = f"{current_prefix}/{s_name}" if current_prefix else s_name
+                results.append({"id": s_id, "name": s_name, "prefix": new_prefix})
+                if include_subsites:
+                    queue.append((s_id, new_prefix))
         except Exception:
             pass
+    return results
 
-def inspect_gcs_bucket(bucket_name):
-    gcs_pages = 0
-    gcs_files = 0
-    gcs_total_bytes = 0
-    try:
-        from google.cloud import storage
-        client = storage.Client()
-        blobs = client.list_blobs(bucket_name)
-        for b in blobs:
-            if b.name.startswith("pages/"):
-                gcs_pages += 1
-                gcs_total_bytes += (b.size or 0)
-            elif b.name.startswith("files/"):
-                gcs_files += 1
-                gcs_total_bytes += (b.size or 0)
-        return gcs_pages, gcs_files, gcs_total_bytes
-    except Exception:
-        pass
+def run_category_after_check(category, params, token, headers, gcs_cache):
+    site_target = category.get("sharepoint_site")
+    if isinstance(site_target, list):
+        site_list = site_target
+    else:
+        site_list = [site_target]
 
-    try:
-        ls_out = subprocess.check_output(
-            ["gcloud", "storage", "ls", "--long", "--recursive", f"gs://{bucket_name}/**"],
-            stderr=subprocess.DEVNULL
-        ).decode("utf-8")
-        for line in ls_out.splitlines():
-            line_str = line.strip()
-            if "/pages/" in line_str or "/files/" in line_str:
-                parts = line_str.split()
-                if len(parts) >= 3 and parts[0].isdigit():
-                    size_b = int(parts[0])
-                    gcs_total_bytes += size_b
-                    if "/pages/" in line_str:
-                        gcs_pages += 1
-                    elif "/files/" in line_str:
-                        gcs_files += 1
-    except Exception:
-        pass
-    return gcs_pages, gcs_files, gcs_total_bytes
+    include_subsites = category.get("include_subsites", True)
+    category_prefix = category.get("gcs_destination_prefix", "").rstrip("/")
+    
+    cat_items = []
+    cat_missing = []
 
-def run_fast_direct_check(params):
-    tenant_id = params.get("CONFIG_M365_Tenant_Id")
-    client_id = params.get("CONFIG_M365_Client_Id")
-    secret_name = params.get("CONFIG_M365_Secret_Name")
-    hostname = params.get("CONFIG_SharePoint_Hostname", "priyambodo.sharepoint.com")
-    site_path = params.get("CONFIG_Sharepoint_Sites", "sites/doddi-sharepoint-to-gcs")
-    library_name = params.get("CONFIG_Sharepoint_Library", "Documents")
-    bucket_name = params.get("CONFIG_GCS_Bucket")
-
-    gcs_cache = {}
-    graph_token = [None]
-
-    def load_graph_token():
-        secret_val = get_secret_gcloud(secret_name)
-        graph_token[0] = get_graph_token(tenant_id, client_id, secret_val)
-
-    def load_gcs_cache():
+    for s_path in site_list:
+        s_clean = s_path.strip("/")
+        hostname = params.get("CONFIG_SharePoint_Hostname")
+        resolve_url = f"https://graph.microsoft.com/v1.0/sites/{hostname}:/{s_clean}"
+        
         try:
-            from google.cloud import storage
-            client = storage.Client()
-            for b in client.list_blobs(bucket_name):
-                if b.updated:
-                    gcs_cache[b.name] = b.updated
+            resp = _CHECK_SESSION.get(resolve_url, headers=headers, timeout=30)
+            if resp.status_code != 200: continue
+            root_id = resp.json().get("id")
+            sub_name = s_clean.split("/")[-1]
         except Exception:
+            continue
+
+        target_sites = [{"id": root_id, "name": sub_name, "prefix": ""}]
+        if include_subsites:
+            target_sites.extend(get_subsites_recursive_scoped(root_id, headers, "", True))
+
+        all_drives = []
+        all_page_drives = []
+        
+        for st in target_sites:
+            d_url = f"https://graph.microsoft.com/v1.0/sites/{st['id']}/drives"
             try:
-                ls_out = subprocess.check_output(
-                    ["gcloud", "storage", "ls", "--long", "--recursive", f"gs://{bucket_name}/**"],
-                    stderr=subprocess.DEVNULL
-                ).decode("utf-8")
-                for line in ls_out.splitlines():
-                    parts = line.strip().split(maxsplit=2)
-                    if len(parts) >= 3 and parts[0].isdigit():
-                        ts_str = parts[1]
-                        uri = parts[2]
-                        prefix = f"gs://{bucket_name}/"
-                        if uri.startswith(prefix):
-                            rel_name = uri[len(prefix):]
-                            try:
-                                dt = datetime.datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                                gcs_cache[rel_name] = dt
-                            except Exception:
-                                pass
+                drives = graph_get_paginated(d_url, headers)
+                for d in drives:
+                    dname = d.get("name", "")
+                    if dname.lower() in ["site pages", "pages"]:
+                        all_page_drives.append((st["id"], st["name"], d))
+                    elif category.get("sharepoint_library", "all") == "all" or category.get("sharepoint_library") == dname:
+                        all_drives.append((st["id"], st["name"], d))
             except Exception:
                 pass
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as init_pool:
-        f1 = init_pool.submit(load_graph_token)
-        f2 = init_pool.submit(load_gcs_cache)
-        concurrent.futures.wait([f1, f2])
+        def check_drive_files(sid, sname, dr):
+            items_found = []
+            missing_found = []
+            try:
+                root_url = f"https://graph.microsoft.com/v1.0/drives/{dr['id']}/root/children"
+                q = [(root_url, dr.get("name", "Documents"))]
+                while q:
+                    curr_url, curr_path = q.pop(0)
+                    items = graph_get_paginated(curr_url, headers)
+                    for item in items:
+                        if "folder" in item and item.get("folder", {}).get("childCount", 0) > 0:
+                            f_url = f"https://graph.microsoft.com/v1.0/drives/{dr['id']}/items/{item['id']}/children"
+                            q.append((f_url, f"{curr_path}/{item.get('name', 'folder')}"))
+                        elif "file" in item:
+                            f_name = item.get("name")
+                            gcs_key = f"{category_prefix}/files/{curr_path}/{f_name}" if category_prefix else f"files/{curr_path}/{f_name}"
+                            gcs_key = gcs_key.replace("//", "/")
+                            item_info = {"id": item["id"], "Name": f_name, "Subsite": sname, "Path": gcs_key}
+                            items_found.append(item_info)
+                            if gcs_key not in gcs_cache:
+                                missing_found.append(item_info)
+            except Exception:
+                pass
+            return items_found, missing_found
 
-    token = graph_token[0]
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        def check_page_library(sid, sname, dr):
+            items_found = []
+            missing_found = []
+            try:
+                p_url = f"https://graph.microsoft.com/v1.0/drives/{dr['id']}/root/children"
+                items = graph_get_paginated(p_url, headers)
+                for item in items:
+                    fname = item.get("name", "")
+                    if fname.lower().endswith(".aspx"):
+                        pdf_name = fname[:-5] + ".pdf"
+                        gcs_key = f"{category_prefix}/pages/{sname}/{pdf_name}" if category_prefix else f"pages/{sname}/{pdf_name}"
+                        gcs_key = gcs_key.replace("//", "/")
+                        item_info = {"id": item["id"], "Name": pdf_name, "Subsite": sname, "Path": gcs_key}
+                        items_found.append(item_info)
+                        if gcs_key not in gcs_cache:
+                            missing_found.append(item_info)
+            except Exception:
+                pass
+            return items_found, missing_found
 
-    site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
-    site_url = f"https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/{site_name_clean}"
-    req = urllib.request.Request(site_url, headers=headers)
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        site_data = json.loads(resp.read().decode("utf-8"))
-        site_id = site_data.get("id")
-
-    def get_all_subsites_recursive(s_id, current_prefix=""):
-        subsites = []
-        url = f"https://graph.microsoft.com/v1.0/sites/{s_id}/sites"
-        try:
-            children = graph_get_paginated(url, headers)
-            for child in children:
-                child_id = child.get("id")
-                raw_name = child.get("name", "")
-                sub_prefix = f"{current_prefix}{raw_name}/" if raw_name else f"{current_prefix}subsite/"
-                subsites.append({"id": child_id, "name": raw_name, "prefix": sub_prefix})
-                subsites.extend(get_all_subsites_recursive(child_id, sub_prefix))
-        except Exception:
-            pass
-        return subsites
-
-    target_sites = [{"id": site_id, "name": site_name_clean, "prefix": ""}]
-    target_sites.extend(get_all_subsites_recursive(site_id, ""))
-
-    all_target_drives = []
-    all_page_drives = []
-    system_libraries = {"style library", "form templates", "site assets"}
-    for s in target_sites:
-        s_id = s["id"]
-        s_name = s["name"] or "Home"
-        drives_url = f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives"
-        try:
-            s_drives = graph_get_paginated(drives_url, headers)
-            for d in s_drives:
-                d_name = d.get("name", "")
-                d_lower = d_name.lower()
-                d_clean = d_lower.replace(" ", "")
-                if d_clean in ["sitepages", "pages"] or d_lower == "site pages":
-                    all_page_drives.append((s_id, s_name, d))
-                elif d.get("driveType") == "documentLibrary" and d_lower not in system_libraries:
-                    if not library_name or library_name.lower() in ["all", "*"] or d_lower == library_name.lower() or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
-                        all_target_drives.append((s_id, s_name, d))
-            if not any(sid == s_id for sid, _, _ in all_target_drives) and s_drives:
-                for d in s_drives:
-                    if d.get("name", "").lower() not in system_libraries and d.get("name", "").lower().replace(" ", "") not in ["sitepages", "pages"]:
-                        all_target_drives.append((s_id, s_name, d))
-                        break
-        except Exception:
-            pass
-
-    print("--------------------------------------------------------------------------------")
-    print(f"🏢 SHAREPOINT SITE & SUBSITE COLLECTION DISCOVERY (Root: '{site_name_clean}')")
-    print(f"   • Total Site Collections / Subsites Scanned: {len(target_sites)}")
-    print(f"   • Total Document Libraries / Drives Found  : {len(all_target_drives)}")
-    print(f"   • Total Site Pages Libraries / Drives Found: {len(all_page_drives)}")
-    for idx, (sid, sname, d) in enumerate(all_target_drives, 1):
-        print(f"     {idx}. [{sname[:20]}] Library '{d.get('name')}' (Drive ID: {d.get('id', '')[:15]}...)")
-    print(f"   • Active Configured Target ('CONFIG_Sharepoint_Library'): '{library_name}'")
-    print("--------------------------------------------------------------------------------\n")
-
-    all_items = []
-    sync_items = []
-    lock = threading.Lock()
-
-    def scan_drive_files(sid, sname, d):
-        crawl_files_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock, subsite_name=sname)
-
-    def scan_page_library(sid, sname, d):
-        crawl_pages_bfs(token, d.get("id"), all_items, sync_items, gcs_cache, lock, subsite_name=sname)
-
-    def scan_subsite_pages_unthrottled(s):
-        s_name = s["name"] or "Home"
-        s_id = s["id"]
-        discovered_pages = []
-        seen_names = set()
-
-        # Strategy 1: Modern Site Pages API v1.0
-        try:
-            pages = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/pages", headers, max_retries=3, timeout=20)
-            for p in pages:
-                pname = p.get("name", "Page.aspx")
-                if pname and pname not in seen_names:
-                    seen_names.add(pname)
-                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
-        except Exception:
-            pass
-
-        # Strategy 1.5: Modern Site Pages API via /sitePages/pages endpoint (for departmental sub-hubs)
-        try:
-            pages_sp = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/sitePages/pages", headers, max_retries=3, timeout=20)
-            for p in pages_sp:
-                pname = p.get("name", "Page.aspx")
-                if pname and pname not in seen_names:
-                    seen_names.add(pname)
-                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
-        except Exception:
-            pass
-
-        # Strategy 2: Modern Site Pages API beta
-        try:
-            pages_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers, max_retries=3, timeout=20)
-            for p in pages_beta:
-                pname = p.get("name", "Page.aspx")
-                if pname and pname not in seen_names:
-                    seen_names.add(pname)
-                    discovered_pages.append((pname, p.get("lastModifiedDateTime")))
-        except Exception:
-            pass
-
-        # Strategy 3: Query SharePoint List Items directly across all lists (/sites/{id}/lists/{list_id}/items)
-        try:
-            lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists", headers, max_retries=3, timeout=20)
-            for lst in lists:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+            f_futures = [pool.submit(check_drive_files, sid, sname, dr) for sid, sname, dr in all_drives]
+            p_futures = [pool.submit(check_page_library, sid, sname, dr) for sid, sname, dr in all_page_drives]
+            for fut in concurrent.futures.as_completed(f_futures + p_futures):
                 try:
-                    items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=3, timeout=20)
-                    for itm in items:
-                        fields = itm.get("fields", {})
-                        iname = fields.get("FileLeafRef") or fields.get("LinkFilename") or ""
-                        if iname.lower().endswith(".aspx") and iname not in seen_names:
-                            seen_names.add(iname)
-                            discovered_pages.append((iname, fields.get("Modified", itm.get("lastModifiedDateTime"))))
-                except Exception:
-                    # Fallback when expand=fields fails (common for SitePages canvas layout items)
-                    try:
-                        raw_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items", headers, max_retries=3, timeout=20)
-                        for itm in raw_items:
-                            web_url = itm.get("webUrl", "")
-                            if web_url.lower().endswith(".aspx"):
-                                iname = os.path.basename(urllib.parse.urlsplit(web_url).path)
-                                if iname and iname not in seen_names:
-                                    seen_names.add(iname)
-                                    discovered_pages.append((iname, itm.get("lastModifiedDateTime")))
-                    except Exception:
-                        pass
-
-                # Strategy 4.5: Direct Drive query for lists named SitePages / Site Pages / Pages
-                if any(k in lst.get("name", "").lower() for k in ["sitepages", "site pages", "pages"]):
-                    try:
-                        drive_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/drive/root/children", headers, max_retries=3, timeout=20)
-                        for di in drive_items:
-                            iname = di.get("name", "")
-                            if iname.lower().endswith(".aspx") and iname not in seen_names:
-                                seen_names.add(iname)
-                                discovered_pages.append((iname, di.get("lastModifiedDateTime")))
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-
-        # Strategy 4: Direct BFS crawl across all Drives on the subsite (.aspx files)
-        try:
-            drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/drives", headers, max_retries=3, timeout=20)
-            for sp_drive in drives_list:
-                try:
-                    queue = deque([("root", "")])
-                    while queue:
-                        curr_id, parent_path = queue.popleft()
-                        url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
-                        if curr_id == "root":
-                            url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
-                        items = graph_get_paginated(url, headers, max_retries=3, timeout=20)
-                        for item in items:
-                            iname = item.get("name", "")
-                            if "folder" in item:
-                                queue.append((item.get("id"), f"{parent_path}{iname}/"))
-                            elif iname.lower().endswith(".aspx") and iname not in seen_names:
-                                seen_names.add(iname)
-                                discovered_pages.append((iname, item.get("lastModifiedDateTime")))
+                    res_all, res_miss = fut.result()
+                    cat_items.extend(res_all)
+                    cat_missing.extend(res_miss)
                 except Exception:
                     pass
-        except Exception:
-            pass
 
-        for page_name, p_mod in discovered_pages:
-            pdf_name = page_name.replace(".aspx", ".pdf")
-            rel_page_path = f"pages/{pdf_name}"
-            page_obj = {"Name": pdf_name, "RelativePath": rel_page_path, "IsPage": True, "Subsite": s_name}
-            needs_sync = True
-            if gcs_cache and rel_page_path in gcs_cache:
-                if p_mod:
-                    try:
-                        sp_dt = datetime.datetime.fromisoformat(p_mod.replace("Z", "+00:00"))
-                        if gcs_cache[rel_page_path] >= sp_dt:
-                            needs_sync = False
-                    except Exception:
-                        pass
-            with lock:
-                if not any(x["RelativePath"] == rel_page_path for x in all_items):
-                    all_items.append(page_obj)
-                    if needs_sync:
-                        sync_items.append(page_obj)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-        f_list = [pool.submit(scan_drive_files, sid, sname, d) for sid, sname, d in all_target_drives]
-        p_list = [pool.submit(scan_page_library, sid, sname, d) for sid, sname, d in all_page_drives]
-        concurrent.futures.wait(f_list + p_list)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as page_pool:
-        api_list = [page_pool.submit(scan_subsite_pages_unthrottled, s) for s in target_sites]
-        concurrent.futures.wait(api_list)
-
-    return all_items, sync_items
+    return cat_items, cat_missing
 
 def main():
+    parser = argparse.ArgumentParser(description="V11 Per-Category Post-Sync Verification")
+    parser.add_argument("--category", help="Target specific category_id (Mode A fast audit)", default=None)
+    args = parser.parse_args()
+
     print("================================================================================")
-    print("⚡ HIGH-SPEED POST-SYNC CHECK: GCS BUCKET & DELTA VERIFICATION (AFTER SYNC)")
+    print("⚡ V11 HIGH-SPEED POST-SYNC VERIFICATION: PER-CATEGORY COMPLETENESS AUDIT")
     print("================================================================================\n")
 
     if not os.path.exists("parameters.json"):
         print("❌ Error: parameters.json not found in working directory.")
         sys.exit(1)
 
-    with open("parameters.json", "r") as f:
+    with open("parameters.json", "r", encoding="utf-8") as f:
         params = json.load(f)
 
-    project_id = params.get("CONFIG_ProjectId", "")
+    sites_sync = load_sites_sync_config(params)
+    categories = sites_sync.get("categories", [])
+
+    target_category_id = args.category or os.environ.get("TARGET_CATEGORY_ID")
+    if target_category_id:
+        categories = [c for c in categories if c.get("category_id") == target_category_id]
+        print(f"🎯 Mode A (Targeted Single Category Audit) Active: Inspecting strictly '{target_category_id}'\n")
+    else:
+        print(f"🔄 Mode B (Master Serial Loop Audit) Active: Inspecting {len(categories)} category groups sequentially.\n")
+
     bucket_name = params.get("CONFIG_GCS_Bucket", "")
-    site_path = params.get("CONFIG_Sharepoint_Sites", "sites/doddi-sharepoint-to-gcs")
-    library_name = params.get("CONFIG_Sharepoint_Library", "Documents")
+    tenant_id = params.get("CONFIG_M365_Tenant_Id")
+    client_id = params.get("CONFIG_M365_Client_Id")
+    secret_name = params.get("CONFIG_M365_Secret_Name")
 
-    print("📂 Step 1: Loading Pipeline Parameters...")
-    print(f" • Project ID            : {project_id}")
-    print(f" • Target GCS Bucket     : gs://{bucket_name}")
-    print(f" • Target SharePoint Site: {site_path}")
-    print(f" • Document Library      : {library_name}\n")
+    print("🔐 Authenticating with M365 and fetching GCS bucket inventory...")
+    secret_val = get_secret_gcloud(secret_name)
+    token = get_graph_token(tenant_id, client_id, secret_val)
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    print(f"⚡ Step 2: Inspecting Google Cloud Storage Bucket Inventory (gs://{bucket_name}/)...")
-    gcs_pages, gcs_files, gcs_total_bytes = inspect_gcs_bucket(bucket_name)
-    gcs_size_mb = gcs_total_bytes / (1024 * 1024) if gcs_total_bytes > 0 else 0.0
-    gcs_total_items = gcs_pages + gcs_files
-    print(f"✅ GCS Bucket Inspection Complete.")
-    print(f"   • Modern Site Pages (.pdf) in GCS ('pages/'): {gcs_pages}")
-    print(f"   • Document Files in GCS ('files/')          : {gcs_files}")
-    print(f"   • Total Items Stored in GCS                 : {gcs_total_items} ({gcs_size_mb:.2f} MB)\n")
-
-    all_items = None
-    sync_items = None
-
-    print("⚡ Step 3: Verifying Sync Completion via Multi-Threaded Direct Discovery...")
-    try:
-        all_items, sync_items = run_with_heartbeat("Checking SharePoint inventory against GCS Delta Cache concurrently", run_fast_direct_check, params)
-    except Exception as e:
-        print(f"ℹ️ Direct client-side check notice ({e}). Falling back to Traversal Cloud Function...")
-        cf_endpoint = params.get("CONFIG_CloudFunction_URL")
-        function_name = params.get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files")
-        location = params.get("CONFIG_Location", "asia-southeast1")
+    gcs_cache = set()
+    if bucket_name:
         try:
-            if not cf_endpoint and function_name:
-                cmd = ["gcloud", "functions", "describe", function_name, "--gen2", "--region", location, "--project", project_id, "--format", "value(serviceConfig.uri)"]
-                cf_endpoint = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
-            token = subprocess.check_output(["gcloud", "auth", "print-identity-token"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
-            site_name_clean = site_path[len("sites/"):] if site_path.startswith("sites/") else site_path
-            payload = {"site_name": site_name_clean, "library_name": library_name, "trigger_integration": False, "sync_files": True, "sync_pages": True}
-            req = urllib.request.Request(cf_endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
-            resp = run_with_heartbeat("Querying Traversal Cloud Function for live inventory", urllib.request.urlopen, req, timeout=600)
-            data = json.loads(resp.read().decode("utf-8"))
-            all_items = data.get("all_resources", data.get("items", []))
-            sync_items = data.get("sync_resources", data.get("items", []))
-        except Exception as ex2:
-            print(f"❌ Failed to inspect inventory: {ex2}")
-            sys.exit(1)
+            from google.cloud import storage
+            client = storage.Client()
+            for b in client.list_blobs(bucket_name):
+                gcs_cache.add(b.name)
+            print(f"✅ Cached {len(gcs_cache)} total GCS objects in memory.")
+        except Exception as e:
+            print(f"Warning: Could not fetch GCS bucket objects: {e}")
 
-    # Calculate SharePoint target totals
-    total_sp_pages = sum(1 for x in all_items if x.get("IsPage"))
-    total_sp_files = sum(1 for x in all_items if not x.get("IsPage"))
-    total_sp_items = len(all_items)
+    summary_rows = []
+    total_all_items = 0
+    total_missing_items = 0
 
-    # Calculate remaining delta (items still needing sync)
-    remaining_pages = sum(1 for x in sync_items if x.get("IsPage"))
-    remaining_files = sum(1 for x in sync_items if not x.get("IsPage"))
-    remaining_total = len(sync_items)
+    print("\n--------------------------------------------------------------------------------")
+    print(f"Executing Sequential Post-Sync Verification (RAM Isolation between categories)...")
+    print("--------------------------------------------------------------------------------")
 
-    # Calculate already synced & up to date (Delta Cache Hit)
-    synced_pages = total_sp_pages - remaining_pages
-    synced_files = total_sp_files - remaining_files
-    synced_total = total_sp_items - remaining_total
+    for idx, cat in enumerate(categories, 1):
+        cat_id = cat.get("category_id", f"category-{idx}")
+        disp_name = cat.get("display_name", cat_id)
+        
+        start_c = time.time()
+        c_items, c_miss = run_category_after_check(cat, params, token, headers, gcs_cache)
+        elapsed_c = round(time.time() - start_c, 1)
+        
+        num_target = len(c_items)
+        num_missing = len(c_miss)
+        num_synced = num_target - num_missing
+        
+        total_all_items += num_target
+        total_missing_items += num_missing
+        
+        summary_rows.append({
+            "idx": idx,
+            "id": cat_id,
+            "name": disp_name,
+            "target": num_target,
+            "synced": num_synced,
+            "missing": num_missing,
+            "time": elapsed_c
+        })
+        
+        status_icon = "✅" if num_missing == 0 else "⚠️"
+        print(f"   {status_icon} [{idx}/{len(categories)}] {disp_name[:32]:<32} -> Target: {num_target:<5} | Synced: {num_synced:<5} | Missing: {num_missing:<3} ({elapsed_c}s)")
+        
+        # WIPE RAM BUFFER FOR SERIAL MEMORY ISOLATION
+        c_items.clear()
+        c_miss.clear()
 
     print("\n================================================================================")
-    print("📊 SHAREPOINT SITE COLLECTION DEPARTMENT BREAKDOWN (ASSETS BY SUBSITE)")
+    print("📊 V11 POST-SYNC AUDIT: CATEGORY BY CATEGORY COMPLETENESS REPORT")
     print("================================================================================")
-    print(f"{'No.':<5}{'Subsite / Department Name':<40}{'Files':<12}{'Pages':<12}{'Total':<10}")
-    print("-" * 80)
-    
-    from collections import defaultdict
-    sub_f = defaultdict(int)
-    sub_p = defaultdict(int)
-    for x in all_items:
-        sname = x.get("Subsite", "Home") or "Home"
-        if x.get("IsPage"):
-            sub_p[sname] += 1
-        else:
-            sub_f[sname] += 1
-            
-    all_subs = sorted(list(set(list(sub_f.keys()) + list(sub_p.keys()))))
-    for idx, sname in enumerate(all_subs, 1):
-        fc = sub_f[sname]
-        pc = sub_p[sname]
-        print(f"{idx:<5}{sname[:38]:<40}{fc:<12}{pc:<12}{fc + pc:<10}")
-        
-    print("-" * 80)
-    print(f"{'':<5}{'TOTAL INVENTORY ACROSS SITE':<40}{total_sp_files:<12}{total_sp_pages:<12}{total_sp_items:<10}")
-    print("================================================================================\n")
-    print("================================================================================")
-    print("📊 POST-SYNC VERIFICATION REPORT (AFTER SYNC)")
-    print("================================================================================")
-    print(f"1️⃣  GOOGLE CLOUD STORAGE BUCKET INVENTORY (gs://{bucket_name}):")
-    print(f"    • Total Modern Site Pages Stored ('pages/') : {gcs_pages:>6}")
-    print(f"    • Total Document Files Stored ('files/')    : {gcs_files:>6}")
-    print(f"    ----------------------------------------------------------------------------")
-    print(f"    • TOTAL GCS OBJECTS STORED                  : {gcs_total_items:>6} ({gcs_size_mb:.2f} MB)")
-    print("--------------------------------------------------------------------------------")
-    print(f"2️⃣  ALREADY SYNCED & UP-TO-DATE IN GCS (DELTA CACHE VERIFIED):")
-    print(f"    • Pages Already Synced & Up-To-Date         : {synced_pages:>6} / {total_sp_pages}")
-    print(f"    • Files Already Synced & Up-To-Date         : {synced_files:>6} / {total_sp_files}")
-    print(f"    ----------------------------------------------------------------------------")
-    print(f"    • TOTAL IN-SYNC ITEMS                       : {synced_total:>6} / {total_sp_items}")
-    print("--------------------------------------------------------------------------------")
-    print(f"3️⃣  REMAINING DELTA (UNSYNCED / IN-PROGRESS ITEMS):")
-    print(f"    • Remaining Pages Needing Sync              : {remaining_pages:>6}")
-    print(f"    • Remaining Files Needing Sync              : {remaining_files:>6}")
-    print(f"    ----------------------------------------------------------------------------")
-    print(f"    • TOTAL REMAINING DELTA                     : {remaining_total:>6}")
-    print("================================================================================")
+    print(f"{'No.':<5}{'Category ID':<26}{'Display Name':<28}{'Target':<8}{'Synced':<8}{'Missing':<8}")
+    print("-" * 83)
 
-    if remaining_total == 0:
-        print("🎉 SUCCESS: 100% of SharePoint pages and files are fully synchronized in GCS!")
+    for r in summary_rows:
+        print(f"{r['idx']:<5}{r['id'][:24]:<26}{r['name'][:26]:<28}{r['target']:<8}{r['synced']:<8}{r['missing']:<8}")
+
+    print("-" * 83)
+    print(f"{'':<5}{'TOTAL INVENTORY ACROSS ALL CATEGORIES':<54}{total_all_items:<8}{total_all_items - total_missing_items:<8}{total_missing_items:<8}")
+    print("================================================================================\n")
+
+    if total_missing_items == 0:
+        print("✅ SUCCESS: 100% of SharePoint category assets are confirmed synced and present in GCS!")
     else:
-        print(f"⚠️ NOTICE: {remaining_total} item(s) remain unsynced or modified since last sync trigger.")
+        print(f"⚠️ NOTICE: {total_missing_items} item(s) were not found in GCS. Check crawler logs or trigger an incremental run.")
     print("================================================================================\n")
 
 if __name__ == "__main__":

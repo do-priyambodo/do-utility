@@ -13,10 +13,10 @@ This checklist tracks our step-by-step engineering progression across the V11 Pe
 ---
 
 ### Phase 2: Diagnostic & Fast Discovery Engine (`check/` utilities)
-- [ ] **Task 2.1:** Create `check/discover_categories.py` — 2-second fast discovery tool that connects via Graph API (`GET /v1.0/sites/{id}/subsites`), reads `root_portal_site` from `sites-sync.json` (or `--root=...`), and outputs all child departments without counting items.
-- [ ] **Task 2.2:** Update `check/check_syncall_before.py` to load `sites-sync.json` and support both **Mode A** (`--category=tier1-business` targeted 15s audit) and **Mode B** (Sequential category-by-category loop with RAM wiping and summary table).
-- [ ] **Task 2.3:** Update `check/check_syncall_after.py` to mirror the exact same Option 1 serial loop and single-category override logic, verifying that all files/pages landed in their exact `gcs_destination_prefix` shards.
-- [ ] **Task 2.4:** Run Python syntax check (`python3 -m py_compile check/*.py`) across both repositories.
+- [x] **Task 2.1:** Create `check/discover_categories.py` — 2-second fast discovery tool that connects via Graph API (`GET /v1.0/sites/{id}/subsites`), reads `root_portal_site` from `sites-sync.json` (or `--root=...`), and outputs all child departments without counting items.
+- [x] **Task 2.2:** Update `check/check_syncall_before.py` to load `sites-sync.json` and support both **Mode A** (`--category=tier1-business` targeted 15s audit) and **Mode B** (Sequential category-by-category loop with RAM wiping and summary table).
+- [x] **Task 2.3:** Update `check/check_syncall_after.py` to mirror the exact same Option 1 serial loop and single-category override logic, verifying that all files/pages landed in their exact `gcs_destination_prefix` shards.
+- [x] **Task 2.4:** Run Python syntax check (`python3 -m py_compile check/*.py`) across both repositories.
 
 ---
 
