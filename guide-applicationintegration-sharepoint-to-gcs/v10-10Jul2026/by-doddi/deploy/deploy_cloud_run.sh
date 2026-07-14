@@ -38,7 +38,7 @@ cp parameters.json cf-sharepoint/
 echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME}..."
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
 echo "📦 Submitting source to Cloud Build (${IMAGE_NAME})..."
-gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}"
+gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --suppress-logs
 
 echo "🚀 Creating or updating Cloud Run Job (${SERVICE_NAME}) with image ${IMAGE_NAME}..."
 gcloud run jobs create "${SERVICE_NAME}" \

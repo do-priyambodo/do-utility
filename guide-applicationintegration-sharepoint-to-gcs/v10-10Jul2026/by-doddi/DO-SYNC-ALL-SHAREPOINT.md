@@ -108,7 +108,7 @@ cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema
 
 # 2. Build and deploy/update the 24-Hour Continuous Cloud Run Job (Universal SDK Support)
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${FUNCTION_NAME}:latest"
-gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}"
+gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --suppress-logs
 
 gcloud run jobs create "${FUNCTION_NAME}" \
   --image="${IMAGE_NAME}" \
