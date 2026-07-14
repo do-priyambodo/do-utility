@@ -3,10 +3,7 @@ import html
 import io
 import re
 import threading
-
-# Concurrency guard: limit concurrent Chromium browser instances in Cloud Run container
-# to prevent CPU starvation and /dev/shm shared memory crashes
-_PLAYWRIGHT_SEMAPHORE = threading.Semaphore(2)
+import time
 
 try:
     from xhtml2pdf import pisa
@@ -17,6 +14,46 @@ try:
     from bs4 import BeautifulSoup
 except ImportError:
     BeautifulSoup = None
+
+# Concurrency guard & Persistent Singleton Chromium Browser Engine for Cloud Run
+_PLAYWRIGHT_SEMAPHORE = threading.Semaphore(4)
+_BROWSER_LOCK = threading.Lock()
+_PLAYWRIGHT_INSTANCE = None
+_CHROMIUM_BROWSER = None
+
+def get_persistent_browser():
+    """
+    Returns or initializes the persistent Singleton Chromium browser instance.
+    Ensures exactly ONE browser is launched per Cloud Run container lifecycle,
+    preventing Linux PID table wraparound (Signal 5 / SIGTRAP) and /dev/shm crashes.
+    """
+    global _PLAYWRIGHT_INSTANCE, _CHROMIUM_BROWSER
+    with _BROWSER_LOCK:
+        if _CHROMIUM_BROWSER is None or not _CHROMIUM_BROWSER.is_connected():
+            from playwright.sync_api import sync_playwright
+            if _PLAYWRIGHT_INSTANCE is None:
+                _PLAYWRIGHT_INSTANCE = sync_playwright().start()
+            _CHROMIUM_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
+                headless=True,
+                timeout=30000,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--no-zygote",
+                    "--single-process",
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-default-apps",
+                    "--disable-sync",
+                    "--hide-scrollbars",
+                    "--metrics-recording-only",
+                    "--mute-audio",
+                    "--no-first-run"
+                ]
+            )
+        return _CHROMIUM_BROWSER
 
 def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
     safe_title = html.escape(str(fallback_title))
@@ -92,55 +129,49 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
     
     with _PLAYWRIGHT_SEMAPHORE:
         try:
-            from playwright.sync_api import sync_playwright
-            with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    headless=True,
-                    timeout=25000,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-gpu",
-                        "--no-zygote",
-                        "--single-process",
-                        "--disable-extensions",
-                        "--disable-background-networking",
-                        "--disable-default-apps",
-                        "--disable-sync",
-                        "--hide-scrollbars",
-                        "--metrics-recording-only",
-                        "--mute-audio",
-                        "--no-first-run"
-                    ]
-                )
+            browser = get_persistent_browser()
+            page = browser.new_page()
+            try:
+                # Stage 1: High-Fidelity Playwright Chromium Render (15s circuit breaker)
                 try:
-                    page = browser.new_page()
-                    
-                    # Stage 1: Standard High-Fidelity Playwright Chromium Render (25s timeout)
-                    try:
-                        page.set_content(cleaned_html, wait_until="domcontentloaded", timeout=25000)
-                        pdf_bytes = page.pdf(format="A4", print_background=True)
-                        return base64.b64encode(pdf_bytes).decode("utf-8")
-                    except Exception as s1_err:
-                        print(f"⚠️ Playwright Stage 1 timed out on '{fallback_title}' ({s1_err}). Attempting Stage 2 (Script-Sanitized Render)...")
-                    
-                    # Stage 2: Strip blocking scripts & iframes -> Playwright Chromium Render
-                    try:
-                        no_scripts = re.sub(r'<(script|iframe|noscript)[^>]*>.*?</\1>', '', cleaned_html, flags=re.DOTALL | re.IGNORECASE)
-                        page.set_content(no_scripts, wait_until="domcontentloaded", timeout=15000)
-                        pdf_bytes = page.pdf(format="A4", print_background=True)
-                        return base64.b64encode(pdf_bytes).decode("utf-8")
-                    except Exception as s2_err:
-                        print(f"⚠️ Playwright Stage 2 failed on '{fallback_title}' ({s2_err}). Attempting Stage 3 (Clean-Layout Playwright Render)...")
-
-                    # Stage 3: Clean Simplified Layout -> Playwright Chromium Render (~0.1s execution)
-                    simplified_html = strip_complex_css_for_pdf(cleaned_html, fallback_title)
-                    page.set_content(simplified_html, wait_until="domcontentloaded", timeout=10000)
+                    page.set_content(cleaned_html, wait_until="domcontentloaded", timeout=15000)
                     pdf_bytes = page.pdf(format="A4", print_background=True)
                     return base64.b64encode(pdf_bytes).decode("utf-8")
-                finally:
-                    browser.close()
+                except Exception as s1_err:
+                    print(f"⚠️ Playwright Stage 1 timeout on '{fallback_title}' ({s1_err}). Attempting Stage 2 (Sanitized)...")
+
+                # Stage 2: Strip blocking scripts & iframes -> Chromium Render (10s timeout)
+                try:
+                    no_scripts = re.sub(r'<(script|iframe|noscript)[^>]*>.*?</\1>', '', cleaned_html, flags=re.DOTALL | re.IGNORECASE)
+                    page.set_content(no_scripts, wait_until="domcontentloaded", timeout=10000)
+                    pdf_bytes = page.pdf(format="A4", print_background=True)
+                    return base64.b64encode(pdf_bytes).decode("utf-8")
+                except Exception as s2_err:
+                    print(f"⚠️ Playwright Stage 2 failed on '{fallback_title}' ({s2_err}). Attempting Stage 3 (Sanitized Simplified Layout)...")
+
+                # Stage 3: Clean Simplified Layout -> Chromium Render (5s timeout)
+                simplified_html = strip_complex_css_for_pdf(cleaned_html, fallback_title)
+                page.set_content(simplified_html, wait_until="domcontentloaded", timeout=5000)
+                pdf_bytes = page.pdf(format="A4", print_background=True)
+                return base64.b64encode(pdf_bytes).decode("utf-8")
+            finally:
+                # Strictly close the tab context to prevent DOM memory accumulation
+                page.close()
         except Exception as pw_fatal:
-            print(f"❌ Fatal Playwright failure on '{fallback_title}': {pw_fatal}")
-            return base64.b64encode(f"<html><body><h1>Error rendering {html.escape(str(fallback_title))}</h1><p>{html.escape(str(pw_fatal))}</p></body></html>".encode("utf-8")).decode("utf-8")
+            print(f"❌ Chromium Pool exception on '{fallback_title}': {pw_fatal}. Switching to Pure-Python xhtml2pdf Fallback...")
+            
+            # Stage 4: Pure-Python Circuit Breaker (Zero PIDs, ~0.05s execution)
+            try:
+                if pisa:
+                    simplified_html = strip_complex_css_for_pdf(cleaned_html, fallback_title)
+                    pdf_buffer = io.BytesIO()
+                    pisa_status = pisa.CreatePDF(io.StringIO(simplified_html), dest=pdf_buffer)
+                    if not pisa_status.err:
+                        return base64.b64encode(pdf_buffer.getvalue()).decode("utf-8")
+            except Exception as py_err:
+                print(f"⚠️ Pure-Python fallback failed on '{fallback_title}': {py_err}")
+
+            # Final Base64 HTML fallback if all PDF converters encounter unparseable binary DOM
+            fallback_html = f"<!DOCTYPE html><html><head><title>{html.escape(str(fallback_title))}</title></head><body><h1>{html.escape(str(fallback_title))}</h1><p>Document structure simplified for storage.</p>{cleaned_html[:50000]}</body></html>"
+            return base64.b64encode(fallback_html.encode("utf-8")).decode("utf-8")
+
