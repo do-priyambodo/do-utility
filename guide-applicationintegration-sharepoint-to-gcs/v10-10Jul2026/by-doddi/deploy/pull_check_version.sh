@@ -8,9 +8,9 @@ echo "==========================================================================
 echo "🔍 STEP 1: PULL LATEST CODE & ASSERT VERSION / PARAMETERS"
 echo "================================================================================"
 
-echo "📥 1. Fetching latest remote branch and checking out origin/main..."
+echo "📥 1. Fetching latest remote branch and updating code directories (cf-sharepoint/, check/, deploy/, util/)..."
 git fetch origin
-git checkout -f origin/main
+git checkout origin/main -- cf-sharepoint/ check/ deploy/ util/ pull_check_version.sh 2>/dev/null || true
 
 echo -e "\n🏷️  2. Inspecting current Git commit and revision tag..."
 CURRENT_COMMIT=$(git log -1 --format="%h - %s (%ci)")
