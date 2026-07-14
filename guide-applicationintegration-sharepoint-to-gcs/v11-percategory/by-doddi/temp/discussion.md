@@ -55,7 +55,36 @@ No.  Subsite / Department Name           Files       Pages       Total
 
 ---
 
-## 3. 🚨 THE DUPLICATE CRAWL DILEMMA (`Why We MUST Change Code in V11`)
+## 3. The Core Architectural Breakthrough: Separation of Concerns
+
+To permanently solve the 20-minute discovery bottleneck and eliminate timeouts without requiring engineering intervention, V11 decouples **Infrastructure/Authentication** from **Business Target Scope**:
+
+```
+[ parameters.json ] (Static Infra & Auth)       [ sites-sync.json ] (Dynamic Category Matrix)
+ ├── GCP Project ID                              ├── Category 1: Business (prefix: /business/)
+ ├── M365 Tenant / Client IDs                    ├── Category 2: Consumer (prefix: /consumer/)
+ ├── Secret Manager Path                         └── Category 3: Lightweight Batch (prefix: /ops/)
+ └── Service Account Email                                    │
+       │                                                      │
+       └─────────────────────── T ────────────────────────────┘
+                                │
+                                ▼
+         [ 🐳 Cloud Run Job (`yourorg-sharepoint-sync-v11`) ]
+```
+
+### 🔐 1. `parameters.json` (Static Infrastructure Profile)
+* Configured **ONCE** during initial container deployment (`./deploy/deploy_cloud_run.sh`).
+* Contains only fixed cloud environment variables: `CONFIG_ProjectId`, `CONFIG_Location`, `CONFIG_Service_Account`, `CONFIG_M365_Tenant_Id`, `CONFIG_M365_Client_Id`, `CONFIG_M365_Secret_Name`, and `CONFIG_SharePoint_Hostname`.
+* **Zero business target paths** are hardcoded here.
+
+### 📋 2. `sites-sync.json` (Dynamic Category Matrix)
+* Maintained exclusively by the data/business integration team (`Janice` & Project Administrators).
+* Can be stored locally alongside the scripts OR hosted dynamically inside a Google Cloud Storage configuration bucket (`gs://<YOUR-BUCKET>/config/sites-sync.json`).
+* Adding, removing, or modifying a knowledge category requires **ZERO Docker rebuilds or Cloud Run deployments**!
+
+---
+
+## 4. 🚨 THE DUPLICATE CRAWL DILEMMA (`include_subsites: false`)
 
 When separating `sites/DEN` (the root portal) from its child departments (`sites/DEN/Consumer`, `sites/DEN/Business`, etc.) inside a Category Matrix, we face a critical architectural challenge with our legacy V10 discovery loop:
 
@@ -144,9 +173,69 @@ else:
 
 ---
 
-## 5. Summary of V11 Required Code & Schema Updates
+## 6. 🧠 THE VERTEX AI SEARCH STRATEGY: Master Aggregated `metadata.jsonl`
 
-When we begin development inside `v11-percategory`:
-1. **Update `cf-sharepoint/main.py`:** Add the `include_subsites` boolean check around `get_all_subsites_recursive()`.
-2. **Update `sites-sync.json` Schema:** Include `"include_subsites": false` on the root `sites/DEN` entry so that the 4,076 root items are cleanly separated from the 34,747 child subsite items without duplication.
-3. **Update `validate_params.py`:** Ensure our validation script checks for valid `include_subsites` boolean syntax.
+A critical enterprise requirement for Vertex AI Search (`AgentAssist`) is that **Vertex AI Unstructured Data Stores with Metadata (`gcs_store`) can only ingest from a SINGLE central `metadata.jsonl` catalog** located in the root bucket (`gs://<bucket>/config/metadata.jsonl`). Vertex AI Search cannot natively read 25 fragmented metadata files scattered across category subfolders without creating 25 separate data stores!
+
+Furthermore, each line of `metadata.jsonl` **must maintain both `source_url` (pointing to GCS for text extraction) and `sharepoint_url` (pointing to M365 for chatbot citation hyperlinks)**.
+
+### The Problem with Concurrent Writes
+If Category 1 (`Business`) and Category 2 (`Consumer`) run at different times or concurrently, and both try to overwrite the single root `gs://<bucket>/config/metadata.jsonl` directly during their sync loop, we risk:
+1. **Lost Writes / Race Conditions:** One category overwrites and erases the metadata of the other category!
+2. **O(n) Rewriting Bottlenecks:** Re-downloading and rewriting a 38,000-line JSONL file after every single file sync slows down the crawler.
+
+### ⭐ The Solution: Sharded Category Metadata + Automatic Master Aggregator (`combine_metadata_shards`)
+
+To solve this cleanly with **zero race conditions and 100% metadata preservation**, V11 implements a **Sharded Write + Atomic Master Aggregation** architecture:
+
+```
+[ gs://doddi-bucket-sharepoint-sync-20260709-v2/ ]
+ │
+ ├── categories/business/config/metadata_part.jsonl   <-- Shard 1 (Written by Business job: 9,599 lines)
+ ├── categories/consumer/config/metadata_part.jsonl   <-- Shard 2 (Written by Consumer job: 8,256 lines)
+ ├── categories/den-root/config/metadata_part.jsonl   <-- Shard 3 (Written by DEN Root job: 4,076 lines)
+ │
+ └── ⚡ combine_metadata_shards() (Executes automatically at end of any job run)
+      │
+      ▼
+ 📂 config/metadata.jsonl                             <-- Master Unified Catalog (All 38,823 lines for Vertex AI!)
+```
+
+#### 1. Sharded Category Writes During the Sync Loop
+When each category job (`Business`, `Consumer`, etc.) runs, it writes and updates **only its own sharded metadata file** inside its category folder:
+* `Business` updates `gs://<bucket>/categories/business/config/metadata_part.jsonl`
+* `Consumer` updates `gs://<bucket>/categories/consumer/config/metadata_part.jsonl`
+
+**Exact Schema Preserved on Every Line:**
+```json
+{
+  "id": "b!CSD9vP0fdkKz8_...",
+  "structData": {
+    "title": "2026_Enterprise_Strategy.pdf",
+    "category": "Business",
+    "sharepoint_url": "https://maxis.sharepoint.com/sites/DEN/Business/Documents/2026_Enterprise_Strategy.pdf",
+    "source_url": "gs://doddi-bucket-sharepoint-sync-20260709-v2/categories/business/files/2026_Enterprise_Strategy.pdf",
+    "last_modified": "2026-07-14T10:00:00Z"
+  }
+}
+```
+
+#### 2. Automatic Master Aggregation Step (`combine_metadata_shards`)
+At the very end of `main.py` inside `v11-percategory` (after a category finishes downloading its delta files), `main.py` automatically executes a fast 3-second **Master Aggregation Function**:
+1. **List all shards:** Queries GCS for `gs://<bucket>/categories/*/config/metadata_part.jsonl` (plus any legacy root `config/metadata.jsonl`).
+2. **In-Memory Merge & Deduplication:** Streams and combines all lines into a single master dictionary in memory (`O(1)` deduplication by `id` / `source_url`).
+3. **Atomic Master Upload:** Uploads the combined master file directly to **`gs://<bucket>/config/metadata.jsonl`**!
+
+#### 🚀 Why This Master Aggregator Strategy Is Perfect for Vertex AI:
+* **One Single Source of Truth:** Vertex AI Search (`gcs_store`) points strictly to `gs://<bucket>/config/metadata.jsonl`. Whenever any department finishes a sync, `metadata.jsonl` is immediately refreshed containing **100% of all items across every department**!
+* **100% Citation Link Preservation:** Both `source_url` (where Vertex AI reads the PDF content in GCS) and `sharepoint_url` (where the `AgentAssist` chatbot generates clickable M365 URLs for human agents) are perfectly preserved for every single item!
+* **Zero Race Conditions:** Because each category writes strictly to its own `metadata_part.jsonl` shard during the heavy traversal loop, department syncs can run concurrently without ever locking or corrupting the master file!
+
+---
+
+## 7. Next Steps & Action Plan for Preparation
+
+1. **Align on Option 2 vs Option 1:** Confirm with the project team tomorrow that the **Rich Category Matrix (`Option 2`)** is the preferred schema for the AI knowledge base.
+2. **Draft the Initial `sites-sync.json` Matrix:** Identify the top 3 to 5 high-priority departments or subsite paths from the `DEN` hierarchy to include in the initial V11 launch.
+3. **Refine `main.py` to Support `sites-sync.json` & `include_subsites`:** Update the discovery engine so that if `sites-sync.json` exists, it iterates over `categories[]` and applies the specific `gcs_destination_prefix`, `sharepoint_library`, and `include_subsites` overrides dynamically.
+4. **Implement `combine_metadata_shards()`:** Add the atomic master aggregator helper to `main.py` to ensure Vertex AI Search always has a fresh, unified 38,823-line `metadata.jsonl` catalog at the root!
