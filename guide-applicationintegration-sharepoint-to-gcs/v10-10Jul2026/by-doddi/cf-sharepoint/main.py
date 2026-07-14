@@ -78,25 +78,36 @@ def main(request):
             print(f"Warning: Could not init GCS bucket client or pre-fetch cache: {e}")
 
     # M365 Tenant Details
-    tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id")
-    client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id")
-    secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name")
-    site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
+    tenant_id = req_data.get("tenant_id") or params.get("CONFIG_M365_Tenant_Id") or params.get("CONFIG_TenantId")
+    client_id = req_data.get("client_id") or params.get("CONFIG_M365_Client_Id") or params.get("CONFIG_ClientId")
+    secret_name = req_data.get("secret_name") or params.get("CONFIG_M365_Secret_Name") or params.get("CONFIG_SecretName")
+    site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname") or params.get("CONFIG_Sharepoint_Domain")
 
     if not all([tenant_id, client_id, secret_name, site_hostname]):
         raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
 
-    
     try:
+        print("="*60, flush=True)
+        print("🚀 [Step 1/7] Initializing M365 Authentication & Parameter Discovery...", flush=True)
+        print("="*60, flush=True)
+
         # 2. Fetch Azure AD Client Secret dynamically via GCP Secret Manager
+        print(f"🔐 [Step 2/7] Retrieving Azure AD Client Secret ({secret_name})...", flush=True)
+        t_sec = time.time()
         client_secret = get_secret(secret_name)
+        print(f"✅ [Step 2 Completed in {time.time()-t_sec:.2f}s] Client Secret retrieved successfully.", flush=True)
         
         # 3. Authenticate with Microsoft Entra ID
+        print(f"🔑 [Step 3/7] Acquiring OAuth Access Token for tenant {tenant_id}...", flush=True)
+        t_tok = time.time()
         token = get_graph_token(tenant_id, client_id, client_secret)
+        print(f"✅ [Step 3 Completed in {time.time()-t_tok:.2f}s] OAuth Access Token acquired successfully.", flush=True)
         
         # 4. Resolve Site ID for SharePoint subsite
         site_url_path = f"sites/{site_name.strip('/')}"
         resolve_site_url = f"https://graph.microsoft.com/v1.0/sites/{site_hostname}:/{site_url_path}"
+        print(f"🌐 [Step 4/7] Resolving SharePoint Site ID via Graph API ({resolve_site_url})...", flush=True)
+        t_site = time.time()
         
         headers = {
             "Authorization": f"Bearer {token}",
@@ -108,11 +119,12 @@ def main(request):
             return (f"Failed to resolve SharePoint Site: {site_resp.text}", 500)
             
         root_site_id = site_resp.json().get("id")
+        print(f"✅ [Step 4 Completed in {time.time()-t_site:.2f}s] Site ID Resolved: {root_site_id}", flush=True)
         
         target_sites = [{"id": root_site_id, "name": site_name, "prefix": ""}]
-        print("🔍 Scoping child subsites across SharePoint site collection...")
+        print("🔍 [Step 5/7] Scoping child subsites across SharePoint site collection...", flush=True)
         target_sites.extend(get_all_subsites_recursive(root_site_id, headers, ""))
-        print(f"✅ Enumerable sites resolved (Total: {len(target_sites)} site collections/subsites).")
+        print(f"✅ [Step 5 Completed] Enumerable sites resolved (Total: {len(target_sites)} site collections/subsites).", flush=True)
 
         all_list = []
         sync_list = []
@@ -701,7 +713,7 @@ def main(request):
                 for item in chunk:
                     item.pop("VirtualContent", None)
         elif len(sync_list) > 0:
-            print(f"⚡ Rendering pages in parallel without Integration trigger ({len(sync_list)} items)...")
+            print(f"⚙️ [Step 6/7] Rendering pages & uploading files in parallel ({len(sync_list)} items)...", flush=True)
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 list(executor.map(_render_lazy_page, sync_list))
 
@@ -709,6 +721,7 @@ def main(request):
         clean_all_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in all_list]
         clean_sync_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in sync_list]
 
+        print(f"🧹 [Step 7/7] Finalizing synchronization response (All: {len(clean_all_list)}, Synced: {len(clean_sync_list)})...", flush=True)
         response_payload = {
             "all_resources_count": len(clean_all_list),
             "sync_resources_count": len(clean_sync_list),
@@ -724,5 +737,12 @@ def main(request):
         
     except Exception as e:
         err_msg = f"Error executing SharePoint traversal Cloud Function: {e}\n{traceback.format_exc()}"
-        print(err_msg)
+        print(err_msg, flush=True)
         return (err_msg, 500)
+
+if __name__ == "__main__":
+    print("🚀 Auto-invoking main() for Cloud Run Job execution or CLI run...", flush=True)
+    resp, status, *_ = main(None)
+    print(f"🏁 Execution Finished with HTTP Status: {status}", flush=True)
+    if status != 200:
+        sys.exit(1)
