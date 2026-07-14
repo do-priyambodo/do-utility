@@ -36,17 +36,7 @@ cp parameters.json cf-sharepoint/
 [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
 
 echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME}..."
-gcloud run jobs create "${SERVICE_NAME}" \
-  --source=./cf-sharepoint \
-  --region="${LOCATION}" \
-  --tasks=1 \
-  --max-retries=0 \
-  --task-timeout=86400s \
-  --memory=8192Mi \
-  --cpu=4 \
-  --service-account="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}" || \
-gcloud run jobs update "${SERVICE_NAME}" \
+gcloud run jobs deploy "${SERVICE_NAME}" \
   --source=./cf-sharepoint \
   --region="${LOCATION}" \
   --tasks=1 \
