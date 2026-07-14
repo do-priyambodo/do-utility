@@ -35,6 +35,7 @@ def get_persistent_browser(force_restart=False):
             except Exception:
                 pass
             _THREAD_LOCAL.playwright = None
+        _THREAD_LOCAL.page_count = 0
 
     if getattr(_THREAD_LOCAL, 'browser', None) is None or not getattr(_THREAD_LOCAL, 'browser').is_connected():
         from playwright.sync_api import sync_playwright
@@ -60,6 +61,7 @@ def get_persistent_browser(force_restart=False):
                 "--no-first-run"
             ]
         )
+        _THREAD_LOCAL.page_count = 0
     return _THREAD_LOCAL.browser
 
 def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
@@ -135,13 +137,26 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
     """
     Converts rendered HTML string to Base64-encoded PDF bytes strictly using Playwright Chromium.
     Enforces a 3-Stage Rendering Hierarchy without any third-party PDF libraries.
+    Includes Proactive Context Auto-Recycling (every 50 pages) and Isolated BrowserContext per page
+    to prevent DOM memory accumulation and socket exhaustion.
     """
     cleaned_html = re.sub(r':\s*(revert|revert-layer|unset|initial)\s*(;|\})', r': inherit\2', html_string, flags=re.IGNORECASE)
     
     with _PLAYWRIGHT_SEMAPHORE:
         try:
-            browser = get_persistent_browser()
-            page = browser.new_page()
+            # Proactively recycle the thread's persistent Chromium browser every 50 pages to prevent memory exhaustion
+            current_count = getattr(_THREAD_LOCAL, 'page_count', 0) + 1
+            if current_count >= 50:
+                print(f"🔄 Proactively recycling Chromium engine for thread {threading.get_ident()} after 50 renders to preserve V8 memory heap...", flush=True)
+                browser = get_persistent_browser(force_restart=True)
+                _THREAD_LOCAL.page_count = 1
+            else:
+                browser = get_persistent_browser()
+                _THREAD_LOCAL.page_count = current_count
+
+            # Create an isolated BrowserContext for clean DOM/cookie/cache isolation per page
+            context = browser.new_context(viewport={"width": 1280, "height": 1024})
+            page = context.new_page()
             try:
                 # Stage 1: High-Fidelity Playwright Chromium Render (15s timeout)
                 try:
@@ -166,14 +181,22 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
                 pdf_bytes = page.pdf(format="A4", print_background=True)
                 return base64.b64encode(pdf_bytes).decode("utf-8")
             finally:
-                # Strictly close the tab context to prevent DOM memory accumulation
-                page.close()
+                # Strictly close both the tab page and isolated BrowserContext to purge 100% of DOM/V8 heap
+                try:
+                    page.close()
+                except Exception:
+                    pass
+                try:
+                    context.close()
+                except Exception:
+                    pass
         except Exception as pw_fatal:
             print(f"❌ Chromium Pool exception on '{fallback_title}': {pw_fatal}. Attempting auto-recycled Playwright Chromium recovery...")
             try:
                 # Stage 4 Recovery: Auto-recycle browser pool and re-try simplified layout via Playwright Chromium
                 browser = get_persistent_browser(force_restart=True)
-                page = browser.new_page()
+                context = browser.new_context(viewport={"width": 1280, "height": 1024})
+                page = context.new_page()
                 try:
                     simplified_html = strip_complex_css_for_pdf(cleaned_html, fallback_title)
                     page.set_content(simplified_html, wait_until="domcontentloaded", timeout=10000)
@@ -181,7 +204,14 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
                     print(f"✅ Stage 4 Recovery: Successfully rendered '{fallback_title}' via auto-recycled Playwright Chromium engine.", flush=True)
                     return base64.b64encode(pdf_bytes).decode("utf-8")
                 finally:
-                    page.close()
+                    try:
+                        page.close()
+                    except Exception:
+                        pass
+                    try:
+                        context.close()
+                    except Exception:
+                        pass
             except Exception as recovery_err:
                 print(f"❌ Fatal Playwright recovery failure on '{fallback_title}': {recovery_err}")
 
