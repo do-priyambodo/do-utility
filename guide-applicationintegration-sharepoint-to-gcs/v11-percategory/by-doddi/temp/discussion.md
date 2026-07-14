@@ -55,118 +55,98 @@ No.  Subsite / Department Name           Files       Pages       Total
 
 ---
 
-## 3. The Core Architectural Breakthrough: Separation of Concerns
+## 3. 🚨 THE DUPLICATE CRAWL DILEMMA (`Why We MUST Change Code in V11`)
 
-To permanently solve the 20-minute discovery bottleneck and eliminate timeouts without requiring engineering intervention, V11 decouples **Infrastructure/Authentication** from **Business Target Scope**:
+When separating `sites/DEN` (the root portal) from its child departments (`sites/DEN/Consumer`, `sites/DEN/Business`, etc.) inside a Category Matrix, we face a critical architectural challenge with our legacy V10 discovery loop:
 
+### The Problem in Legacy V10 Code (`get_all_subsites_recursive`)
+In `v10-10Jul2026/by-doddi/cf-sharepoint/main.py`, when the crawler receives a target site path (`CONFIG_Sharepoint_Sites = "sites/DEN"`), it automatically executes:
+```python
+target_sites_to_scan = get_all_subsites_recursive("sites/DEN", headers)
 ```
-[ parameters.json ] (Static Infra & Auth)       [ sites-sync.json ] (Dynamic Category Matrix)
- ├── GCP Project ID                              ├── Category 1: Business (prefix: /business/)
- ├── M365 Tenant / Client IDs                    ├── Category 2: Consumer (prefix: /consumer/)
- ├── Secret Manager Path                         └── Category 3: Lightweight Batch (prefix: /ops/)
- └── Service Account Email                                    │
-       │                                                      │
-       └─────────────────────── T ────────────────────────────┘
-                                │
-                                ▼
-         [ 🐳 Cloud Run Job (`yourorg-sharepoint-sync-v11`) ]
-```
+What `get_all_subsites_recursive()` does:
+1. It queries the root site (`DEN`), finding its 4,076 root items.
+2. It queries Microsoft Graph API for `/sites/DEN:/subsites` (or `/children`), which returns **all 24 child departments** (`DEN/Consumer`, `DEN/Business`, `DEN/System-Procedure`, etc.)!
+3. It recursively traverses every child subsite down to the bottom of the tree.
 
-### 🔐 1. `parameters.json` (Static Infrastructure Profile)
-* Configured **ONCE** during initial container deployment (`./deploy/deploy_cloud_run.sh`).
-* Contains only fixed cloud environment variables: `CONFIG_ProjectId`, `CONFIG_Location`, `CONFIG_Service_Account`, `CONFIG_M365_Tenant_Id`, `CONFIG_M365_Client_Id`, `CONFIG_M365_Secret_Name`, and `CONFIG_SharePoint_Hostname`.
-* **Zero business target paths** are hardcoded here.
-
-### 📋 2. `sites-sync.json` (Dynamic Category Matrix)
-* Maintained exclusively by the data/business integration team (`Janice` & Project Administrators).
-* Can be stored locally alongside the scripts OR hosted dynamically inside a Google Cloud Storage configuration bucket (`gs://<YOUR-BUCKET>/config/sites-sync.json`).
-* Adding, removing, or modifying a knowledge category requires **ZERO Docker rebuilds or Cloud Run deployments**!
+**Why this creates massive duplication if left unchanged in V11:**
+If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites/DEN/Consumer`), and Category 3 (`sites/DEN/Business`):
+* When Category 2 (`Consumer`) runs, it syncs **8,256 items**.
+* When Category 3 (`Business`) runs, it syncs **9,599 items**.
+* But when Category 1 (`sites/DEN Root Portal`) runs, `get_all_subsites_recursive()` will automatically traverse downwards into `Consumer` and `Business` all over again, attempting to sync **all 38,823 items** across the entire tenant!
+* **Result:** Extreme duplication of GCS objects, wasted API bandwidth, and redundant file processing!
 
 ---
 
-## 4. How We Structure `sites-sync.json` for V11 (`The Rich Category Matrix`) ⭐
+### 💡 THE V11 CODE SOLUTION: `"include_subsites": false` (Exact Target / Non-Recursive Mode)
 
-Instead of pointing `CONFIG_Sharepoint_Sites: "sites/DEN"` and `CONFIG_Sharepoint_Library: "all"` (which forces scanning all 59 libraries including `Images_Staging`, `NewBulletinLandingImages`, and `BulletinsImages`), we structure `sites-sync.json` to **filter out decorative website files and isolate each department into its own GCS prefix**:
+To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v11-percategory`** to support a new parameter/flag: `"include_subsites"` (or `"recursive"`), defaulting to `true` for backward compatibility, but allowing `false` when targeting root site collections that have separate child category jobs.
+
+#### How It Works:
+We add `"include_subsites"` to our category entries inside `sites-sync.json` (or `parameters.json`):
 
 ```json
 {
   "categories": [
     {
+      "category_id": "tier1-den-root-only",
+      "display_name": "DEN Root Portal Documents & Guides ONLY",
+      "sharepoint_site": "sites/DEN",
+      "include_subsites": false,        <-- 🚨 PREVENTS DOWNWARD CRAWL INTO CHILD DEPARTMENTS!
+      "sharepoint_library": "Documents",
+      "gcs_destination_prefix": "categories/den-root/",
+      "cron_schedule": "0 0 * * *"
+    },
+    {
       "category_id": "tier1-business",
       "display_name": "Business Department Policies & Documents",
       "sharepoint_site": "sites/DEN/Business",
+      "include_subsites": true,         <-- Crawls Business + any sub-teams inside Business
       "sharepoint_library": "Documents",
       "gcs_destination_prefix": "categories/business/",
-      "cron_schedule": "0 0 * * *"
+      "cron_schedule": "0 2 * * *"
     },
     {
       "category_id": "tier1-consumer",
       "display_name": "Consumer Department SOPs & Guides",
       "sharepoint_site": "sites/DEN/Consumer",
+      "include_subsites": true,         <-- Crawls Consumer + any sub-teams inside Consumer
       "sharepoint_library": "Documents",
       "gcs_destination_prefix": "categories/consumer/",
-      "cron_schedule": "0 2 * * *"
-    },
-    {
-      "category_id": "tier1-hotlink",
-      "display_name": "Hotlink Department Documents",
-      "sharepoint_site": "sites/DEN/Hotlink",
-      "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/hotlink/",
       "cron_schedule": "0 4 * * *"
-    },
-    {
-      "category_id": "tier1-system-procedure",
-      "display_name": "System & Procedure Standard Guidelines",
-      "sharepoint_site": "sites/DEN/System-Procedure",
-      "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/system-procedure/",
-      "cron_schedule": "0 6 * * *"
-    },
-    {
-      "category_id": "tier2-medium-departments",
-      "display_name": "Channels, Enterprise Solutions & QA",
-      "sharepoint_site": [
-        "sites/DEN/Channels",
-        "sites/DEN/Enterprise-Solutions",
-        "sites/DEN/ChannelMarketing",
-        "sites/DEN/Quality-Assurance"
-      ],
-      "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/medium-departments/",
-      "cron_schedule": "0 8 * * *"
-    },
-    {
-      "category_id": "tier3-lightweight-departments",
-      "display_name": "MEPS, Credit, BCP, FAQ & Specialized Teams",
-      "sharepoint_site": [
-        "sites/DEN/MEPS",
-        "sites/DEN/Credit-Operations",
-        "sites/DEN/BCP",
-        "sites/DEN/FAQ",
-        "sites/DEN/Assisted",
-        "sites/DEN/CDPU",
-        "sites/DEN/Customer-Support",
-        "sites/DEN/Customer_First",
-        "sites/DEN/DistributionMgmt",
-        "sites/DEN/Quicklinks",
-        "sites/DEN/Self_Serve",
-        "sites/DEN/Service-Insights",
-        "sites/DEN/Training"
-      ],
-      "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/specialized-teams/",
-      "cron_schedule": "0 10 * * *"
     }
   ]
 }
 ```
 
-#### Why This Matrix Solves 100% of the Customer's Pain Points:
-1. **Eliminates the 20-Minute Discovery & API Throttling:** When the `tier1-business` cron job runs, `main.py` discovers **only** the `sites/DEN/Business` subsite. Discovery finishes in **<15 seconds** instead of 1,243 seconds!
-2. **Filters Out Decorative UI / Banner Images:** Look at the customer's 59 libraries in `sample-sites.txt`: `Images_Staging`, `NewBulletinLandingImages`, `BulletinsImages`, `Site Collection Images`, `bulletins_images_staging`. By explicitly specifying `"sharepoint_library": "Documents"` (and `"SitePages"` where needed), the AI chatbot (`AgentAssist`) never gets polluted with decorative website PNG/JPG banners!
-3. **Staggered Execution Schedules:** By staggering Tier 1 across different hours (`00:00`, `02:00`, `04:00`, `06:00`) and grouping Tier 3 into a fast batch run (`10:00`), Microsoft Graph API never sees concurrent rate throttling (`429`) across all 38,823 items at once.
-4. **Targeted On-Demand Execution in Seconds:** If the Legal/Credit or HR team updates 20 urgent SOPs at 3:00 PM, Janice can trigger an instant, targeted sync without running the other 38,000 items:
-   ```bash
-   gcloud run jobs execute <YOUR-JOB-NAME> --update-env-vars="TARGET_CATEGORY_ID=tier1-business"
-   ```
+#### Required Code Change in `v11-percategory/by-doddi/cf-sharepoint/main.py`:
+We modify the discovery initialization in `main.py` so that if `include_subsites` (or `recursive`) is `False`, we **skip `get_all_subsites_recursive()`** and inspect only the exact target site:
+
+```python
+# Check if the category configuration requests non-recursive / root-only discovery
+include_subsites = req_data.get("include_subsites", params.get("CONFIG_Include_Subsites", True))
+
+if not include_subsites:
+    print(f"🎯 Non-Recursive / Exact Target Mode Active ('include_subsites': False)")
+    print(f"   Inspecting only root site '{CONFIG_Sharepoint_Sites}' without crawling child departments.")
+    # Resolve only the root site object without calling get_all_subsites_recursive()
+    root_site_obj = resolve_site_info(CONFIG_Sharepoint_Sites, headers)
+    target_sites_to_scan = [root_site_obj] if root_site_obj else []
+else:
+    print(f"🏢 Recursive Discovery Mode Active ('include_subsites': True)")
+    target_sites_to_scan = get_all_subsites_recursive(CONFIG_Sharepoint_Sites, headers)
+```
+
+#### The Operational Result with `include_subsites: false`:
+1. When Category 1 (`sites/DEN` with `include_subsites: false`) runs: It scans only the libraries directly attached to `sites/DEN` (exactly those **4,076 root items**). It **never** crawls `Consumer` or `Business`. $\rightarrow$ **0 Duplicates!**
+2. When Category 2 (`sites/DEN/Consumer` with `include_subsites: true`) runs: It scans only `Consumer` (and its sub-teams, exactly those **8,256 items**). $\rightarrow$ **0 Duplicates!**
+3. When Category 3 (`sites/DEN/Business` with `include_subsites: true`) runs: It scans only `Business` (exactly those **9,599 items**). $\rightarrow$ **0 Duplicates!**
+
+---
+
+## 5. Summary of V11 Required Code & Schema Updates
+
+When we begin development inside `v11-percategory`:
+1. **Update `cf-sharepoint/main.py`:** Add the `include_subsites` boolean check around `get_all_subsites_recursive()`.
+2. **Update `sites-sync.json` Schema:** Include `"include_subsites": false` on the root `sites/DEN` entry so that the 4,076 root items are cleanly separated from the 34,747 child subsite items without duplication.
+3. **Update `validate_params.py`:** Ensure our validation script checks for valid `include_subsites` boolean syntax.
