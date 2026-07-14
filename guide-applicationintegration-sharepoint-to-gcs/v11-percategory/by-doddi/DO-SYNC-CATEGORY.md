@@ -157,14 +157,6 @@ python3 check/check_syncall_before.py --category=tier1-business
 
 ## Step 9: Execute Per-Category Synchronization
 
-Initiate the synchronization across your categories. Standard regular files scale automatically to **100 items/batch**, `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
-
-> [!RECOMMENDED]
-> **What to run with your Customer (And for Tomorrow's Demo): Run Option A or Option B**  
-> Both options below automatically load your `config-category.json`, iterate in `order_to_sync` sequence across all `"active": "yes"` categories, and run asynchronously inside Google Cloud for up to 24 hours. **Both options are 100% safe for you to close your terminal or shut down your laptop right after executing!**
-
----
-
 ### Option A (RECOMMENDED PRIMARY): Unattended 24-Hour Master Loop via Cloud Scheduler
 Run this single command to trigger the automated Cloud Scheduler job to iterate sequentially across all `"active": "yes"` categories:
 
