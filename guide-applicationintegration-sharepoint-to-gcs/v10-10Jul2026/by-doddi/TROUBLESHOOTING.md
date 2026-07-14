@@ -194,7 +194,7 @@ resource.labels.job_id="${SCHEDULER_JOB}"
 #### 🖥️ CLI Command (View All Live Execution & Status Logs)
 Standard Python `print()` statements log at `INFO`/`DEFAULT` severity. Run this command to view live progress outputs (`✅ Status Log`, `⏭️ Skipping...`, `🟢 Batch scheduled`):
 ```bash
-gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\"" \
+gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\")" \
     --project="${PROJECT_ID}" \
     --limit=30 \
     --order=desc \
@@ -205,8 +205,8 @@ gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_
 
 #### 🔍 GCP Console Log Explorer Query
 ```query
-(resource.type="cloud_function" OR resource.type="cloud_run_revision")
-resource.labels.service_name="${FUNCTION_NAME}"
+(resource.type="cloud_run_job" OR resource.type="cloud_function" OR resource.type="cloud_run_revision")
+(resource.labels.job_name="${FUNCTION_NAME}" OR resource.labels.service_name="${FUNCTION_NAME}")
 ```
 
 * **What to look for**:
@@ -352,7 +352,7 @@ When returning a `429` or `503` error, Microsoft includes an HTTP `Retry-After` 
 Run this CLI command to search your Cloud Function / Cloud Run logs specifically for throttling rejections, rate limits, and `Retry-After` headers:
 
 ```bash
-gcloud logging read "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND resource.labels.service_name:\"${FUNCTION_NAME}\" AND (textPayload=~\"429\" OR textPayload=~\"503\" OR textPayload=~\"504\" OR textPayload=~\"Too Many Requests\" OR textPayload=~\"Retry-After\" OR textPayload=~\"Server Busy\" OR textPayload=~\"ECONNRESET\")" \
+gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND (resource.labels.job_name=\"${FUNCTION_NAME}\" OR resource.labels.service_name=\"${FUNCTION_NAME}\") AND (textPayload=~\"429\" OR textPayload=~\"503\" OR textPayload=~\"504\" OR textPayload=~\"Too Many Requests\" OR textPayload=~\"Retry-After\" OR textPayload=~\"Server Busy\" OR textPayload=~\"ECONNRESET\")" \
     --project="${PROJECT_ID}" \
     --limit=25 \
     --order=desc \
