@@ -25,7 +25,7 @@ try:
     from util.config_loader import load_sites_sync_config
 except ImportError:
     def load_sites_sync_config(params=None):
-        for p in ["sites-sync.json", "config/sites-sync.json", "../sites-sync.json"]:
+        for p in ["config-category.json", "config/config-category.json", "../config-category.json"]:
             if os.path.exists(p):
                 with open(p, "r", encoding="utf-8") as f:
                     return json.load(f)
@@ -80,11 +80,11 @@ def main():
     print("🚀 V11 SHAREPOINT FAST CATEGORY DISCOVERY (ROOT ONLY — NO ITEM COUNTING)")
     print("================================================================================\n")
 
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found in current directory.")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found in current directory.")
         sys.exit(1)
 
-    with open("parameters.json", "r", encoding="utf-8") as f:
+    with open("config-parameters.json", "r", encoding="utf-8") as f:
         params = json.load(f)
 
     sites_sync = load_sites_sync_config(params)
@@ -97,7 +97,7 @@ def main():
     hostname = params.get("CONFIG_SharePoint_Hostname")
 
     if not all([tenant_id, client_id, secret_name, hostname]):
-        print("❌ Error: Missing M365 authentication credentials inside parameters.json.")
+        print("❌ Error: Missing M365 authentication credentials inside config-parameters.json.")
         sys.exit(1)
 
     print(f" • Hostname        : {hostname}")
@@ -153,7 +153,7 @@ def main():
         print(f"{'1':<5}{'(Root Portal Only — No child subsites)':<35}{root_web_url:<40}")
 
     print("================================================================================")
-    print("💡 TIP: Copy any Category Name above directly into your 'sites-sync.json' to onboard it!")
+    print("💡 TIP: Copy any Category Name above directly into your 'config-category.json' to onboard it!")
     print("================================================================================")
 
 if __name__ == "__main__":

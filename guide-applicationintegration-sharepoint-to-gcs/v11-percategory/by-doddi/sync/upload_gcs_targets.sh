@@ -3,15 +3,15 @@ cd "$(dirname "$0")/.."
 export PYTHONPATH="$(pwd)/util:${PYTHONPATH:-}"
 set -e
 
-if [ ! -f "parameters.json" ]; then
-  echo "❌ Error: parameters.json not found!"
+if [ ! -f "config-parameters.json" ]; then
+  echo "❌ Error: config-parameters.json not found!"
   exit 1
 fi
 
-BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 
 if [ -z "$BUCKET_NAME" ]; then
-  echo "❌ Error: CONFIG_GCS_Bucket not specified in parameters.json!"
+  echo "❌ Error: CONFIG_GCS_Bucket not specified in config-parameters.json!"
   exit 1
 fi
 

@@ -14,8 +14,8 @@ gcloud config unset auth/impersonate_service_account 2>/dev/null || true
 # 3. Login to Google Cloud SDK with your user account (updates active user & ADC):
 gcloud auth login --update-adc
 
-# 4. Set your active target GCP Project ID from parameters.json:
-export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+# 4. Set your active target GCP Project ID from config-parameters.json:
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
 gcloud config set project "${PROJECT_ID}"
 
 # 5. Verify your authentication status and active project:
@@ -39,13 +39,13 @@ echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...�
 ./util/prereq/sa-roles.sh
 ```
 
-### Step 2.2: Validate Configuration Syntax (`parameters.json` & `sites-sync.json`)
+### Step 2.2: Validate Configuration Syntax (`config-parameters.json` & `config-category.json`)
 
-Verify that all required infrastructure keys and M365 credentials inside `parameters.json` and your category matrix inside `sites-sync.json` are structurally valid:
+Verify that all required infrastructure keys and M365 credentials inside `config-parameters.json` and your category matrix inside `config-category.json` are structurally valid:
 
 ```bash
-python3 -m json.tool parameters.json > /dev/null && echo "✅ parameters.json valid"
-python3 -m json.tool sites-sync.json > /dev/null && echo "✅ sites-sync.json valid"
+python3 -m json.tool config-parameters.json > /dev/null && echo "✅ config-parameters.json valid"
+python3 -m json.tool config-category.json > /dev/null && echo "✅ config-category.json valid"
 ```
 
 ---
@@ -58,22 +58,22 @@ To discover all available child subsites/departments under your target root port
 python3 check/discover_categories.py --root="sites/CHANGETHISTOYOURROOTSITE"
 ```
 
-Copy the output category names and paths directly into `sites-sync.json` under your desired `categories[]` matrix.
+Copy the output category names and paths directly into `config-category.json` under your desired `categories[]` matrix.
 
 ---
 
 ## Step 4: Export Shell Configuration Variables
 
-Copy and run the following block in your terminal to export active project parameters dynamically from `parameters.json`:
+Copy and run the following block in your terminal to export active project parameters dynamically from `config-parameters.json`:
 
 ```bash
-export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-export DEV_MEMBER=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
-export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+export DEV_MEMBER=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
+export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")
 export SCHEDULER_JOB_NAME="${FUNCTION_NAME}-daily-master"
-export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_GCS_Bucket', ''))")
 
 gcloud config set project "${PROJECT_ID}"
 echo "✅ Active Project: ${PROJECT_ID} | Job: ${FUNCTION_NAME} | Scheduler: ${SCHEDULER_JOB_NAME}"
@@ -83,7 +83,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Job: ${FUNCTION_NAME} | Scheduler: ${S
 
 ## Step 5: Deploy Cloud Run Job with Category Config (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
 
-Deploy the containerized high-fidelity Playwright backend service as a 24-hour Cloud Run Job (`${FUNCTION_NAME}`). Our automated script copies `parameters.json`, `sites-sync.json`, and utilities into the container build context and sets `--set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json"`:
+Deploy the containerized high-fidelity Playwright backend service as a 24-hour Cloud Run Job (`${FUNCTION_NAME}`). Our automated script copies `config-parameters.json`, `config-category.json`, and utilities into the container build context and sets `--set-env-vars="CONFIG_SITES_SYNC_PATH=config-category.json"`:
 
 ```bash
 ./deploy/deploy_cloud_run.sh
@@ -168,14 +168,14 @@ Because a full per-category synchronization runs asynchronously over multiple ho
 Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in real time from the **Google Cloud Console**:
 1. Navigate to **Logging > Logs Explorer** (`https://console.cloud.google.com/logs/query`).
 2. **Set Time Range Filter (IMPORTANT):** In the top-right time picker of Logs Explorer, filter the start time to the **exact timestamp when you executed the Cloud Scheduler job in Step 9**. This ensures you only see active logs from the current execution without noise from prior runs.
-3. Paste the following universal query into the search bar (replace `your-service-name` with your actual service name from `parameters.json`, e.g., `doddi-sharepoint-list-files`):
+3. Paste the following universal query into the search bar (replace `your-service-name` with your actual service name from `config-parameters.json`, e.g., `doddi-sharepoint-list-files`):
    ```text
    (resource.type="cloud_run_job" OR resource.type="cloud_run_revision" OR resource.type="cloud_function")
    (resource.labels.job_name="your-service-name" OR resource.labels.service_name="your-service-name" OR resource.labels.function_name="your-service-name")
    ```
-   *(Optional)* To generate this exact query dynamically with your `parameters.json` service name already inserted, run:
+   *(Optional)* To generate this exact query dynamically with your `config-parameters.json` service name already inserted, run:
    ```bash
-   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\" OR resource.type=\"cloud_function\")\n(resource.labels.job_name=\"{fn}\" OR resource.labels.service_name=\"{fn}\" OR resource.labels.function_name=\"{fn}\")\n")'
+   python3 -c 'import json; fn = json.load(open("config-parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\" OR resource.type=\"cloud_function\")\n(resource.labels.job_name=\"{fn}\" OR resource.labels.service_name=\"{fn}\" OR resource.labels.function_name=\"{fn}\")\n")'
    ```
 4. Click **Stream Logs** (top right) to watch live batch processing and Playwright rendering in real time.
 
@@ -185,7 +185,7 @@ Run these commands in your Cloud Shell or local terminal to track live objects l
 **A. Ad-Hoc GCS Bucket Snapshot (One-Shot Instant Check):**
 Check exactly how many files and `.aspx` pages have landed in your destination GCS bucket without locking up your terminal in a watch loop:
 ```bash
-export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
 echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
 echo "Timestamp    : $(date)" && \
 echo "Target Bucket: gs://${GCS_BUCKET}" && \
@@ -200,16 +200,16 @@ echo "------------------------------------------------------------"
 **B. Live Cloud Run Terminal Log Stream:**
 Stream live container heartbeats directly from your terminal session without opening the browser:
 ```bash
-gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND textPayload:*' \
-  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND textPayload:*' \
+  --project="$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")" \
   --limit=25 \
   --format="table(timestamp, textPayload)"
 ```
 
 To filter strictly for **Errors & Exceptions only**, append `AND severity>=ERROR`:
 ```bash
-gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND severity>=ERROR' \
-  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND severity>=ERROR' \
+  --project="$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")" \
   --limit=25 \
   --format="table(timestamp, severity, textPayload, jsonPayload.message)"
 ```

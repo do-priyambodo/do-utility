@@ -60,7 +60,7 @@ No.  Subsite / Department Name           Files       Pages       Total
 To permanently solve the 20-minute discovery bottleneck and eliminate timeouts without requiring engineering intervention, V11 decouples **Infrastructure/Authentication** from **Business Target Scope**:
 
 ```
-[ parameters.json ] (Static Infra & Auth)       [ sites-sync.json ] (Dynamic Category Matrix)
+[ config-parameters.json ] (Static Infra & Auth)       [ config-category.json ] (Dynamic Category Matrix)
  ├── GCP Project ID                              ├── Category 1: Business (prefix: /business/)
  ├── M365 Tenant / Client IDs                    ├── Category 2: Consumer (prefix: /consumer/)
  ├── Secret Manager Path                         └── Category 3: Lightweight Batch (prefix: /ops/)
@@ -72,14 +72,14 @@ To permanently solve the 20-minute discovery bottleneck and eliminate timeouts w
          [ 🐳 Cloud Run Job (`yourorg-sharepoint-sync-v11`) ]
 ```
 
-### 🔐 1. `parameters.json` (Static Infrastructure Profile)
+### 🔐 1. `config-parameters.json` (Static Infrastructure Profile)
 * Configured **ONCE** during initial container deployment (`./deploy/deploy_cloud_run.sh`).
 * Contains only fixed cloud environment variables: `CONFIG_ProjectId`, `CONFIG_Location`, `CONFIG_Service_Account`, `CONFIG_M365_Tenant_Id`, `CONFIG_M365_Client_Id`, `CONFIG_M365_Secret_Name`, and `CONFIG_SharePoint_Hostname`.
 * **Zero business target paths** are hardcoded here.
 
-### 📋 2. `sites-sync.json` (Dynamic Category Matrix)
+### 📋 2. `config-category.json` (Dynamic Category Matrix)
 * Maintained exclusively by the data/business integration team (`Janice` & Project Administrators).
-* Can be stored locally alongside the scripts OR hosted dynamically inside a Google Cloud Storage configuration bucket (`gs://<YOUR-BUCKET>/config/sites-sync.json`).
+* Can be stored locally alongside the scripts OR hosted dynamically inside a Google Cloud Storage configuration bucket (`gs://<YOUR-BUCKET>/config/config-category.json`).
 * Adding, removing, or modifying a knowledge category requires **ZERO Docker rebuilds or Cloud Run deployments**!
 
 ---
@@ -90,7 +90,7 @@ Per user alignment (`Option 1 is better`), we standardize on **One Master Cloud 
 
 ### How Option 1 Works in V11:
 1. **One Cloud Scheduler Job in GCP Console:** You maintain exactly **ONE** Cloud Scheduler cron job (`yourorg-sharepoint-sync-daily`) that triggers once a day or on your preferred schedule. Zero scheduler management clutter for the customer!
-2. **Sequential Category Loop in `main.py`:** When the container wakes up, `main.py` opens `sites-sync.json` and iterates through every category inside `categories[]` one by one:
+2. **Sequential Category Loop in `main.py`:** When the container wakes up, `main.py` opens `config-category.json` and iterates through every category inside `categories[]` one by one:
    * It runs Category 1 (`DEN Root Only` with `include_subsites: false`) $\rightarrow$ discovers items in 5s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/den-root/config/metadata_part.jsonl`.
    * It runs Category 2 (`Business`) $\rightarrow$ discovers items in 15s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/business/config/metadata_part.jsonl`.
    * It runs Category 3 (`Consumer`) $\rightarrow$ discovers items in 15s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/consumer/config/metadata_part.jsonl`.
@@ -119,7 +119,7 @@ What `get_all_subsites_recursive()` does:
 3. It recursively traverses every child subsite down to the bottom of the tree.
 
 **Why this creates massive duplication if left unchanged in V11:**
-If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites/DEN/Consumer`), and Category 3 (`sites/DEN/Business`):
+If we create `config-category.json` with Category 1 (`sites/DEN`), Category 2 (`sites/DEN/Consumer`), and Category 3 (`sites/DEN/Business`):
 * When Category 2 (`Consumer`) runs, it syncs **8,256 items**.
 * When Category 3 (`Business`) runs, it syncs **9,599 items**.
 * But when Category 1 (`sites/DEN Root Portal`) runs in the master loop, `get_all_subsites_recursive()` will automatically traverse downwards into `Consumer` and `Business` all over again, attempting to sync **all 38,823 items** across the entire tenant!
@@ -131,7 +131,7 @@ If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites
 
 To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v11-percategory`** to support a new parameter/flag: `"include_subsites"` (or `"recursive"`), defaulting to `true` for backward compatibility, but allowing `false` when targeting root site collections that have separate child category jobs.
 
-#### How It Works in `sites-sync.json`:
+#### How It Works in `config-category.json`:
 ```json
 {
   "root_portal_site": "sites/DEN",
@@ -241,21 +241,21 @@ At the very end of `main.py` inside `v11-percategory` (after the loop finishes a
 
 ## 7. 🔍 DIAGNOSTIC MECHANISMS: `check_syncall_before.py` & `check_syncall_after.py` in V11
 
-In V11, our pre-flight and post-flight verification scripts (`check/check_syncall_before.py` and `check/check_syncall_after.py`) are updated to mirror the exact same `sites-sync.json` Category Matrix and support **two execution modes**:
+In V11, our pre-flight and post-flight verification scripts (`check/check_syncall_before.py` and `check/check_syncall_after.py`) are updated to mirror the exact same `config-category.json` Category Matrix and support **two execution modes**:
 
 ### Mode A: Targeted Single-Category Check (`Fast Audit Mode`) ⭐
 If an operator wants to check only the status of one specific department right before or right after a sync:
 ```bash
 python3 check/check_syncall_before.py --category=tier1-business
 ```
-* **Behavior:** Opens `sites-sync.json`, finds `tier1-business`, connects strictly to `sites/DEN/Business`, evaluates timestamps against `gs://<bucket>/categories/business/`, and outputs that single category's exact report in **<15 seconds**!
+* **Behavior:** Opens `config-category.json`, finds `tier1-business`, connects strictly to `sites/DEN/Business`, evaluates timestamps against `gs://<bucket>/categories/business/`, and outputs that single category's exact report in **<15 seconds**!
 
 ### Mode B: Master Serial Category-by-Category Loop (`Full Tenant Audit Mode`)
 If run without `--category`:
 ```bash
 python3 check/check_syncall_before.py
 ```
-* **Behavior:** Instead of running one massive 20-minute discovery burst across 59 libraries simultaneously, the diagnostic script loops through `sites-sync.json` sequentially (or with parallel category workers), cleans up memory after each category, and prints a **Unified Category Summary Report Table**:
+* **Behavior:** Instead of running one massive 20-minute discovery burst across 59 libraries simultaneously, the diagnostic script loops through `config-category.json` sequentially (or with parallel category workers), cleans up memory after each category, and prints a **Unified Category Summary Report Table**:
 
 ```
 ================================================================================

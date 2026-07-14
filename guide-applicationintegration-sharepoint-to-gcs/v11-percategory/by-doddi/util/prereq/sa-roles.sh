@@ -4,31 +4,31 @@ cd "$(dirname "$0")/.."
 # CLI Commands to Create and Configure Custom Service Account & Developer Permissions
 # ==============================================================================
 
-# Ensure parameters.json exists
-if [ ! -f "parameters.json" ]; then
+# Ensure config-parameters.json exists
+if [ ! -f "config-parameters.json" ]; then
   # Try to find it in parent directory if run from prereq/
-  if [ -f "../parameters.json" ]; then
+  if [ -f "../config-parameters.json" ]; then
     cd ..
   else
-    echo "❌ Error: parameters.json not found! Please run from the directory containing parameters.json"
+    echo "❌ Error: config-parameters.json not found! Please run from the directory containing config-parameters.json"
     exit 1
   fi
 fi
 
-# Load variables dynamically from parameters.json
-export PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-export LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', ''))")
-export BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
-export DEV_USER=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
+# Load variables dynamically from config-parameters.json
+export PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+export LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+export SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+export FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', ''))")
+export BUCKET_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+export DEV_USER=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))")
 
 # Extract SA name/ID from the email (e.g. name@project.iam.gserviceaccount.com -> name)
 export SA_NAME=$(echo "$SERVICE_ACCOUNT" | cut -d'@' -f1)
 
 # Extract Secret Name from M365 secret version resource ID
 # (e.g., projects/123/secrets/secret-name/versions/1 -> secret-name)
-export SECRET_PATH=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_M365_Secret_Name', ''))")
+export SECRET_PATH=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_M365_Secret_Name', ''))")
 export SECRET_NAME=$(echo "$SECRET_PATH" | cut -d'/' -f4)
 
 # Resolve GCP Project Number
@@ -191,7 +191,7 @@ if [ -n "$DEV_USER" ]; then
       --project="$PROJECT_ID"
 else
   echo ""
-  echo "⏭️ [Part 2/2] Skipping Developer Setup Roles configuration (CONFIG_Developer_Group_Or_User is empty in parameters.json)."
+  echo "⏭️ [Part 2/2] Skipping Developer Setup Roles configuration (CONFIG_Developer_Group_Or_User is empty in config-parameters.json)."
 fi
 
 echo ""

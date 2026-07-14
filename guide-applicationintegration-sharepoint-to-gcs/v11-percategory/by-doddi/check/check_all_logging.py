@@ -13,12 +13,12 @@ import subprocess
 import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PARAMS_FILE = os.path.join(ROOT_DIR, "parameters.json")
+PARAMS_FILE = os.path.join(ROOT_DIR, "config-parameters.json")
 
 
 def load_params():
     if not os.path.exists(PARAMS_FILE):
-        print(f"❌ Error: parameters.json not found at {PARAMS_FILE}")
+        print(f"❌ Error: config-parameters.json not found at {PARAMS_FILE}")
         sys.exit(1)
     with open(PARAMS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

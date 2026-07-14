@@ -3,22 +3,22 @@ cd "$(dirname "$0")/.."
 export PYTHONPATH="$(pwd)/util:${PYTHONPATH:-}"
 set -e
 
-if [ ! -f "parameters.json" ]; then
-  echo "❌ Error: parameters.json not found!"
+if [ ! -f "config-parameters.json" ]; then
+  echo "❌ Error: config-parameters.json not found!"
   exit 1
 fi
 
-PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-DATASTORE_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Id', ''))")
-DATASTORE_LOC=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Location', 'global'))")
-BUCKET_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))")
-CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+DATASTORE_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Datastore_Id', ''))")
+DATASTORE_LOC=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Datastore_Location', 'global'))")
+BUCKET_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_GCS_Bucket', ''))")
+CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
 JOB_NAME="yourorg-sharepoint-datastore-sync-12h"
 
 if [ -z "$PROJECT_ID" ] || [ -z "$DATASTORE_ID" ] || [ -z "$BUCKET_NAME" ]; then
-  echo "❌ Error: CONFIG_ProjectId, CONFIG_Datastore_Id, and CONFIG_GCS_Bucket must be set in parameters.json!"
+  echo "❌ Error: CONFIG_ProjectId, CONFIG_Datastore_Id, and CONFIG_GCS_Bucket must be set in config-parameters.json!"
   exit 1
 fi
 
@@ -33,7 +33,7 @@ echo "⏰ Cron Schedule:     ${CRON_SCHEDULE}"
 echo "🤖 Service Account:   ${SERVICE_ACCOUNT}"
 echo "================================================================"
 
-FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Datastore_Function_Name', 'yourorg-datastore-import'))")
+FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Datastore_Function_Name', 'yourorg-datastore-import'))")
 
 echo "🔍 Resolving Cloud Run Service / Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
 FUNCTION_URL=$(gcloud run services describe "${FUNCTION_NAME}" --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(status.url)" 2>/dev/null || true)

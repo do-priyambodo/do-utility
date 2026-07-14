@@ -8,7 +8,7 @@ except Exception: pass
 #!/usr/bin/env python3
 """
 Pre-Flight Diagnostic: Verify Azure AD / Entra ID Authentication & Microsoft Graph API Token Generation.
-Reads parameters dynamically from parameters.json and retrieves secret via gcloud CLI.
+Reads parameters dynamically from config-parameters.json and retrieves secret via gcloud CLI.
 Zero pip dependencies required.
 """
 import json
@@ -24,7 +24,7 @@ def main():
     print("🔐 PRE-FLIGHT DIAGNOSTIC: AZURE AD / ENTRA ID AUTHENTICATION CHECK")
     print("================================================================================")
 
-    config_path = "parameters.json"
+    config_path = "config-parameters.json"
     if not os.path.exists(config_path):
         print(f"❌ Error: {config_path} not found!")
         sys.exit(1)
@@ -37,7 +37,7 @@ def main():
     secret_path = params.get("CONFIG_M365_Secret_Name", "")
 
     if not tenant_id or not client_id or not secret_path:
-        print("❌ Error: Missing M365 parameters (Tenant ID, Client ID, or Secret Name) in parameters.json!")
+        print("❌ Error: Missing M365 parameters (Tenant ID, Client ID, or Secret Name) in config-parameters.json!")
         sys.exit(1)
 
     print(f"🏢 M365 Tenant ID : {tenant_id}")

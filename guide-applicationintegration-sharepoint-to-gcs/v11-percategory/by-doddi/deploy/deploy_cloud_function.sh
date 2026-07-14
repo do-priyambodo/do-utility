@@ -12,30 +12,30 @@ trap 'python3 -c "import log_helper; log_helper.log_error(\"deploy_cf.sh failed 
 # Redirect stdout and stderr to setup.log while outputting to terminal
 exec > >(tee -a log/setup.log) 2>&1
 
-if [ ! -f "parameters.json" ]; then
-  echo "❌ Error: parameters.json not found!"
+if [ ! -f "config-parameters.json" ]; then
+  echo "❌ Error: config-parameters.json not found!"
   exit 1
 fi
 
-PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ]; then
-  echo "❌ Error: CONFIG_ProjectId, CONFIG_Location, CONFIG_Service_Account, or CONFIG_CloudFunction_Name missing in parameters.json!"
+  echo "❌ Error: CONFIG_ProjectId, CONFIG_Location, CONFIG_Service_Account, or CONFIG_CloudFunction_Name missing in config-parameters.json!"
   exit 1
 fi
 
 if [[ "$PROJECT_ID" == *"yourorg"* ]]; then
-  echo "❌ Error: 'parameters.json' still contains sample placeholder ('$PROJECT_ID'). Please update parameters.json with your target GCP Project ID."
+  echo "❌ Error: 'config-parameters.json' still contains sample placeholder ('$PROJECT_ID'). Please update config-parameters.json with your target GCP Project ID."
   exit 1
 fi
 
 CURRENT_GCLOUD_PROJECT=$(gcloud config get-value project 2>/dev/null || true)
 if [ -n "$CURRENT_GCLOUD_PROJECT" ] && [ "$CURRENT_GCLOUD_PROJECT" != "$PROJECT_ID" ] && [ "$PROJECT_ID" = "work-mylab-machinelearning" ]; then
-  echo "❌ Error: CONFIG_ProjectId in 'parameters.json' is set to the default sample project ('work-mylab-machinelearning'), but your active gcloud project is '${CURRENT_GCLOUD_PROJECT}'."
-  echo "👉 Please edit 'parameters.json' and set CONFIG_ProjectId to your target project ('${CURRENT_GCLOUD_PROJECT}') before running this script."
+  echo "❌ Error: CONFIG_ProjectId in 'config-parameters.json' is set to the default sample project ('work-mylab-machinelearning'), but your active gcloud project is '${CURRENT_GCLOUD_PROJECT}'."
+  echo "👉 Please edit 'config-parameters.json' and set CONFIG_ProjectId to your target project ('${CURRENT_GCLOUD_PROJECT}') before running this script."
   exit 1
 fi
 
@@ -53,8 +53,8 @@ if gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --
   fi
 fi
 
-echo "📦 Copying parameters.json to cf-sharepoint for function deployment context..."
-cp parameters.json cf-sharepoint/
+echo "📦 Copying config-parameters.json to cf-sharepoint for function deployment context..."
+cp config-parameters.json cf-sharepoint/
 
 echo "📦 Deploying Python Cloud Function: ${FUNCTION_NAME}..."
 gcloud functions deploy "${FUNCTION_NAME}" \
@@ -71,6 +71,6 @@ gcloud functions deploy "${FUNCTION_NAME}" \
   --source=./cf-sharepoint
 
 echo "🧹 Cleaning up deployment context copy..."
-rm cf-sharepoint/parameters.json
+rm cf-sharepoint/config-parameters.json
 
 echo "🎉 Cloud Function successfully deployed!"

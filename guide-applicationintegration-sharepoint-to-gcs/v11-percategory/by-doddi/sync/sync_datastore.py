@@ -26,11 +26,11 @@ def get_access_token():
         sys.exit(1)
 
 def run_datastore_sync():
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found!")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found!")
         sys.exit(1)
 
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
 
     project_id = params.get("CONFIG_ProjectId")
@@ -39,7 +39,7 @@ def run_datastore_sync():
     bucket_name = params.get("CONFIG_GCS_Bucket")
 
     if not all([project_id, datastore_id, bucket_name]):
-        print("❌ Error: CONFIG_ProjectId, CONFIG_Datastore_Id, and CONFIG_GCS_Bucket must be configured in parameters.json!")
+        print("❌ Error: CONFIG_ProjectId, CONFIG_Datastore_Id, and CONFIG_GCS_Bucket must be configured in config-parameters.json!")
         sys.exit(1)
 
     print("================================================================")

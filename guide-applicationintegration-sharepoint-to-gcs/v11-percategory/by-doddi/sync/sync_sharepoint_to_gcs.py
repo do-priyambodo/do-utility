@@ -89,12 +89,12 @@ def get_cf_url(function_name, location, project_id):
 def run_sync():
     if log_helper:
         log_helper.init_logging("setup")
-    # 1. Load configurations from parameters.json
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found!")
+    # 1. Load configurations from config-parameters.json
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found!")
         sys.exit(1)
         
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
         
     PROJECT_ID = params.get("CONFIG_ProjectId")
@@ -110,7 +110,7 @@ def run_sync():
         cf_endpoint = get_cf_url(FUNCTION_NAME, LOCATION, PROJECT_ID)
         
     if not cf_endpoint:
-        print("❌ Could not resolve Cloud Function URI. Please specify CONFIG_CloudFunction_URL in parameters.json or deploy the Cloud Function.")
+        print("❌ Could not resolve Cloud Function URI. Please specify CONFIG_CloudFunction_URL in config-parameters.json or deploy the Cloud Function.")
         sys.exit(1)
     else:
         print(f"✅ Resolved Cloud Function URI: {cf_endpoint}")

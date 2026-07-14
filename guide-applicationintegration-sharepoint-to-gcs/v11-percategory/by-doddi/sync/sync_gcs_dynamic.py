@@ -68,11 +68,11 @@ def run_dynamic_gcs_sync():
     if log_helper:
         log_helper.init_logging("setup")
         
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found!")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found!")
         sys.exit(1)
         
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
 
     PROJECT_ID = params.get("CONFIG_ProjectId")

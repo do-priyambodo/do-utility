@@ -1,11 +1,11 @@
 # Enterprise M365 SharePoint to Google Cloud Storage (GCS) Per-Category Sharded Synchronization Pipeline (`V11.0 Per-Category Release`)
 
-An enterprise-grade, rugged serverless synchronization pipeline built for massive scale (**38,800+ SharePoint assets across nested subsites and 23+ departments**). Decouples static cloud infrastructure (`parameters.json`) from dynamic SharePoint subsite targeting (`sites-sync.json`) using an **Option 1 Master Sequential Category Loop**.
+An enterprise-grade, rugged serverless synchronization pipeline built for massive scale (**38,800+ SharePoint assets across nested subsites and 23+ departments**). Decouples static cloud infrastructure (`config-parameters.json`) from dynamic SharePoint subsite targeting (`config-category.json`) using an **Option 1 Master Sequential Category Loop**.
 
 Features **Rugged Enterprise Best Practices (`v11-percategory`)**, including:
-- **Configuration Decoupling (`sites-sync.json`)**: Shards large enterprise site collections into manageable category tiers (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier2-medium-departments`, etc.) targeting `"sharepoint_library": "all"`.
+- **Configuration Decoupling (`config-category.json`)**: Shards large enterprise site collections into manageable category tiers (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier2-medium-departments`, etc.) targeting `"sharepoint_library": "all"`.
 - **Fast Subsite Discovery (`check/discover_categories.py`)**: Resolves all child subsite categories under any root portal in **<3 seconds** without crawling libraries or counting items.
-- **Master Serial Category Loop & RAM Isolation**: `main.py` iterates sequentially over each category in `sites-sync.json`, wiping local memory buffers (`all_list.clear()`, `sync_list.clear()`, `target_sites.clear()`) after every category to guarantee O(1) memory safety (<8 GB Cloud Run limit).
+- **Master Serial Category Loop & RAM Isolation**: `main.py` iterates sequentially over each category in `config-category.json`, wiping local memory buffers (`all_list.clear()`, `sync_list.clear()`, `target_sites.clear()`) after every category to guarantee O(1) memory safety (<8 GB Cloud Run limit).
 - **Duplicate Crawl Prevention (`include_subsites: false`)**: Root-scoped entries (`sites/DEN`) inspect only root libraries without descending into child departments (`Consumer`, `Business`).
 - **Sharded Metadata & Master Aggregator (`combine_metadata_shards`)**: Each category job writes local metadata to `gs://<bucket>/<prefix>/config/metadata_part.jsonl`. At completion, `combine_metadata_shards()` atomically aggregates all shards into `gs://<bucket>/config/metadata.jsonl` for Vertex AI Search (`AgentAssist`).
 
@@ -19,7 +19,7 @@ To prevent duplication and keep instructions authoritative, all deployment, oper
 👉 **Open Runbook:** [DO-SYNC-SELECTED-CATEGORY.md](DO-SYNC-SELECTED-CATEGORY.md)
 
 Follow the comprehensive **10-Step Per-Category Operations Runbook** for end-to-end setup, authentication, prerequisites, fast category discovery, and both Option 1 Master Loop and single-category override execution:
-1. **GCP & IAM Prerequisites (Steps 1–2)**: Authenticate, validate `parameters.json` and `sites-sync.json`.
+1. **GCP & IAM Prerequisites (Steps 1–2)**: Authenticate, validate `config-parameters.json` and `config-category.json`.
 2. **Discover Subsites (<3s) (Step 3)**: Execute `python3 check/discover_categories.py --root="sites/your-portal"`.
 3. **Automated Master Deployment (Steps 4–7)**: Deploy Cloud Run container (`deploy_cloud_run.sh`), Application Integration workflows (`deploy_workflows.py`), and daily midnight Cloud Scheduler job (`deploy_category_scheduler.sh`).
 4. **Pre-Sync Verification (Step 8)**: Run targeted Mode A (`--category=tier1-business`) or master loop Mode B (`python3 check/check_syncall_before.py`).
@@ -65,6 +65,6 @@ Comprehensive remediation playbook covering M365 authentication failures, Graph 
 
 ## ⚙️ Configuration Files Overview
 
-- [sites-sync.json](sites-sync.json): Dynamic 3-Tier Sharded Category Matrix and target library scopes (`sharepoint_library: all`).
-- [parameters.json](parameters.json): Static GCP & M365 infrastructure credentials, Secret Manager paths, hostname, and batching limits (`CONFIG_Batch_Size`, `CONFIG_Max_Parallel_Workers`).
+- [config-category.json](config-category.json): Dynamic 3-Tier Sharded Category Matrix and target library scopes (`sharepoint_library: all`).
+- [config-parameters.json](config-parameters.json): Static GCP & M365 infrastructure credentials, Secret Manager paths, hostname, and batching limits (`CONFIG_Batch_Size`, `CONFIG_Max_Parallel_Workers`).
 - [cf-sharepoint/config_schema.py](cf-sharepoint/config_schema.py): Strict schema validator ensuring static cloud keys and valid configuration rules.

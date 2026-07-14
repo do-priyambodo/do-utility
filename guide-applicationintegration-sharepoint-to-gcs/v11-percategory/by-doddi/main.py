@@ -21,15 +21,15 @@ def main(request):
     # 1. Parse JSON payload or query parameters
     req_data = request.get_json(silent=True) or {}
     
-    # Load parameters.json if it exists in local context
+    # Load config-parameters.json if it exists in local context
     params = {}
-    if os.path.exists("parameters.json"):
+    if os.path.exists("config-parameters.json"):
         try:
-            with open("parameters.json", "r") as f:
+            with open("config-parameters.json", "r") as f:
                 params = json.load(f)
             params = validate_parameters(params)
         except Exception as e:
-            print(f"Warning: Failed to load or validate parameters.json: {e}")
+            print(f"Warning: Failed to load or validate config-parameters.json: {e}")
 
     # Default configuration fallback
     site_name = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
@@ -70,7 +70,7 @@ def main(request):
     site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname")
 
     if not all([tenant_id, client_id, secret_name, site_hostname]):
-        raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
+        raise ValueError("Missing required M365 configuration parameters in config-parameters.json or request payload.")
 
     
     try:
@@ -523,7 +523,7 @@ def main(request):
         raw_batch_size = params.get("CONFIG_Batch_Size", 5)
         raw_workers = params.get("CONFIG_Max_Parallel_Workers", 5)
 
-        # Layer 5: Smart Adaptive Batching (Zero parameters.json changes required)
+        # Layer 5: Smart Adaptive Batching (Zero config-parameters.json changes required)
         # Automatically scale regular JSON file metadata batches to 100 items (~15 KB payload)
         file_batch_size = params.get("CONFIG_File_Batch_Size", 20 * raw_batch_size if raw_batch_size <= 10 else raw_batch_size)
         # Keep heavy Base64 PDF pages safely at raw_batch_size (5 items/batch ~1.0 MB payload)
@@ -557,7 +557,7 @@ def main(request):
             credentials, credentials_project_id = google.auth.default()
             project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
             if not project_id:
-                raise ValueError("Project ID not specified in parameters.json or GCP credentials.")
+                raise ValueError("Project ID not specified in config-parameters.json or GCP credentials.")
             credentials.refresh(Request())
             access_token = credentials.token
             integration_url = f"https://{location}-integrations.googleapis.com/v1/projects/{project_id}/locations/{location}/integrations/{integration_name}:schedule"

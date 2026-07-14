@@ -25,11 +25,11 @@ def test_image_fetching():
     print("🧪 DIAGNOSTIC TEST: SHAREPOINT IMAGE RESOLUTION & BASE64 EMBEDDING")
     print("================================================================================")
 
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found!")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found!")
         sys.exit(1)
 
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
 
     tenant_id = params.get("CONFIG_M365_Tenant_Id")
@@ -39,7 +39,7 @@ def test_image_fetching():
     site_name = params.get("CONFIG_Sharepoint_Sites", "").replace("sites/", "")
 
     if not all([tenant_id, client_id, secret_name, site_hostname]):
-        print("❌ Error: Missing M365 parameters in parameters.json")
+        print("❌ Error: Missing M365 parameters in config-parameters.json")
         sys.exit(1)
 
     print("🔐 Step 1: Authenticating with Microsoft Entra ID...")

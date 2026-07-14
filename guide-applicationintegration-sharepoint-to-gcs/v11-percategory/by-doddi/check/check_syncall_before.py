@@ -2,11 +2,11 @@
 """
 check_syncall_before.py - V11 High-Performance Per-Category Pre-Sync Verification
 
-Supports two execution modes based on sites-sync.json:
+Supports two execution modes based on config-category.json:
   Mode A (Fast Targeted Audit): python3 check/check_syncall_before.py --category=tier1-business
     -> Audits strictly the Business subsite and its GCS prefix in <15 seconds.
   Mode B (Master Serial Loop): python3 check/check_syncall_before.py
-    -> Iterates sequentially through each category inside sites-sync.json, wiping RAM after each category,
+    -> Iterates sequentially through each category inside config-category.json, wiping RAM after each category,
        and prints a unified Category Summary Table across all 38,823 items.
 """
 
@@ -38,7 +38,7 @@ try:
     from util.config_loader import load_sites_sync_config
 except ImportError:
     def load_sites_sync_config(params=None):
-        for p in ["sites-sync.json", "config/sites-sync.json", "../sites-sync.json"]:
+        for p in ["config-category.json", "config/config-category.json", "../config-category.json"]:
             if os.path.exists(p):
                 with open(p, "r", encoding="utf-8") as f:
                     return json.load(f)
@@ -284,11 +284,11 @@ def main():
     print("⚡ V11 HIGH-SPEED PRE-SYNC VERIFICATION: PER-CATEGORY DELTA AUDIT")
     print("================================================================================\n")
 
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found in working directory.")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found in working directory.")
         sys.exit(1)
 
-    with open("parameters.json", "r", encoding="utf-8") as f:
+    with open("config-parameters.json", "r", encoding="utf-8") as f:
         params = json.load(f)
 
     sites_sync = load_sites_sync_config(params)

@@ -12,7 +12,7 @@ This directory contains lightweight verification tooling designed to test the Se
 
 ## Usage
 
-1. Ensure your deployment parameters are configured in `../parameters.json` and that your GCP credentials are active:
+1. Ensure your deployment parameters are configured in `../config-parameters.json` and that your GCP credentials are active:
    ```bash
    gcloud auth login
    ```

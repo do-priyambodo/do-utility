@@ -12,18 +12,18 @@ import sys
 import os
 
 def check_logs(limit=15):
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found!")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found!")
         sys.exit(1)
         
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
         
     project_id = params.get("CONFIG_ProjectId")
     base_job = params.get("CONFIG_Scheduler_Job_Name")
     
     if not project_id or not base_job:
-        print("❌ Error: CONFIG_ProjectId or CONFIG_Scheduler_Job_Name missing in parameters.json!")
+        print("❌ Error: CONFIG_ProjectId or CONFIG_Scheduler_Job_Name missing in config-parameters.json!")
         sys.exit(1)
         
     print(f"================================================================")

@@ -14,14 +14,14 @@ def main(request):
     """
     req_data = request.get_json(silent=True) or {}
     
-    # Load default configuration from parameters.json if available
+    # Load default configuration from config-parameters.json if available
     params = {}
-    if os.path.exists("parameters.json"):
+    if os.path.exists("config-parameters.json"):
         try:
-            with open("parameters.json", "r") as f:
+            with open("config-parameters.json", "r") as f:
                 params = json.load(f)
         except Exception as e:
-            print(f"Warning: Could not load parameters.json: {e}")
+            print(f"Warning: Could not load config-parameters.json: {e}")
             
     project_id = req_data.get("project_id") or params.get("CONFIG_ProjectId")
     datastore_id = req_data.get("datastore_id") or params.get("CONFIG_Datastore_Id")

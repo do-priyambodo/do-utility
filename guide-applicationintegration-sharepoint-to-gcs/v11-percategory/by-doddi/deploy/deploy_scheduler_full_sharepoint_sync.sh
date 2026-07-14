@@ -7,39 +7,39 @@ set -e
 mkdir -p log
 exec > >(tee -a log/setup.log) 2>&1
 
-if [ ! -f "parameters.json" ]; then
-  echo "❌ Error: parameters.json not found!"
+if [ ! -f "config-parameters.json" ]; then
+  echo "❌ Error: config-parameters.json not found!"
   exit 1
 fi
 
-PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
-SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
-CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+FUNCTION_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
+SCHEDULER_JOB_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Scheduler_Job_Name', 'yourorg-sharepoint-sync-hourly'))")
+CRON_SCHEDULE=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Scheduler_Cron_Schedule', '0 */12 * * *'))")
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$FUNCTION_NAME" ] || [ -z "$SCHEDULER_JOB_NAME" ]; then
-  echo "❌ Error: Missing required scheduler configuration parameters in parameters.json!"
+  echo "❌ Error: Missing required scheduler configuration parameters in config-parameters.json!"
   exit 1
 fi
 
 if [[ "$PROJECT_ID" == *"yourorg"* ]]; then
-  echo "❌ Error: 'parameters.json' still contains sample placeholder ('$PROJECT_ID'). Please update parameters.json with your target GCP Project ID."
+  echo "❌ Error: 'config-parameters.json' still contains sample placeholder ('$PROJECT_ID'). Please update config-parameters.json with your target GCP Project ID."
   exit 1
 fi
 
 CURRENT_GCLOUD_PROJECT=$(gcloud config get-value project 2>/dev/null || true)
 if [ -n "$CURRENT_GCLOUD_PROJECT" ] && [ "$CURRENT_GCLOUD_PROJECT" != "$PROJECT_ID" ] && [ "$PROJECT_ID" = "work-mylab-machinelearning" ]; then
-  echo "❌ Error: CONFIG_ProjectId in 'parameters.json' is set to the default sample project ('work-mylab-machinelearning'), but your active gcloud project is '${CURRENT_GCLOUD_PROJECT}'."
-  echo "👉 Please edit 'parameters.json' and set CONFIG_ProjectId to your target project ('${CURRENT_GCLOUD_PROJECT}') before running this script."
+  echo "❌ Error: CONFIG_ProjectId in 'config-parameters.json' is set to the default sample project ('work-mylab-machinelearning'), but your active gcloud project is '${CURRENT_GCLOUD_PROJECT}'."
+  echo "👉 Please edit 'config-parameters.json' and set CONFIG_ProjectId to your target project ('${CURRENT_GCLOUD_PROJECT}') before running this script."
   exit 1
 fi
 
-# Generate JSON payload dynamically attaching environment config from parameters.json
+# Generate JSON payload dynamically attaching environment config from config-parameters.json
 MESSAGE_BODY=$(python3 -c "
 import json
-params = json.load(open('parameters.json'))
+params = json.load(open('config-parameters.json'))
 payload = {
     'site_name': params.get('CONFIG_Sharepoint_Sites', '').replace('sites/', ''),
     'library_name': params.get('CONFIG_Sharepoint_Library', 'Documents'),

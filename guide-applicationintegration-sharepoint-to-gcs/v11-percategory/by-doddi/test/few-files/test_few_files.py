@@ -75,13 +75,13 @@ def run_limited_test():
     if log_helper:
         log_helper.init_logging("setup")
 
-    # Locate parameters.json in local or parent directory
-    param_path = "parameters.json"
+    # Locate config-parameters.json in local or parent directory
+    param_path = "config-parameters.json"
     if not os.path.exists(param_path):
-        param_path = os.path.join(parent_dir, "parameters.json")
+        param_path = os.path.join(parent_dir, "config-parameters.json")
         
     if not os.path.exists(param_path):
-        print(f"❌ Error: parameters.json not found in current directory or {parent_dir}!")
+        print(f"❌ Error: config-parameters.json not found in current directory or {parent_dir}!")
         sys.exit(1)
         
     with open(param_path, "r") as f:
@@ -98,7 +98,7 @@ def run_limited_test():
         cf_endpoint = get_cf_url(FUNCTION_NAME, LOCATION, PROJECT_ID)
         
     if not cf_endpoint:
-        print("❌ Could not resolve Cloud Function URI. Please specify CONFIG_CloudFunction_URL in parameters.json or deploy Cloud Function.")
+        print("❌ Could not resolve Cloud Function URI. Please specify CONFIG_CloudFunction_URL in config-parameters.json or deploy Cloud Function.")
         sys.exit(1)
     else:
         print(f"✅ Resolved Cloud Function URI: {cf_endpoint}")

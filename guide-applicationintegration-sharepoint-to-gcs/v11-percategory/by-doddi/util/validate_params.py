@@ -118,21 +118,21 @@ def validate():
     if log_helper:
         log_helper.init_logging("setup")
 
-    print_header("Step 1: Checking parameter presence & formats in parameters.json")
+    print_header("Step 1: Checking parameter presence & formats in config-parameters.json")
     
-    params_file = "parameters.json"
-    if not os.path.exists(params_file) and os.path.exists("../parameters.json"):
-        params_file = "../parameters.json"
+    params_file = "config-parameters.json"
+    if not os.path.exists(params_file) and os.path.exists("../config-parameters.json"):
+        params_file = "../config-parameters.json"
         
     if not os.path.exists(params_file):
-        print_result("FAILED", "parameters.json", "File not found!")
+        print_result("FAILED", "config-parameters.json", "File not found!")
         sys.exit(1)
         
     with open(params_file, "r") as f:
         try:
             params = json.load(f)
         except Exception as e:
-            print_result("FAILED", "parameters.json", f"Failed to parse JSON: {e}")
+            print_result("FAILED", "config-parameters.json", f"Failed to parse JSON: {e}")
             sys.exit(1)
 
     # Define parameters configuration & regex rules
@@ -247,7 +247,7 @@ def validate():
             print_result("PASSED", f"Format: {key}")
 
     if not all_passed:
-        print(f"\n{COLOR_FAIL}❌ Format validation failed. Please fix formats in parameters.json before proceeding.{COLOR_RESET}")
+        print(f"\n{COLOR_FAIL}❌ Format validation failed. Please fix formats in config-parameters.json before proceeding.{COLOR_RESET}")
         sys.exit(1)
         
     print_header("Step 2: Checking GCP Resource Existence (Live Checks)")

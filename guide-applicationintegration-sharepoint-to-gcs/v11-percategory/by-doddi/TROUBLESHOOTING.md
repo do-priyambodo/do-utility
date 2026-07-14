@@ -3,7 +3,7 @@
 
 > [!IMPORTANT]
 > **Customer Reference Document — YourOrg Environment Deployment**
-> This guide provides comprehensive diagnostic commands, real-time sync progress monitoring mechanisms, and root-cause analysis checklists to investigate and resolve synchronization failures (such as the sync attempt on last Friday) and verify ongoing production health. All CLI commands automatically export and utilize configuration variables from your local [parameters.json](parameters.json).
+> This guide provides comprehensive diagnostic commands, real-time sync progress monitoring mechanisms, and root-cause analysis checklists to investigate and resolve synchronization failures (such as the sync attempt on last Friday) and verify ongoing production health. All CLI commands automatically export and utilize configuration variables from your local [config-parameters.json](config-parameters.json).
 
 ---
 
@@ -26,7 +26,7 @@ Based on baseline benchmark performance where **13 files/pages completed in 5 mi
 > **Why does an initial full sync take ~25.6 hours?**
 > * **Headless Playwright Browser Rendering**: Unlike simple file copying, V9.0 queries modern SharePoint site pages (`.aspx`), launches a headless Chromium browser instance in Cloud Run, executes live JavaScript/DOM layouts, waits for external OData/thumbnail images to render, and prints high-fidelity executive `.pdf` reports.
 > * **Inline Leadership & Attachment Download**: Each page requires resolving and downloading physical inline leadership images and embedded attachments.
-> * **Micro-Batching Safety**: To guarantee 0% data loss and prevent gateway timeouts, Application Integration processes items in controlled chunks (configured via `CONFIG_Batch_Size` and `CONFIG_Max_Parallel_Workers` in [parameters.json](parameters.json)).
+> * **Micro-Batching Safety**: To guarantee 0% data loss and prevent gateway timeouts, Application Integration processes items in controlled chunks (configured via `CONFIG_Batch_Size` and `CONFIG_Max_Parallel_Workers` in [config-parameters.json](config-parameters.json)).
 
 ---
 
@@ -41,7 +41,7 @@ In pipeline version V9.0, the Traversal Cloud Function implements **O(1) GCS Del
 * **Subsequent hourly or daily syncs of 4,000+ items will complete in under 2 to 3 minutes**, as only newly created or modified documents are processed.
 
 ### ⚡ Performance Tuning (Speeding Up the Initial Sync)
-To accelerate the initial 25.6-hour sync in your customer environment, increase concurrency limits inside [parameters.json](parameters.json):
+To accelerate the initial 25.6-hour sync in your customer environment, increase concurrency limits inside [config-parameters.json](config-parameters.json):
 ```json
 {
   "CONFIG_Batch_Size": 20,
@@ -57,8 +57,8 @@ To accelerate the initial 25.6-hour sync in your customer environment, increase 
 Because a full enterprise sync spans multiple hours, engineers must actively monitor progress without waiting for completion or guessing if the pipeline is frozen. Before running monitoring checks, export your destination bucket from your local configuration:
 
 ```bash
-# Export the target bucket name from parameters.json into your current shell:
-export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' parameters.json)
+# Export the target bucket name from config-parameters.json into your current shell:
+export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' config-parameters.json)
 ```
 
 ### Method A: Live GCS Bucket Object Counter (Real-Time Storage Tracking)
@@ -77,7 +77,7 @@ gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes
 > [!WARNING]
 > **Getting an `ERROR: 404 not found`?**
 > If you receive an error like `ERROR: (gcloud.storage.ls) gs://yourorg-bucket-sharepoint-sync not found: 404`, it means either:
-> 1. **You have not updated `parameters.json` yet**: The configuration file currently contains a default sample bucket name (`yourorg-bucket-sharepoint-sync`). Open [parameters.json](parameters.json) and update `"CONFIG_GCS_Bucket"` to your actual production bucket name.
+> 1. **You have not updated `config-parameters.json` yet**: The configuration file currently contains a default sample bucket name (`yourorg-bucket-sharepoint-sync`). Open [config-parameters.json](config-parameters.json) and update `"CONFIG_GCS_Bucket"` to your actual production bucket name.
 
 > [!WARNING]
 > **Getting an `ERROR: PERMISSION_DENIED: Failed to impersonate service account`?**
@@ -88,13 +88,13 @@ gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes
 > ```
 > 2. **The bucket has not been created yet in GCP**: If this is a new environment deployment and the bucket does not exist yet, create it first by running:
 >    ```bash
->    gcloud storage buckets create "gs://${GCS_BUCKET}" --location=$(jq -r '.CONFIG_Location' parameters.json)
+>    gcloud storage buckets create "gs://${GCS_BUCKET}" --location=$(jq -r '.CONFIG_Location' config-parameters.json)
 >    ```
 
 #### 🔄 Automated Real-Time Watch Loop (Live Dashboard in Terminal)
 Execute this command to monitor sync speed in real time (refreshing automatically every 30 seconds):
 ```bash
-watch -n 30 'export GCS_BUCKET=$(jq -r ".CONFIG_GCS_Bucket" parameters.json) && \
+watch -n 30 'export GCS_BUCKET=$(jq -r ".CONFIG_GCS_Bucket" config-parameters.json) && \
 echo "=== 📊 LIVE SHAREPOINT -> GCS SYNC MONITOR ===" && \
 echo "Timestamp    : $(date)" && \
 echo "Target Bucket: gs://${GCS_BUCKET}" && \
@@ -129,9 +129,9 @@ When the Traversal Cloud Function submits batches, the Parent Integration iterat
 
 ```bash
 # Export required project parameters:
-export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
-export LOCATION=$(jq -r '.CONFIG_Location' parameters.json)
-export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' parameters.json)
+export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' config-parameters.json)
+export LOCATION=$(jq -r '.CONFIG_Location' config-parameters.json)
+export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' config-parameters.json)
 
 # Usage: python3 check/check_application_integration_execution.py <project_id> <location> <integration_name> <execution_id>
 python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCATION}" "${PARENT_INTEGRATION}" <INSERT_EXECUTION_ID>
@@ -145,17 +145,17 @@ python3 check/check_application_integration_execution.py "${PROJECT_ID}" "${LOCA
 To identify the root cause of sync failures, execute the following targeted `gcloud logging read` CLI commands or use the corresponding query strings in the GCP Console **Log Explorer**.
 
 ### 🛠️ Step 0: Load Your Customer Environment Parameters
-Run this block in your Cloud Shell or terminal first. It reads your local [parameters.json](parameters.json) and exports all relevant names as shell environment variables:
+Run this block in your Cloud Shell or terminal first. It reads your local [config-parameters.json](config-parameters.json) and exports all relevant names as shell environment variables:
 
 ```bash
-export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' parameters.json)
-export SCHEDULER_JOB=$(jq -r '.CONFIG_Scheduler_Job_Name' parameters.json)
-export FUNCTION_NAME=$(jq -r '.CONFIG_CloudFunction_Name' parameters.json)
-export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' parameters.json)
-export CHILD_INTEGRATION=$(jq -r '.CONFIG_Child_Integration_Name' parameters.json)
-export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' parameters.json)
-export SHAREPOINT_CONN=$(jq -r '.CONFIG_SharePoint_Connection' parameters.json | awk -F/ '{print $NF}')
-export GCS_CONN=$(jq -r '.CONFIG_GCS_Connection' parameters.json | awk -F/ '{print $NF}')
+export PROJECT_ID=$(jq -r '.CONFIG_ProjectId' config-parameters.json)
+export SCHEDULER_JOB=$(jq -r '.CONFIG_Scheduler_Job_Name' config-parameters.json)
+export FUNCTION_NAME=$(jq -r '.CONFIG_CloudFunction_Name' config-parameters.json)
+export PARENT_INTEGRATION=$(jq -r '.CONFIG_Parent_Integration_Name' config-parameters.json)
+export CHILD_INTEGRATION=$(jq -r '.CONFIG_Child_Integration_Name' config-parameters.json)
+export GCS_BUCKET=$(jq -r '.CONFIG_GCS_Bucket' config-parameters.json)
+export SHAREPOINT_CONN=$(jq -r '.CONFIG_SharePoint_Connection' config-parameters.json | awk -F/ '{print $NF}')
+export GCS_CONN=$(jq -r '.CONFIG_GCS_Connection' config-parameters.json | awk -F/ '{print $NF}')
 
 # Verify parameters are loaded:
 echo "✅ Loaded Config for Project: ${PROJECT_ID} | Bucket: gs://${GCS_BUCKET} | Function: ${FUNCTION_NAME}"
@@ -180,7 +180,7 @@ gcloud logging read "resource.type=\"cloud_scheduler_job\" AND resource.labels.j
 resource.type="cloud_scheduler_job"
 resource.labels.job_id="${SCHEDULER_JOB}"
 ```
-*(Note: When pasting into Log Explorer in GCP Console, substitute `${SCHEDULER_JOB}` with your actual job name from parameters.json).*
+*(Note: When pasting into Log Explorer in GCP Console, substitute `${SCHEDULER_JOB}` with your actual job name from config-parameters.json).*
 
 * **What to look for**: 
   * HTTP `403 Forbidden`: The Cloud Scheduler service account (`CONFIG_Service_Account`) lacks the `roles/run.invoker` or `roles/cloudfunctions.invoker` IAM permission.
@@ -360,7 +360,7 @@ gcloud logging read "(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_f
 ```
 
 ### 🛡️ How to Resolve & Prevent Throttling in V9.0
-1. **Tune Down Concurrency & Batch Size**: In your local [parameters.json](parameters.json), lower `CONFIG_Max_Parallel_Workers` (e.g., to `5` or `8`) and `CONFIG_Batch_Size` (e.g., to `5` or `10`). This spreads the request footprint over time and avoids triggering Microsoft's DDoS heuristics.
+1. **Tune Down Concurrency & Batch Size**: In your local [config-parameters.json](config-parameters.json), lower `CONFIG_Max_Parallel_Workers` (e.g., to `5` or `8`) and `CONFIG_Batch_Size` (e.g., to `5` or `10`). This spreads the request footprint over time and avoids triggering Microsoft's DDoS heuristics.
 2. **Exponential Backoff with Randomized Jitter**: The V9.0 Microsoft Graph API client (`graph_client.py`) is engineered to automatically intercept `429`/`503` responses, read the `Retry-After` header, and apply exponential backoff with randomized jitter. Verify in your logs that these retry pauses are executing rather than failing immediately.
 3. **Enterprise M365 `User-Agent` Header**: Ensure your Microsoft Graph API requests include an enterprise-compliant, descriptive `User-Agent` header (e.g., `ISV|YourOrg|SharePointToGCSSync/8.0`). Microsoft strictly throttles or rejects traffic from generic or default scripting user-agents (such as `python-requests` or empty headers).
 
@@ -372,20 +372,20 @@ Use this structured checklist to evaluate the top 6 most common enterprise root 
 
 | Check | Potential Root Cause | Component to Inspect | How to Diagnose & Resolve |
 | :---: | :--- | :--- | :--- |
-| 🔲 1 | **SharePoint Throttling / Anti-DDoS Rejection** | Microsoft Graph API / SharePoint | **Diagnose**: Check **Section 4** logs for HTTP `429 Too Many Requests`, `503 Server Busy`, or `504 Gateway Timeout`.<br>**Resolve**: Reduce `CONFIG_Max_Parallel_Workers` to `5` or `8` in [parameters.json](parameters.json), ensure backoff jitter is enabled in `graph_client.py`, and obey `Retry-After` headers. |
+| 🔲 1 | **SharePoint Throttling / Anti-DDoS Rejection** | Microsoft Graph API / SharePoint | **Diagnose**: Check **Section 4** logs for HTTP `429 Too Many Requests`, `503 Server Busy`, or `504 Gateway Timeout`.<br>**Resolve**: Reduce `CONFIG_Max_Parallel_Workers` to `5` or `8` in [config-parameters.json](config-parameters.json), ensure backoff jitter is enabled in `graph_client.py`, and obey `Retry-After` headers. |
 | 🔲 2 | **Entra ID Conditional Access Block / Expired Secret** | Azure AD / M365 Graph API | **Diagnose**: Check **Section 3.2** logs for HTTP `401`/`403`.<br>**Resolve**: Verify in Azure Portal that `CONFIG_M365_Secret_Name` has not expired and that no Conditional Access policy requires interactive MFA for headless client-credentials flows. |
 | 🔲 3 | **Playwright Chromium Out-of-Memory (OOM)** | Traversal Cloud Function (Gen2) | **Diagnose**: Check **Section 3.2** logs for `Memory limit exceeded` or container crash code `500` during `.aspx` page conversion.<br>**Resolve**: In GCP Console > Cloud Run > Revisions, increase memory allocation from 1GB to **2GB or 4GB**. |
 | 🔲 4 | **VPC Service Controls (VPC-SC) Egress Block** | Network Security / Connectors | **Diagnose**: Check **Section 3.7** logs for `VpcServiceControlAuditMetadata` violation.<br>**Resolve**: Add an egress rule in perimeter settings allowing traffic to `connectors.googleapis.com` and `*.sharepoint.com`. |
 | 🔲 5 | **Missing IAM Invoker or Storage Creator Roles** | IAM & Admin | **Diagnose**: Check **Section 3.4** and **Section 3.5** for `PERMISSION_DENIED`.<br>**Resolve**: Ensure service account `CONFIG_Service_Account` has `roles/integrations.integrationInvoker`, `roles/storage.objectAdmin`, and `roles/secretmanager.secretAccessor`. |
-| 🔲 6 | **Micro-Batch Payload Serialization Timeout** | Application Integration | **Diagnose**: Check **Section 3.4** for workflow execution timeouts or payload size errors.<br>**Resolve**: Reduce `CONFIG_Batch_Size` to `5` or `10` in [parameters.json](parameters.json) to ensure smooth streaming without exceeding integration message limits. |
+| 🔲 6 | **Micro-Batch Payload Serialization Timeout** | Application Integration | **Diagnose**: Check **Section 3.4** for workflow execution timeouts or payload size errors.<br>**Resolve**: Reduce `CONFIG_Batch_Size` to `5` or `10` in [config-parameters.json](config-parameters.json) to ensure smooth streaming without exceeding integration message limits. |
 
 ---
 
 ## 6. Unified Diagnostic Log Inspector (Interactive & Timezone/Timeframe Aware)
 
-To streamline troubleshooting across all serverless components without running individual `gcloud logging read` commands manually, use our automated diagnostic inspector script: [`check/check_all_logging.py`](parameters.json).
+To streamline troubleshooting across all serverless components without running individual `gcloud logging read` commands manually, use our automated diagnostic inspector script: [`check/check_all_logging.py`](config-parameters.json).
 
-This script automatically pulls your Project ID, Function Name, Scheduler Job, and GCS Bucket from `parameters.json`, formats all timestamps in your selected time zone, and allows you to define custom lookback windows or start timestamps.
+This script automatically pulls your Project ID, Function Name, Scheduler Job, and GCS Bucket from `config-parameters.json`, formats all timestamps in your selected time zone, and allows you to define custom lookback windows or start timestamps.
 
 ### Method A: Interactive Mode (Recommended)
 Run the script interactively to select your time zone and enter a lookback duration or RFC3339 start timestamp:

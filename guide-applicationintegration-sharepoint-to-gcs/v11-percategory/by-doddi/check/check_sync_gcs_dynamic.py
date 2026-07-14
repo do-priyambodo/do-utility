@@ -80,11 +80,11 @@ def check_dynamic_sync():
     print("🔍 DIAGNOSTIC CHECK: DYNAMIC SHAREPOINT-TO-GCS SYNC PIPELINE (V6.0)")
     print("================================================================================\n")
 
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found in current directory.")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found in current directory.")
         sys.exit(1)
 
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
 
     bucket_name = params.get("CONFIG_GCS_Bucket")
@@ -94,7 +94,7 @@ def check_dynamic_sync():
     project_id = params.get("CONFIG_ProjectId", "your-project")
 
     if not bucket_name:
-        print("❌ Error: CONFIG_GCS_Bucket not defined in parameters.json.")
+        print("❌ Error: CONFIG_GCS_Bucket not defined in config-parameters.json.")
         sys.exit(1)
 
     print(f"📂 Step 1: Fetching dynamic configuration from gs://{bucket_name}/config/target_urls.txt...")

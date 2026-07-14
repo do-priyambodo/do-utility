@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # pull_check_version.sh - Step 1 of Mandatory 2-Step Deployment Protocol
 # Pulls latest code from remote repository, asserts exact Git version/tag,
-# and verifies that parameters.json is valid before Cloud Run deployment.
+# and verifies that config-parameters.json is valid before Cloud Run deployment.
 set -euo pipefail
 
 echo "================================================================================"
@@ -25,19 +25,19 @@ else
     echo "   ⚠️ Warning: Could not detect standard Revision tag (Current: ${CURRENT_TAG}). Please confirm branch."
 fi
 
-echo -e "\n⚙️  3. Verifying local configuration (parameters.json)..."
-if [[ ! -f "parameters.json" ]]; then
-    echo "❌ Error: parameters.json not found in current directory!"
+echo -e "\n⚙️  3. Verifying local configuration (config-parameters.json)..."
+if [[ ! -f "config-parameters.json" ]]; then
+    echo "❌ Error: config-parameters.json not found in current directory!"
     exit 1
 fi
 
-PROJECT_ID=$(python3 -c 'import json; print(json.load(open("parameters.json")).get("CONFIG_ProjectId", ""))' 2>/dev/null || echo "")
-BUCKET_NAME=$(python3 -c 'import json; print(json.load(open("parameters.json")).get("CONFIG_GCS_Bucket", ""))' 2>/dev/null || echo "")
-JOB_NAME=$(python3 -c 'import json; print(json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files"))' 2>/dev/null || echo "")
-PARENT_INT=$(python3 -c 'import json; print(json.load(open("parameters.json")).get("CONFIG_Parent_Integration_Name", ""))' 2>/dev/null || echo "")
+PROJECT_ID=$(python3 -c 'import json; print(json.load(open("config-parameters.json")).get("CONFIG_ProjectId", ""))' 2>/dev/null || echo "")
+BUCKET_NAME=$(python3 -c 'import json; print(json.load(open("config-parameters.json")).get("CONFIG_GCS_Bucket", ""))' 2>/dev/null || echo "")
+JOB_NAME=$(python3 -c 'import json; print(json.load(open("config-parameters.json")).get("CONFIG_CloudFunction_Name", "yourorg-sharepoint-list-files"))' 2>/dev/null || echo "")
+PARENT_INT=$(python3 -c 'import json; print(json.load(open("config-parameters.json")).get("CONFIG_Parent_Integration_Name", ""))' 2>/dev/null || echo "")
 
 if [[ -z "${PROJECT_ID}" || -z "${BUCKET_NAME}" ]]; then
-    echo "❌ Error: CONFIG_ProjectId or CONFIG_GCS_Bucket is missing in parameters.json!"
+    echo "❌ Error: CONFIG_ProjectId or CONFIG_GCS_Bucket is missing in config-parameters.json!"
     exit 1
 fi
 

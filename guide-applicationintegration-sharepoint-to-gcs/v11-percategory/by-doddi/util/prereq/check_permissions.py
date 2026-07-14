@@ -385,11 +385,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # Try to load defaults from parameters.json
+    # Try to load defaults from config-parameters.json
     params_data = {}
     possible_paths = [
-        os.path.join(os.path.dirname(__file__), "../parameters.json"),
-        os.path.join(os.path.dirname(__file__), "parameters.json")
+        os.path.join(os.path.dirname(__file__), "../config-parameters.json"),
+        os.path.join(os.path.dirname(__file__), "config-parameters.json")
     ]
     
     default_params_path = None

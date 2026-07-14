@@ -13,12 +13,12 @@ The exact same changes MUST be mirrored/copied to the corresponding version dire
 ### 1. Zero Customer Hardcoding in Code & Documentation
 When writing or updating any application code (`.py`, `.sh`), markdown runbooks (`.md`), release milestone banners, or git commit/tag messages across this repository:
 - **Never hardcode specific customer names** (e.g., `Maxis`, `Customer X`). Use generic terms such as `Customer Production`, `Enterprise Tenant`, or `<YOUR-ORG>`.
-- **Never hardcode specific tenant IDs or GCP Project IDs** (e.g., `mxs-agentassist-dev`). Always use `<YOUR-PROJECT-ID>` or reference `parameters.json`.
-- **Never hardcode specific GCS bucket names or resource labels** (e.g., `fullsharepoint-1stjuly`). Always use `<YOUR-GCS-BUCKET>` or dynamically query from `parameters.json`.
+- **Never hardcode specific tenant IDs or GCP Project IDs** (e.g., `mxs-agentassist-dev`). Always use `<YOUR-PROJECT-ID>` or reference `config-parameters.json`.
+- **Never hardcode specific GCS bucket names or resource labels** (e.g., `fullsharepoint-1stjuly`). Always use `<YOUR-GCS-BUCKET>` or dynamically query from `config-parameters.json`.
 
 ### 2. Zero Local Developer Paths in Documentation
 - **Never hardcode local developer filesystem paths** (e.g., `/usr/local/google/home/username/...` or `C:\Users\...`) in markdown runbooks, `README.md`, or deployment instructions.
 - Always use **relative paths** (`./deploy/deploy_cloud_run.sh`, `DO-SYNC-ALL-SHAREPOINT.md`) or generic placeholder directories (`/path/to/your/repo/v10-10Jul2026/by-yourorg`).
 
 ### 3. Separation of Concerns
-All tenant-specific configuration values and customer secrets must exist exclusively inside local environment configuration files (`parameters.json`, `.env.local`). Code and documentation must remain 100% anonymized, generic, and suitable for sharing or public distribution at all times.
+All tenant-specific configuration values and customer secrets must exist exclusively inside local environment configuration files (`config-parameters.json`, `.env.local`). Code and documentation must remain 100% anonymized, generic, and suitable for sharing or public distribution at all times.

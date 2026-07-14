@@ -5,8 +5,8 @@
 The V11 Category-Based Synchronization architecture (`v11-percategory`) transitions our enterprise SharePoint ingestion from a monolithic 20-minute discovery loop (`sites/DEN` crawling **38,823 items across 59 document libraries and 23 subsites** simultaneously) to a modular, fault-isolated, and memory-isolated **Category-Driven Ingestion Pipeline**.
 
 ### The 4 Core Pillars of V11:
-1. **Decoupled Architecture (`Separation of Concerns`):** `parameters.json` becomes your static infrastructure profile (`Project ID`, `Service Account`, `Tenant ID`, `Secret Path`). A new **`sites-sync.json`** file acts as the dynamic, hot-swappable category matrix. Adding or changing categories requires **zero Docker rebuilds or container deployments**.
-2. **Option 1 Single Master Scheduler Loop (`Sequential Sharding`):** Exactly **ONE** Cloud Scheduler cron job is deployed in GCP (`yourorg-sharepoint-sync-daily`). When triggered, `main.py` loads `sites-sync.json` and iterates cleanly through the category groups one by one. Zero scheduler management clutter for the customer!
+1. **Decoupled Architecture (`Separation of Concerns`):** `config-parameters.json` becomes your static infrastructure profile (`Project ID`, `Service Account`, `Tenant ID`, `Secret Path`). A new **`config-category.json`** file acts as the dynamic, hot-swappable category matrix. Adding or changing categories requires **zero Docker rebuilds or container deployments**.
+2. **Option 1 Single Master Scheduler Loop (`Sequential Sharding`):** Exactly **ONE** Cloud Scheduler cron job is deployed in GCP (`yourorg-sharepoint-sync-daily`). When triggered, `main.py` loads `config-category.json` and iterates cleanly through the category groups one by one. Zero scheduler management clutter for the customer!
 3. **Duplicate Crawl Prevention (`include_subsites: false`):** We update `cf-sharepoint/main.py` with an `include_subsites` check around `get_all_subsites_recursive()`, allowing root subsites (`sites/DEN`) to sync only their direct root items without recursively crawling child departments (`Consumer`, `Business`), guaranteeing **zero duplicate objects across the 38,823 inventory**.
 4. **Vertex AI Unified Master Metadata Engine (`combine_metadata_shards`):** To satisfy Vertex AI Search's requirement for a single master `metadata.jsonl` catalog while eliminating concurrent write race conditions, each category job writes its own sharded `metadata_part.jsonl`. At the end of the master category loop, an atomic helper merges all shards into `gs://<bucket>/config/metadata.jsonl` while preserving 100% of both `source_url` (GCS text) and `sharepoint_url` (M365 chatbot citation links).
 
@@ -16,7 +16,7 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 
 > [!IMPORTANT]
 > **Zero Docker Rebuild Guarantee**  
-> Once `v11-percategory` is deployed to Cloud Run (`yourorg-sharepoint-sync-v11`), business operators only edit or upload `sites-sync.json`. No `./deploy/deploy_cloud_run.sh` calls are ever needed when onboarding new departments.
+> Once `v11-percategory` is deployed to Cloud Run (`yourorg-sharepoint-sync-v11`), business operators only edit or upload `config-category.json`. No `./deploy/deploy_cloud_run.sh` calls are ever needed when onboarding new departments.
 
 > [!WARNING]
 > **Strict Anonymization & Bidirectional Mirroring Mandate**  
@@ -27,9 +27,9 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 
 ## 3. Step-by-Step Implementation Roadmap (`Easy to Follow Engineering Guide`)
 
-### Phase 1: Configuration Decoupling (`sites-sync.json` & `parameters.json`)
+### Phase 1: Configuration Decoupling (`config-category.json` & `config-parameters.json`)
 
-#### Step 1.1: Create `config/sites-sync.json`
+#### Step 1.1: Create `config/config-category.json`
 Create the dynamic category matrix with the top-level `"root_portal_site"` property and 3-Tier Sharding Matrix (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier1-hotlink`, `tier1-system-procedure`, `tier2-medium-departments`, `tier3-specialized-teams`). Standardize all entries on `"sharepoint_library": "all"`.
 
 ```json
@@ -56,11 +56,11 @@ Create the dynamic category matrix with the top-level `"root_portal_site"` prope
 }
 ```
 
-#### Step 1.2: Clean Up `parameters.json`
-Remove `CONFIG_Sharepoint_Sites` and `CONFIG_Sharepoint_Library` from `parameters.json`. Leave only cloud infrastructure credentials, Secret Manager configuration, and `CONFIG_SharePoint_Hostname`.
+#### Step 1.2: Clean Up `config-parameters.json`
+Remove `CONFIG_Sharepoint_Sites` and `CONFIG_Sharepoint_Library` from `config-parameters.json`. Leave only cloud infrastructure credentials, Secret Manager configuration, and `CONFIG_SharePoint_Hostname`.
 
 #### Step 1.3: Update Configuration Loader (`util/config_loader.py` or `main.py`)
-Add a helper `load_sites_sync_config(params)` that attempts to load `sites-sync.json` from local path `./config/sites-sync.json` first, or from a GCS configuration bucket (`gs://<bucket>/config/sites-sync.json`) if running inside Cloud Run.
+Add a helper `load_sites_sync_config(params)` that attempts to load `config-category.json` from local path `./config/config-category.json` first, or from a GCS configuration bucket (`gs://<bucket>/config/config-category.json`) if running inside Cloud Run.
 
 ---
 
@@ -68,15 +68,15 @@ Add a helper `load_sites_sync_config(params)` that attempts to load `sites-sync.
 
 #### Step 2.1: Create `check/discover_categories.py` (2-Second Fast Discovery)
 Build a lightweight script that connects to Microsoft Graph API and lists all child subsite categories directly under `"root_portal_site"` (`sites/DEN`) without querying libraries or counting items:
-1. Load OAuth credentials and `CONFIG_SharePoint_Hostname` from `parameters.json`.
-2. Read `root_portal_site` from `sites-sync.json` (or accept `--root="sites/DEN"` CLI flag).
+1. Load OAuth credentials and `CONFIG_SharePoint_Hostname` from `config-parameters.json`.
+2. Read `root_portal_site` from `config-category.json` (or accept `--root="sites/DEN"` CLI flag).
 3. Query `GET https://graph.microsoft.com/v1.0/sites/{hostname}:/{root_path}` for root ID.
 4. Query `GET https://graph.microsoft.com/v1.0/sites/{root_id}/subsites` and print the formatted table.
 
 #### Step 2.2: Update `check/check_syncall_before.py` (Pre-Flight Audit)
-Update the pre-sync diagnostic check to read `sites-sync.json` and support two execution modes:
+Update the pre-sync diagnostic check to read `config-category.json` and support two execution modes:
 * **Mode A (Targeted Fast Audit):** If invoked with `--category=tier1-business`, inspect ONLY that category's SharePoint subsite and compare against `gs://<bucket>/categories/business/` in <15 seconds.
-* **Mode B (Master Serial Category Loop):** If invoked without `--category`, loop through every category in `sites-sync.json` sequentially, clearing memory after each category (`target_sites_to_scan.clear()`), and output a unified Category Summary Table across all 38,823 items.
+* **Mode B (Master Serial Category Loop):** If invoked without `--category`, loop through every category in `config-category.json` sequentially, clearing memory after each category (`target_sites_to_scan.clear()`), and output a unified Category Summary Table across all 38,823 items.
 
 #### Step 2.3: Update `check/check_syncall_after.py` (Post-Flight Audit)
 Mirror the exact same Option 1 serial loop and `--category=...` override logic in the post-sync check to verify all files and pages have landed successfully in their respective `gcs_destination_prefix` folders.
@@ -86,7 +86,7 @@ Mirror the exact same Option 1 serial loop and `--category=...` override logic i
 ### Phase 3: Core Synchronization Engine & Vertex AI Master Aggregator (`cf-sharepoint/main.py`)
 
 #### Step 3.1: Option 1 Master Category Loop & Optional On-Demand Overrides
-In `main.py`, replace the single-site discovery entry point with a sequential loop over `sites-sync.json`:
+In `main.py`, replace the single-site discovery entry point with a sequential loop over `config-category.json`:
 ```python
 sites_sync_config = load_sites_sync_config(params)
 categories_to_sync = sites_sync_config.get("categories", [])
@@ -161,7 +161,7 @@ def combine_metadata_shards(bucket_name):
 ### Phase 4: Deployment Automation & Operator Runbooks (`deploy/` & documentation)
 
 #### Step 4.1: Update Container Deployment Script (`deploy/deploy_cloud_run.sh`)
-Update the Cloud Run Job deployment script so it deploys the container with generic infrastructure variables and `CONFIG_SITES_SYNC_PATH=config/sites-sync.json`.
+Update the Cloud Run Job deployment script so it deploys the container with generic infrastructure variables and `CONFIG_SITES_SYNC_PATH=config/config-category.json`.
 
 #### Step 4.2: Create Cloud Scheduler Helper (`deploy/deploy_category_scheduler.sh`)
 Create a simple helper script to deploy or check the single Option 1 daily Cloud Scheduler job (`yourorg-sharepoint-sync-daily`).
@@ -180,8 +180,8 @@ Create a comprehensive, copy-pasteable operator guide for Janice detailing:
 ### Automated Tests
 1. **Validate JSON Syntax & Matrix Schema:**
    ```bash
-   python3 -m json.tool config/sites-sync.json > /dev/null && echo "✅ sites-sync.json valid"
-   python3 -m json.tool parameters.json > /dev/null && echo "✅ parameters.json valid"
+   python3 -m json.tool config/config-category.json > /dev/null && echo "✅ config-category.json valid"
+   python3 -m json.tool config-parameters.json > /dev/null && echo "✅ config-parameters.json valid"
    ```
 2. **Execute Python Syntax & Unit Tests:**
    ```bash

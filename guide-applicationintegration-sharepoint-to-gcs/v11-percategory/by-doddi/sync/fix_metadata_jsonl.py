@@ -30,16 +30,16 @@ def main():
     print("🛠️ INSTANT GCS MANIFEST FIXER (config/metadata.jsonl)")
     print("================================================================================")
 
-    if not os.path.exists("parameters.json"):
-        print("❌ Error: parameters.json not found in working directory.")
+    if not os.path.exists("config-parameters.json"):
+        print("❌ Error: config-parameters.json not found in working directory.")
         sys.exit(1)
 
-    with open("parameters.json", "r") as f:
+    with open("config-parameters.json", "r") as f:
         params = json.load(f)
 
     bucket_name = params.get("CONFIG_GCS_Bucket", "")
     if not bucket_name:
-        print("❌ Error: CONFIG_GCS_Bucket not found in parameters.json.")
+        print("❌ Error: CONFIG_GCS_Bucket not found in config-parameters.json.")
         sys.exit(1)
 
     manifest_gcs_path = f"gs://{bucket_name}/config/metadata.jsonl"

@@ -54,12 +54,12 @@ def main():
     print("🔍 CHECKING FILES TO SYNC VIA SHAREPOINT TRAVERSAL CLOUD FUNCTION")
     print("================================================================")
 
-    param_path = "parameters.json"
+    param_path = "config-parameters.json"
     if not os.path.exists(param_path):
-        param_path = os.path.join(parent_dir, "parameters.json")
+        param_path = os.path.join(parent_dir, "config-parameters.json")
         
     if not os.path.exists(param_path):
-        print(f"❌ Error: parameters.json not found in current directory or {parent_dir}!")
+        print(f"❌ Error: config-parameters.json not found in current directory or {parent_dir}!")
         sys.exit(1)
         
     with open(param_path, "r") as f:

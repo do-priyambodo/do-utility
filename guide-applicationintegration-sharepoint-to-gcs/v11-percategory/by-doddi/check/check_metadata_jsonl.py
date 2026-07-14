@@ -16,7 +16,7 @@ def run_metadata_check():
     print("================================================================================")
 
     # 1. Load pipeline parameters
-    param_path = "parameters.json"
+    param_path = "config-parameters.json"
     if not os.path.exists(param_path):
         print(f"❌ Error: {param_path} not found in current working directory.")
         sys.exit(1)
@@ -30,7 +30,7 @@ def run_metadata_check():
 
     bucket_name = params.get("CONFIG_GCS_Bucket", "").strip()
     if not bucket_name:
-        print("❌ Error: 'CONFIG_GCS_Bucket' is missing or empty in parameters.json.")
+        print("❌ Error: 'CONFIG_GCS_Bucket' is missing or empty in config-parameters.json.")
         sys.exit(1)
 
     # Remove gs:// prefix if provided

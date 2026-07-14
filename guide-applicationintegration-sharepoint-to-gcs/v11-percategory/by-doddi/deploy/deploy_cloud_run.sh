@@ -12,27 +12,27 @@ trap 'python3 -c "import log_helper; log_helper.log_error(\"deploy_cloud_run.sh 
 # Redirect stdout and stderr to setup.log while outputting to terminal
 exec > >(tee -a log/setup.log) 2>&1
 
-if [ ! -f "parameters.json" ]; then
-  echo "❌ Error: parameters.json not found!"
+if [ ! -f "config-parameters.json" ]; then
+  echo "❌ Error: config-parameters.json not found!"
   exit 1
 fi
 
-PROJECT_ID=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
-LOCATION=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', ''))")
-SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Service_Account', ''))")
-SERVICE_NAME=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
+PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_ProjectId', ''))")
+LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
+SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
+SERVICE_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
 
 if [ -z "$PROJECT_ID" ] || [ -z "$LOCATION" ] || [ -z "$SERVICE_ACCOUNT" ] || [ -z "$SERVICE_NAME" ]; then
-  echo "❌ Error: Required configuration parameters missing in parameters.json!"
+  echo "❌ Error: Required configuration parameters missing in config-parameters.json!"
   exit 1
 fi
 
 echo "🚀 Setting project to ${PROJECT_ID}..."
 gcloud config set project "${PROJECT_ID}"
 
-echo "📦 Copying parameters.json, sites-sync.json, and utilities to cf-sharepoint for Docker build context..."
-cp parameters.json cf-sharepoint/
-[ -f sites-sync.json ] && cp sites-sync.json cf-sharepoint/ || true
+echo "📦 Copying config-parameters.json, config-category.json, and utilities to cf-sharepoint for Docker build context..."
+cp config-parameters.json cf-sharepoint/
+[ -f config-category.json ] && cp config-category.json cf-sharepoint/ || true
 [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true
 [ -d config ] && cp -r config cf-sharepoint/ || true
 [ -d util ] && cp -r util cf-sharepoint/ || true
@@ -65,7 +65,7 @@ gcloud run jobs create "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
-  --set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json" \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=config-category.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}" || \
 gcloud run jobs update "${SERVICE_NAME}" \
@@ -76,7 +76,7 @@ gcloud run jobs update "${SERVICE_NAME}" \
   --task-timeout=86400s \
   --memory=8192Mi \
   --cpu=4 \
-  --set-env-vars="CONFIG_SITES_SYNC_PATH=sites-sync.json" \
+  --set-env-vars="CONFIG_SITES_SYNC_PATH=config-category.json" \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}"
 
@@ -87,7 +87,7 @@ gcloud run jobs add-iam-policy-binding "${SERVICE_NAME}" \
   --role="roles/run.invoker" \
   --project="${PROJECT_ID}"
 
-DEV_MEMBER=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))" 2>/dev/null || true)
+DEV_MEMBER=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Developer_Group_Or_User', ''))" 2>/dev/null || true)
 if [ -n "$DEV_MEMBER" ]; then
   echo "🔐 Granting Cloud Run Job Invoker role (roles/run.invoker) to developer ${DEV_MEMBER}..."
   if [[ "${DEV_MEMBER}" == "group:"* ]]; then
@@ -111,8 +111,8 @@ if [ -n "$DEV_MEMBER" ]; then
 fi
 
 echo "🧹 Cleaning up deployment context copy..."
-rm -f cf-sharepoint/parameters.json
-[ -f cf-sharepoint/sites-sync.json ] && rm -f cf-sharepoint/sites-sync.json || true
+rm -f cf-sharepoint/config-parameters.json
+[ -f cf-sharepoint/config-category.json ] && rm -f cf-sharepoint/config-category.json || true
 [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true
 [ -d cf-sharepoint/config ] && rm -rf cf-sharepoint/config || true
 [ -d cf-sharepoint/util ] && rm -rf cf-sharepoint/util || true

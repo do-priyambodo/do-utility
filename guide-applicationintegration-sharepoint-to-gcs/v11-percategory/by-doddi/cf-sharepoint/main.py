@@ -37,7 +37,7 @@ except ImportError:
         from config_loader import load_sites_sync_config
     except ImportError:
         def load_sites_sync_config(params=None):
-            for p in ["sites-sync.json", "config/sites-sync.json", "../sites-sync.json", "../config/sites-sync.json"]:
+            for p in ["config-category.json", "config/config-category.json", "../config-category.json", "../config/config-category.json"]:
                 if os.path.exists(p):
                     with open(p, "r", encoding="utf-8") as f:
                         return json.load(f)
@@ -96,15 +96,15 @@ def main(request):
         except Exception:
             pass
     
-    # Load parameters.json if it exists in local context
+    # Load config-parameters.json if it exists in local context
     params = {}
-    if os.path.exists("parameters.json"):
+    if os.path.exists("config-parameters.json"):
         try:
-            with open("parameters.json", "r") as f:
+            with open("config-parameters.json", "r") as f:
                 params = json.load(f)
             params = validate_parameters(params)
         except Exception as e:
-            print(f"Warning: Failed to load or validate parameters.json: {e}", flush=True)
+            print(f"Warning: Failed to load or validate config-parameters.json: {e}", flush=True)
 
     # Load dynamic category config
     sites_sync = load_sites_sync_config(params)
@@ -117,9 +117,9 @@ def main(request):
         print(f"🎯 Single-Category Override Active: Running strictly for category '{target_category_id}' ({len(categories_to_sync)} matched)", flush=True)
     elif len(categories) > 0:
         categories_to_sync = categories
-        print(f"🔄 Option 1 Master Loop Active: Sequentially running {len(categories_to_sync)} categories from sites-sync.json", flush=True)
+        print(f"🔄 Option 1 Master Loop Active: Sequentially running {len(categories_to_sync)} categories from config-category.json", flush=True)
     else:
-        # Legacy fallback if sites-sync.json is empty
+        # Legacy fallback if config-category.json is empty
         legacy_site = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "sites/DEN")
         legacy_lib = req_data.get("library_name") or params.get("CONFIG_Sharepoint_Library", "all")
         categories_to_sync = [{
@@ -130,7 +130,7 @@ def main(request):
             "sharepoint_library": legacy_lib,
             "gcs_destination_prefix": ""
         }]
-        print(f"⚠️ No categories found in sites-sync.json. Using legacy fallback: {legacy_site}", flush=True)
+        print(f"⚠️ No categories found in config-category.json. Using legacy fallback: {legacy_site}", flush=True)
 
     # Optional integration automatic trigger parameters
     integration_name = req_data.get("integration_name") or params.get("CONFIG_Parent_Integration_Name")
@@ -168,7 +168,7 @@ def main(request):
     site_hostname = req_data.get("site_hostname") or params.get("CONFIG_SharePoint_Hostname") or params.get("CONFIG_Sharepoint_Domain")
 
     if not all([tenant_id, client_id, secret_name, site_hostname]):
-        raise ValueError("Missing required M365 configuration parameters in parameters.json or request payload.")
+        raise ValueError("Missing required M365 configuration parameters in config-parameters.json or request payload.")
 
     try:
         print("="*70, flush=True)
@@ -543,7 +543,7 @@ def main(request):
                 credentials, credentials_project_id = google.auth.default()
                 project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
                 if not project_id:
-                    raise ValueError("Project ID not specified in parameters.json or GCP credentials.")
+                    raise ValueError("Project ID not specified in config-parameters.json or GCP credentials.")
                 credentials.refresh(Request())
                 access_token = credentials.token
                 integration_url = f"https://{location}-integrations.googleapis.com/v1/projects/{project_id}/locations/{location}/integrations/{integration_name}:schedule"

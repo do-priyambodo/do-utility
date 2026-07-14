@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Rugged Enterprise Configuration Schema Validator (v10-10Jul2026)
-Validates parameters.json keys and data types before executing SharePoint or GCS network operations.
+Validates config-parameters.json keys and data types before executing SharePoint or GCS network operations.
 """
 
 import sys
@@ -32,7 +32,7 @@ def validate_parameters(params: Dict[str, Any]) -> Dict[str, Any]:
 
     if missing_keys:
         err_msg = (
-            f"❌ Configuration Validation Error: Missing or empty required keys in parameters.json:\n"
+            f"❌ Configuration Validation Error: Missing or empty required keys in config-parameters.json:\n"
             + "\n".join(f"   • {k}" for k in missing_keys)
         )
         raise ValueError(err_msg)
