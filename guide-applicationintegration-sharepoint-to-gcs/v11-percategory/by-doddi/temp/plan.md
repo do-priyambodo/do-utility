@@ -30,7 +30,7 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 Group files by component and order logically. Separate components with horizontal rules for visual clarity.
 
 ### [Component 1: Dynamic Category Configuration & Schema (`Option 1 Clean Loop`)]
-Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Sharding Matrix (without `cron_schedule` clutter).
+Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Sharding Matrix (standardizing on `"sharepoint_library": "all"`).
 
 #### [NEW] `config/sites-sync.json`
 ```json
@@ -41,7 +41,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "display_name": "DEN Root Portal Documents & Guides ONLY",
       "sharepoint_site": "sites/DEN",
       "include_subsites": false,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/den-root/"
     },
     {
@@ -49,7 +49,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "display_name": "Business Department Policies & Documents",
       "sharepoint_site": "sites/DEN/Business",
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/business/"
     },
     {
@@ -57,7 +57,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "display_name": "Consumer Department SOPs & Guides",
       "sharepoint_site": "sites/DEN/Consumer",
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/consumer/"
     },
     {
@@ -65,7 +65,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "display_name": "Hotlink Department Documents",
       "sharepoint_site": "sites/DEN/Hotlink",
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/hotlink/"
     },
     {
@@ -73,7 +73,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "display_name": "System & Procedure Standard Guidelines",
       "sharepoint_site": "sites/DEN/System-Procedure",
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/system-procedure/"
     },
     {
@@ -86,7 +86,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
         "sites/DEN/Quality-Assurance"
       ],
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/medium-departments/"
     },
     {
@@ -108,7 +108,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
         "sites/DEN/Training"
       ],
       "include_subsites": true,
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/specialized-teams/"
     }
   ]

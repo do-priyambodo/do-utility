@@ -140,7 +140,7 @@ To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v1
       "display_name": "DEN Root Portal Documents & Guides ONLY",
       "sharepoint_site": "sites/DEN",
       "include_subsites": false,        <-- 🚨 PREVENTS DOWNWARD CRAWL INTO CHILD DEPARTMENTS!
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/den-root/"
     },
     {
@@ -148,7 +148,7 @@ To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v1
       "display_name": "Business Department Policies & Documents",
       "sharepoint_site": "sites/DEN/Business",
       "include_subsites": true,         <-- Crawls Business + any sub-teams inside Business
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/business/"
     },
     {
@@ -156,7 +156,7 @@ To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v1
       "display_name": "Consumer Department SOPs & Guides",
       "sharepoint_site": "sites/DEN/Consumer",
       "include_subsites": true,         <-- Crawls Consumer + any sub-teams inside Consumer
-      "sharepoint_library": "Documents",
+      "sharepoint_library": "all",
       "gcs_destination_prefix": "categories/consumer/"
     }
   ]
