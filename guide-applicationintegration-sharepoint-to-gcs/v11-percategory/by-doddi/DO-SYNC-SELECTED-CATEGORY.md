@@ -6,7 +6,7 @@ Before running deployment or verification scripts, ensure your local terminal se
 
 ```bash
 # 1. Navigate to Version 11 working directory
-cd /path/to/your/repo/app/v11-percategory/by-doddi
+# cd /path/to/your/repo/app/v11-percategory/by-doddi
 
 # 2. Ensure service account impersonation is disabled so commands run directly as your user:
 gcloud config unset auth/impersonate_service_account 2>/dev/null || true
@@ -55,7 +55,7 @@ python3 -m json.tool config/sites-sync.json > /dev/null && echo "✅ sites-sync.
 To discover all available child subsites/departments under your target root portal site in **<3 seconds** (without waiting 30 minutes for library counting), run:
 
 ```bash
-python3 check/discover_categories.py --root="sites/DEN"
+python3 check/discover_categories.py --root="sites/CHANGETHISTOYOURROOTSITE"
 ```
 
 Copy the output category names and paths directly into `config/sites-sync.json` under your desired `categories[]` matrix.
@@ -101,7 +101,7 @@ python3 deploy/deploy_workflows.py
 
 ---
 
-## Step 7: Deploy Option 1 Master Cloud Scheduler Trigger Job
+## Step 7: Deploy Cloud Scheduler Trigger Job
 
 Deploy the single automated Cloud Scheduler job (`${FUNCTION_NAME}-daily-master`) that triggers our Cloud Run Job daily at midnight (`0 0 * * *`) to iterate sequentially across all categories:
 
@@ -130,10 +130,10 @@ python3 check/check_syncall_before.py --category=tier1-business
 
 ## Step 9: Execute Per-Category Synchronization
 
-Initiate the synchronization across your sharded categories (`38,800+ items`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
+Initiate the synchronization across your categories. Standard regular files scale automatically to **100 items/batch**, `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
 
 ### Option A: Cloud Scheduler Trigger (`Recommended Unattended 24-Hour Master Loop`)
-Force your Option 1 Master Cloud Scheduler job to trigger immediately on demand, executing all categories sequentially with RAM isolation between each category:
+Cloud Scheduler job to trigger immediately on demand, executing all categories sequentially with RAM isolation between each category:
 
 ```bash
 gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}"
@@ -157,6 +157,62 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
 >   --region="${LOCATION}" \
 >   --remove-env-vars="TARGET_CATEGORY_ID"
 > ```
+
+---
+
+## Step 9.5: Active Real-Time Monitoring While Running (`During Step 9 Sync`)
+
+Because a full per-category synchronization runs asynchronously over multiple hours via Cloud Scheduler and Application Integration, use either of these **2 real-time monitoring options** to track progress and verify health while the sync is running (or see our complete dedicated monitoring guide 👉 **[DO-CHECKPROGRESS.md](DO-CHECKPROGRESS.md)**):
+
+### Option 1: Log Explorer (GCP Console UI)
+Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in real time from the **Google Cloud Console**:
+1. Navigate to **Logging > Logs Explorer** (`https://console.cloud.google.com/logs/query`).
+2. **Set Time Range Filter (IMPORTANT):** In the top-right time picker of Logs Explorer, filter the start time to the **exact timestamp when you executed the Cloud Scheduler job in Step 9**. This ensures you only see active logs from the current execution without noise from prior runs.
+3. Paste the following universal query into the search bar (replace `your-service-name` with your actual service name from `parameters.json`, e.g., `doddi-sharepoint-list-files`):
+   ```text
+   (resource.type="cloud_run_job" OR resource.type="cloud_run_revision" OR resource.type="cloud_function")
+   (resource.labels.job_name="your-service-name" OR resource.labels.service_name="your-service-name" OR resource.labels.function_name="your-service-name")
+   ```
+   *(Optional)* To generate this exact query dynamically with your `parameters.json` service name already inserted, run:
+   ```bash
+   python3 -c 'import json; fn = json.load(open("parameters.json")).get("CONFIG_CloudFunction_Name", "your-service-name"); print(f"\n📋 Paste this exact query into GCP Logs Explorer:\n\n(resource.type=\"cloud_run_job\" OR resource.type=\"cloud_run_revision\" OR resource.type=\"cloud_function\")\n(resource.labels.job_name=\"{fn}\" OR resource.labels.service_name=\"{fn}\" OR resource.labels.function_name=\"{fn}\")\n")'
+   ```
+4. Click **Stream Logs** (top right) to watch live batch processing and Playwright rendering in real time.
+
+### Option 2: Command Line (Real-Time Storage & Log Tracking)
+Run these commands in your Cloud Shell or local terminal to track live objects landing in Google Cloud Storage or stream Cloud Run logs directly:
+
+**A. Ad-Hoc GCS Bucket Snapshot (One-Shot Instant Check):**
+Check exactly how many files and `.aspx` pages have landed in your destination GCS bucket without locking up your terminal in a watch loop:
+```bash
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
+echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
+echo "Timestamp    : $(date)" && \
+echo "Target Bucket: gs://${GCS_BUCKET}" && \
+echo "------------------------------------------------------------" && \
+echo -n "Total Synced Files/Pages Landed in GCS : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/**" 2>/dev/null | wc -l && \
+echo -n "Total Bucket Storage Footprint         : " && \
+gcloud storage du -s "gs://${GCS_BUCKET}/" --readable-sizes 2>/dev/null | cut -f1 && \
+echo "------------------------------------------------------------"
+```
+
+**B. Live Cloud Run Terminal Log Stream:**
+Stream live container heartbeats directly from your terminal session without opening the browser:
+```bash
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND textPayload:*' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+  --limit=25 \
+  --format="table(timestamp, textPayload)"
+```
+
+To filter strictly for **Errors & Exceptions only**, append `AND severity>=ERROR`:
+```bash
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'doddi-sharepoint-list-files'))")"'" AND severity>=ERROR' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+  --limit=25 \
+  --format="table(timestamp, severity, textPayload, jsonPayload.message)"
+```
 
 ---
 
