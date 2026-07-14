@@ -6,9 +6,9 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 
 ### The 4 Core Pillars of V11:
 1. **Decoupled Architecture (`Separation of Concerns`):** `parameters.json` becomes your static infrastructure profile (`Project ID`, `Service Account`, `Tenant ID`, `Secret Path`). A new **`sites-sync.json`** file acts as the dynamic, hot-swappable category matrix. Adding or changing categories requires **zero Docker rebuilds or container deployments**.
-2. **3-Tier Department Sharding:** Based on the customer's steep Pareto inventory distribution (`sample-sites.txt`), we shard the 23 subsites into Mega-Categories (`Business` 9.5k, `Consumer` 8.2k, `Hotlink` 5.2k, `System-Procedure` 4.3k, `DEN Root` 4k) and Lightweight Batches, running on staggered schedules to eliminate Microsoft Graph API rate throttling (`429`).
-3. **Duplicate Crawl Prevention (`include_subsites: false`):** We update `cf-sharepoint/main.py` with an `include_subsites` check around `get_all_subsites_recursive()`, allowing root subsites (`sites/DEN`) to sync only their direct root items without recursively crawling child departments (`Consumer`, `Business`), guaranteeing **zero duplicate objects**.
-4. **Vertex AI Unified Master Metadata Engine (`combine_metadata_shards`):** To satisfy Vertex AI Search's requirement for a single master `metadata.jsonl` catalog while eliminating concurrent write race conditions, each category job writes its own sharded `metadata_part.jsonl`. At the end of any job run, an atomic helper merges all shards into `gs://<bucket>/config/metadata.jsonl` while preserving 100% of both `source_url` (GCS text) and `sharepoint_url` (M365 chatbot citation links).
+2. **Option 1 Single Master Scheduler Loop (`Sequential Sharding`):** Per user alignment (`Option 1 is better`), we deploy exactly **ONE** Cloud Scheduler cron job in GCP (`yourorg-sharepoint-sync-daily`). When triggered, `main.py` loads `sites-sync.json` and iterates cleanly through the 6 category groups one by one. Zero scheduler management clutter for the customer!
+3. **Duplicate Crawl Prevention (`include_subsites: false`):** We update `cf-sharepoint/main.py` with an `include_subsites` check around `get_all_subsites_recursive()`, allowing root subsites (`sites/DEN`) to sync only their direct root items without recursively crawling child departments (`Consumer`, `Business`), guaranteeing **zero duplicate objects across the 38,823 inventory**.
+4. **Vertex AI Unified Master Metadata Engine (`combine_metadata_shards`):** To satisfy Vertex AI Search's requirement for a single master `metadata.jsonl` catalog while eliminating concurrent write race conditions, each category job writes its own sharded `metadata_part.jsonl`. At the end of the master category loop, an atomic helper merges all shards into `gs://<bucket>/config/metadata.jsonl` while preserving 100% of both `source_url` (GCS text) and `sharepoint_url` (M365 chatbot citation links).
 
 ---
 
@@ -29,8 +29,8 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 
 Group files by component and order logically. Separate components with horizontal rules for visual clarity.
 
-### [Component 1: Dynamic Category Configuration & Schema]
-Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Sharding Matrix.
+### [Component 1: Dynamic Category Configuration & Schema (`Option 1 Clean Loop`)]
+Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Sharding Matrix (without `cron_schedule` clutter).
 
 #### [NEW] `config/sites-sync.json`
 ```json
@@ -42,8 +42,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "sharepoint_site": "sites/DEN",
       "include_subsites": false,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/den-root/",
-      "cron_schedule": "0 0 * * *"
+      "gcs_destination_prefix": "categories/den-root/"
     },
     {
       "category_id": "tier1-business",
@@ -51,8 +50,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "sharepoint_site": "sites/DEN/Business",
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/business/",
-      "cron_schedule": "0 2 * * *"
+      "gcs_destination_prefix": "categories/business/"
     },
     {
       "category_id": "tier1-consumer",
@@ -60,8 +58,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "sharepoint_site": "sites/DEN/Consumer",
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/consumer/",
-      "cron_schedule": "0 4 * * *"
+      "gcs_destination_prefix": "categories/consumer/"
     },
     {
       "category_id": "tier1-hotlink",
@@ -69,8 +66,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "sharepoint_site": "sites/DEN/Hotlink",
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/hotlink/",
-      "cron_schedule": "0 6 * * *"
+      "gcs_destination_prefix": "categories/hotlink/"
     },
     {
       "category_id": "tier1-system-procedure",
@@ -78,8 +74,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       "sharepoint_site": "sites/DEN/System-Procedure",
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/system-procedure/",
-      "cron_schedule": "0 8 * * *"
+      "gcs_destination_prefix": "categories/system-procedure/"
     },
     {
       "category_id": "tier2-medium-departments",
@@ -92,8 +87,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       ],
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/medium-departments/",
-      "cron_schedule": "0 10 * * *"
+      "gcs_destination_prefix": "categories/medium-departments/"
     },
     {
       "category_id": "tier3-specialized-teams",
@@ -115,8 +109,7 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
       ],
       "include_subsites": true,
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/specialized-teams/",
-      "cron_schedule": "0 12 * * *"
+      "gcs_destination_prefix": "categories/specialized-teams/"
     }
   ]
 }
@@ -124,36 +117,54 @@ Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Shard
 
 ---
 
-### [Component 2: SharePoint Crawler Engine (`Duplicate Prevention & Sharded Metadata`)]
-Modify the discovery logic inside `cf-sharepoint/main.py` to support `include_subsites`, dynamic `sites-sync.json` routing, and atomic master metadata aggregation.
+### [Component 2: SharePoint Crawler Engine (`Master Loop, Duplicate Prevention & Sharded Metadata`)]
+Modify the discovery logic inside `cf-sharepoint/main.py` to support `Option 1 Master Loop`, `include_subsites`, dynamic `sites-sync.json` routing, and atomic master metadata aggregation.
 
 #### [MODIFY] `cf-sharepoint/main.py`
-1. **Duplicate Prevention (`include_subsites: false` Check):**
+1. **Option 1 Master Category Loop & Optional On-Demand Overrides:**
    ```python
-   # Check if the active category configuration requests non-recursive / root-only discovery
-   include_subsites = req_data.get("include_subsites", params.get("CONFIG_Include_Subsites", True))
+   # Load category matrix from sites-sync.json
+   sites_sync_config = load_sites_sync_config(params)
+   categories_to_sync = sites_sync_config.get("categories", [])
+   
+   # Check if an operator requested a single-category on-demand override
+   target_override = os.environ.get("TARGET_CATEGORY_ID") or req_data.get("category_id")
+   if target_override:
+       categories_to_sync = [c for c in categories_to_sync if c.get("category_id") == target_override]
+       print(f"🎯 On-Demand Single Category Override Active: Running ONLY '{target_override}'")
+   else:
+       print(f"🔄 Option 1 Master Loop Active: Iterating through {len(categories_to_sync)} category groups sequentially.")
+       
+   for category in categories_to_sync:
+       process_category_sync(category, params, headers)
+   ```
+
+2. **Duplicate Prevention (`include_subsites: false` Check):**
+   ```python
+   # Inside process_category_sync(): Check if active category requests non-recursive / root-only discovery
+   include_subsites = category.get("include_subsites", True)
 
    if not include_subsites:
        print(f"🎯 Non-Recursive / Exact Target Mode Active ('include_subsites': False)")
-       print(f"   Inspecting only root site '{CONFIG_Sharepoint_Sites}' without crawling child departments.")
-       root_site_obj = resolve_site_info(CONFIG_Sharepoint_Sites, headers)
+       print(f"   Inspecting only root site '{category['sharepoint_site']}' without crawling child departments.")
+       root_site_obj = resolve_site_info(category["sharepoint_site"], headers)
        target_sites_to_scan = [root_site_obj] if root_site_obj else []
    else:
        print(f"🏢 Recursive Discovery Mode Active ('include_subsites': True)")
-       target_sites_to_scan = get_all_subsites_recursive(CONFIG_Sharepoint_Sites, headers)
+       target_sites_to_scan = get_all_subsites_recursive(category["sharepoint_site"], headers)
    ```
 
-2. **Sharded Category Metadata Output:**
+3. **Sharded Category Metadata Output:**
    Direct every category job to write its local metadata strictly to its category shard:
    ```python
-   category_prefix = req_data.get("gcs_destination_prefix", params.get("CONFIG_GCS_Prefix", ""))
+   category_prefix = category.get("gcs_destination_prefix", "")
    local_shard_path = f"gs://{CONFIG_GCS_Bucket}/{category_prefix.rstrip('/')}/config/metadata_part.jsonl" if category_prefix else f"gs://{CONFIG_GCS_Bucket}/config/metadata_part.jsonl"
    # Write metadata shard with 100% preservation of id, structData.sharepoint_url, and structData.source_url
    upload_to_gcs_atomic(local_shard_path, metadata_lines_buffer)
    ```
 
-3. **Atomic Master Aggregator (`combine_metadata_shards`):**
-   Execute at the end of `main.py` when any category run completes:
+4. **Atomic Master Aggregator (`combine_metadata_shards`):**
+   Execute at the very end of `main.py` after the master loop completes all categories:
    ```python
    def combine_metadata_shards(bucket_name):
        print(f"⚡ Master Metadata Aggregator: Combining all category shards into root config/metadata.jsonl...")
@@ -183,13 +194,13 @@ Modify the discovery logic inside `cf-sharepoint/main.py` to support `include_su
 ---
 
 ### [Component 3: Verification & Runbook Hygiene]
-Ensure all operational scripts support Category-Based dispatching.
+Ensure all operational scripts support Option 1 Master Loop dispatching.
 
 #### [NEW] `deploy/deploy_category_scheduler.sh`
-Helper script to deploy or update individual category cron jobs pointing to the universal Cloud Run container URL with `--message-body='{"category_id": "tier1-business"}'`.
+Helper script to deploy or check the single Option 1 Cloud Scheduler job (`yourorg-sharepoint-sync-daily`) pointing to the universal Cloud Run container URL.
 
 #### [NEW] `DO-SYNC-SELECTED-CATEGORY.md`
-Standardized copy-pasteable runbook for category execution, monitoring, and verification.
+Standardized copy-pasteable runbook for Option 1 master loop execution, single-category overrides (`--update-env-vars="TARGET_CATEGORY_ID=tier1-business"`), monitoring, and verification.
 
 ---
 
@@ -211,4 +222,4 @@ Standardized copy-pasteable runbook for category execution, monitoring, and veri
 2. **Pre-Flight Root Audit (`check_syncall_before.py --category=tier1-den-root-only`):**
    Verify that with `"include_subsites": false`, the root check finds exactly the 4,076 root items without crawling down into the 23 child departments.
 3. **Master Metadata Verification:**
-   Trigger two different category runs and verify via `gcloud storage cat gs://<YOUR-BUCKET>/config/metadata.jsonl | wc -l` that the unified master file contains the merged records from both categories with both `source_url` and `sharepoint_url` intact.
+   Run the master loop and verify via `gcloud storage cat gs://<YOUR-BUCKET>/config/metadata.jsonl | wc -l` that the unified master file contains the merged records from all categories with both `source_url` and `sharepoint_url` intact.

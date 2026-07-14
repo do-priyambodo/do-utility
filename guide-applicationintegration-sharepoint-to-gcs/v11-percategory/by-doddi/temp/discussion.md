@@ -84,7 +84,27 @@ To permanently solve the 20-minute discovery bottleneck and eliminate timeouts w
 
 ---
 
-## 4. 🚨 THE DUPLICATE CRAWL DILEMMA (`include_subsites: false`)
+## 4. ⭐ SELECTED OPERATIONAL MODEL: Option 1 (Single Master Scheduler Loop)
+
+Per user alignment (`Option 1 is better`), we standardize on **One Master Cloud Scheduler Job (`Option 1 — Single Loop`)** instead of deploying multiple separate scheduler cron jobs across the day.
+
+### How Option 1 Works in V11:
+1. **One Cloud Scheduler Job in GCP Console:** You maintain exactly **ONE** Cloud Scheduler cron job (`yourorg-sharepoint-sync-daily`) that triggers once a day or on your preferred schedule. Zero scheduler management clutter for the customer!
+2. **Sequential Category Loop in `main.py`:** When the container wakes up, `main.py` opens `sites-sync.json` and iterates through every category inside `categories[]` one by one:
+   * It runs Category 1 (`DEN Root Only` with `include_subsites: false`) $\rightarrow$ discovers items in 5s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/den-root/config/metadata_part.jsonl`.
+   * It runs Category 2 (`Business`) $\rightarrow$ discovers items in 15s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/business/config/metadata_part.jsonl`.
+   * It runs Category 3 (`Consumer`) $\rightarrow$ discovers items in 15s $\rightarrow$ syncs delta $\rightarrow$ writes shard `categories/consumer/config/metadata_part.jsonl`.
+   * *(And so on through the 6 category groups!)*
+3. **Master Metadata Aggregation at the Very End:** Once all categories in the loop have finished syncing, `main.py` executes `combine_metadata_shards()` ONCE right before exiting! That combines all sharded files into one master `gs://<bucket>/config/metadata.jsonl` containing all 38,823 items for Vertex AI Search (`AgentAssist`).
+4. **Optional Single-Category On-Demand Overrides:** If Janice *ever* needs an urgent 2-minute sync for JUST ONE category (e.g. HR just updated 20 urgent SOPs at 3:00 PM), she can still pass an override parameter:
+   ```bash
+   gcloud run jobs execute <YOUR-JOB-NAME> --update-env-vars="TARGET_CATEGORY_ID=tier1-business"
+   ```
+   If `TARGET_CATEGORY_ID` is present, `main.py` runs ONLY that category and skips the loop! If absent, `main.py` runs the full master loop!
+
+---
+
+## 5. 🚨 THE DUPLICATE CRAWL DILEMMA (`include_subsites: false`)
 
 When separating `sites/DEN` (the root portal) from its child departments (`sites/DEN/Consumer`, `sites/DEN/Business`, etc.) inside a Category Matrix, we face a critical architectural challenge with our legacy V10 discovery loop:
 
@@ -102,7 +122,7 @@ What `get_all_subsites_recursive()` does:
 If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites/DEN/Consumer`), and Category 3 (`sites/DEN/Business`):
 * When Category 2 (`Consumer`) runs, it syncs **8,256 items**.
 * When Category 3 (`Business`) runs, it syncs **9,599 items**.
-* But when Category 1 (`sites/DEN Root Portal`) runs, `get_all_subsites_recursive()` will automatically traverse downwards into `Consumer` and `Business` all over again, attempting to sync **all 38,823 items** across the entire tenant!
+* But when Category 1 (`sites/DEN Root Portal`) runs in the master loop, `get_all_subsites_recursive()` will automatically traverse downwards into `Consumer` and `Business` all over again, attempting to sync **all 38,823 items** across the entire tenant!
 * **Result:** Extreme duplication of GCS objects, wasted API bandwidth, and redundant file processing!
 
 ---
@@ -111,9 +131,7 @@ If we create `sites-sync.json` with Category 1 (`sites/DEN`), Category 2 (`sites
 
 To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v11-percategory`** to support a new parameter/flag: `"include_subsites"` (or `"recursive"`), defaulting to `true` for backward compatibility, but allowing `false` when targeting root site collections that have separate child category jobs.
 
-#### How It Works:
-We add `"include_subsites"` to our category entries inside `sites-sync.json` (or `parameters.json`):
-
+#### How It Works in `sites-sync.json` (Notice zero `cron_schedule` needed per Option 1):
 ```json
 {
   "categories": [
@@ -123,8 +141,7 @@ We add `"include_subsites"` to our category entries inside `sites-sync.json` (or
       "sharepoint_site": "sites/DEN",
       "include_subsites": false,        <-- 🚨 PREVENTS DOWNWARD CRAWL INTO CHILD DEPARTMENTS!
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/den-root/",
-      "cron_schedule": "0 0 * * *"
+      "gcs_destination_prefix": "categories/den-root/"
     },
     {
       "category_id": "tier1-business",
@@ -132,8 +149,7 @@ We add `"include_subsites"` to our category entries inside `sites-sync.json` (or
       "sharepoint_site": "sites/DEN/Business",
       "include_subsites": true,         <-- Crawls Business + any sub-teams inside Business
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/business/",
-      "cron_schedule": "0 2 * * *"
+      "gcs_destination_prefix": "categories/business/"
     },
     {
       "category_id": "tier1-consumer",
@@ -141,8 +157,7 @@ We add `"include_subsites"` to our category entries inside `sites-sync.json` (or
       "sharepoint_site": "sites/DEN/Consumer",
       "include_subsites": true,         <-- Crawls Consumer + any sub-teams inside Consumer
       "sharepoint_library": "Documents",
-      "gcs_destination_prefix": "categories/consumer/",
-      "cron_schedule": "0 4 * * *"
+      "gcs_destination_prefix": "categories/consumer/"
     }
   ]
 }
@@ -179,11 +194,6 @@ A critical enterprise requirement for Vertex AI Search (`AgentAssist`) is that *
 
 Furthermore, each line of `metadata.jsonl` **must maintain both `source_url` (pointing to GCS for text extraction) and `sharepoint_url` (pointing to M365 for chatbot citation hyperlinks)**.
 
-### The Problem with Concurrent Writes
-If Category 1 (`Business`) and Category 2 (`Consumer`) run at different times or concurrently, and both try to overwrite the single root `gs://<bucket>/config/metadata.jsonl` directly during their sync loop, we risk:
-1. **Lost Writes / Race Conditions:** One category overwrites and erases the metadata of the other category!
-2. **O(n) Rewriting Bottlenecks:** Re-downloading and rewriting a 38,000-line JSONL file after every single file sync slows down the crawler.
-
 ### ⭐ The Solution: Sharded Category Metadata + Automatic Master Aggregator (`combine_metadata_shards`)
 
 To solve this cleanly with **zero race conditions and 100% metadata preservation**, V11 implements a **Sharded Write + Atomic Master Aggregation** architecture:
@@ -195,14 +205,14 @@ To solve this cleanly with **zero race conditions and 100% metadata preservation
  ├── categories/consumer/config/metadata_part.jsonl   <-- Shard 2 (Written by Consumer job: 8,256 lines)
  ├── categories/den-root/config/metadata_part.jsonl   <-- Shard 3 (Written by DEN Root job: 4,076 lines)
  │
- └── ⚡ combine_metadata_shards() (Executes automatically at end of any job run)
+ └── ⚡ combine_metadata_shards() (Executes automatically once when the master category loop completes)
       │
       ▼
  📂 config/metadata.jsonl                             <-- Master Unified Catalog (All 38,823 lines for Vertex AI!)
 ```
 
 #### 1. Sharded Category Writes During the Sync Loop
-When each category job (`Business`, `Consumer`, etc.) runs, it writes and updates **only its own sharded metadata file** inside its category folder:
+When each category inside the loop (`Business`, `Consumer`, etc.) runs, it updates **only its own sharded metadata file** inside its category folder:
 * `Business` updates `gs://<bucket>/categories/business/config/metadata_part.jsonl`
 * `Consumer` updates `gs://<bucket>/categories/consumer/config/metadata_part.jsonl`
 
@@ -221,21 +231,12 @@ When each category job (`Business`, `Consumer`, etc.) runs, it writes and update
 ```
 
 #### 2. Automatic Master Aggregation Step (`combine_metadata_shards`)
-At the very end of `main.py` inside `v11-percategory` (after a category finishes downloading its delta files), `main.py` automatically executes a fast 3-second **Master Aggregation Function**:
+At the very end of `main.py` inside `v11-percategory` (after the loop finishes all categories), `main.py` automatically executes a fast 3-second **Master Aggregation Function**:
 1. **List all shards:** Queries GCS for `gs://<bucket>/categories/*/config/metadata_part.jsonl` (plus any legacy root `config/metadata.jsonl`).
 2. **In-Memory Merge & Deduplication:** Streams and combines all lines into a single master dictionary in memory (`O(1)` deduplication by `id` / `source_url`).
 3. **Atomic Master Upload:** Uploads the combined master file directly to **`gs://<bucket>/config/metadata.jsonl`**!
 
 #### 🚀 Why This Master Aggregator Strategy Is Perfect for Vertex AI:
-* **One Single Source of Truth:** Vertex AI Search (`gcs_store`) points strictly to `gs://<bucket>/config/metadata.jsonl`. Whenever any department finishes a sync, `metadata.jsonl` is immediately refreshed containing **100% of all items across every department**!
+* **One Single Source of Truth:** Your Vertex AI Data Store (`gcs_store`) points strictly to `gs://<bucket>/config/metadata.jsonl`. Whenever the loop finishes, `metadata.jsonl` is immediately refreshed containing **100% of all items across every department**!
 * **100% Citation Link Preservation:** Both `source_url` (where Vertex AI reads the PDF content in GCS) and `sharepoint_url` (where the `AgentAssist` chatbot generates clickable M365 URLs for human agents) are perfectly preserved for every single item!
-* **Zero Race Conditions:** Because each category writes strictly to its own `metadata_part.jsonl` shard during the heavy traversal loop, department syncs can run concurrently without ever locking or corrupting the master file!
-
----
-
-## 7. Next Steps & Action Plan for Preparation
-
-1. **Align on Option 2 vs Option 1:** Confirm with the project team tomorrow that the **Rich Category Matrix (`Option 2`)** is the preferred schema for the AI knowledge base.
-2. **Draft the Initial `sites-sync.json` Matrix:** Identify the top 3 to 5 high-priority departments or subsite paths from the `DEN` hierarchy to include in the initial V11 launch.
-3. **Refine `main.py` to Support `sites-sync.json` & `include_subsites`:** Update the discovery engine so that if `sites-sync.json` exists, it iterates over `categories[]` and applies the specific `gcs_destination_prefix`, `sharepoint_library`, and `include_subsites` overrides dynamically.
-4. **Implement `combine_metadata_shards()`:** Add the atomic master aggregator helper to `main.py` to ensure Vertex AI Search always has a fresh, unified 38,823-line `metadata.jsonl` catalog at the root!
+* **Zero Race Conditions:** Because each category writes strictly to its own `metadata_part.jsonl` shard during the loop, category writes are 100% isolated and safe!
