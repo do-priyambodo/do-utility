@@ -134,6 +134,7 @@ To prevent this duplication, **we MUST update `cf-sharepoint/main.py` inside `v1
 #### How It Works in `sites-sync.json`:
 ```json
 {
+  "root_portal_site": "sites/DEN",
   "categories": [
     {
       "category_id": "tier1-den-root-only",

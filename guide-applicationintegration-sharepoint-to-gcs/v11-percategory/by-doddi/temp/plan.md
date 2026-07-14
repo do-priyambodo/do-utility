@@ -29,12 +29,13 @@ The V11 Category-Based Synchronization architecture (`v11-percategory`) transiti
 
 Group files by component and order logically. Separate components with horizontal rules for visual clarity.
 
-### [Component 1: Dynamic Category Configuration & Schema (`Option 1 Clean Loop`)]
-Decouple `parameters.json` and introduce `sites-sync.json` with the 3-Tier Sharding Matrix (standardizing on `"sharepoint_library": "all"`).
+### [Component 1: Dynamic Category Configuration & Schema (`Option 1 Clean Loop + Root Portal Header`)]
+Decouple `parameters.json` and introduce `sites-sync.json` with the top-level `"root_portal_site"` property and 3-Tier Sharding Matrix.
 
 #### [NEW] `config/sites-sync.json`
 ```json
 {
+  "root_portal_site": "sites/DEN",
   "categories": [
     {
       "category_id": "tier1-den-root-only",
@@ -195,8 +196,11 @@ Modify the discovery logic inside `cf-sharepoint/main.py` to support `Option 1 M
 
 ---
 
-### [Component 3: Verification & Runbook Hygiene (`check_syncall_before/after`)]
-Ensure all operational scripts and diagnostic checks (`check_syncall_before.py` and `check_syncall_after.py`) support Category-Based dispatching and serial memory isolation.
+### [Component 3: Verification & Runbook Hygiene (`discover_categories`, `check_syncall_before/after`)]
+Ensure all operational scripts and diagnostic checks support Category-Based dispatching, fast discovery, and serial memory isolation.
+
+#### [NEW] `check/discover_categories.py`
+Lightweight 2-second utility that opens `sites-sync.json`, reads `"root_portal_site": "sites/DEN"` (or accepts `--root=sites/DEN`), connects via Graph API (`/v1.0/sites/{root_id}/subsites`), and lists every child department without counting files/pages.
 
 #### [MODIFY] `check/check_syncall_before.py` & `check/check_syncall_after.py`
 Update both verification scripts to load `sites-sync.json` and support two execution modes:
@@ -218,9 +222,11 @@ Update both verification scripts to load `sites-sync.json` and support two execu
    ```
 
 ### Manual Verification
-1. **Pre-Flight Category Audit (`check_syncall_before.py --category=tier1-business`):**
+1. **Fast Category Discovery (`discover_categories.py`):**
+   Run `python3 check/discover_categories.py` and verify it prints all 23 child departments inside **<3 seconds** without counting files.
+2. **Pre-Flight Category Audit (`check_syncall_before.py --category=tier1-business`):**
    Verify that Microsoft Graph API resolves only `sites/DEN/Business` and finishes discovery in **<15 seconds** with zero duplicate counts from `Consumer`.
-2. **Pre-Flight Root Audit (`check_syncall_before.py --category=tier1-den-root-only`):**
+3. **Pre-Flight Root Audit (`check_syncall_before.py --category=tier1-den-root-only`):**
    Verify that with `"include_subsites": false`, the root check finds exactly the 4,076 root items without crawling down into the 23 child departments.
-3. **Master Metadata Verification:**
+4. **Master Metadata Verification:**
    Run the master loop and verify via `gcloud storage cat gs://<YOUR-BUCKET>/config/metadata.jsonl | wc -l` that the unified master file contains the merged records from all categories with both `source_url` and `sharepoint_url` intact.
