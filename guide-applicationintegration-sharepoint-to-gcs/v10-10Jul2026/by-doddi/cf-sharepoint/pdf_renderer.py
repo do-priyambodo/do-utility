@@ -10,53 +10,57 @@ try:
 except ImportError:
     BeautifulSoup = None
 
-# Concurrency guard & Persistent Singleton Chromium Browser Engine for Cloud Run
+# Concurrency guard & Thread-Local Persistent Chromium Browser Engine for Cloud Run
 _PLAYWRIGHT_SEMAPHORE = threading.Semaphore(4)
-_BROWSER_LOCK = threading.Lock()
-_PLAYWRIGHT_INSTANCE = None
-_CHROMIUM_BROWSER = None
+_THREAD_LOCAL = threading.local()
 
 def get_persistent_browser(force_restart=False):
     """
-    Returns or initializes the persistent Singleton Chromium browser instance.
-    Ensures exactly ONE browser is launched per Cloud Run container lifecycle,
-    preventing Linux PID table wraparound (Signal 5 / SIGTRAP) and /dev/shm crashes.
-    If force_restart is True or browser is disconnected, cleanly recycles the browser engine.
+    Returns or initializes a persistent, thread-local Chromium browser instance.
+    Because Python's playwright.sync_api uses greenlets that are strictly bound to the
+    creating thread, sharing a Browser object across multiple ThreadPoolExecutor worker
+    threads raises 'greenlet.error: cannot switch to a different thread'.
+    Using threading.local() ensures every worker thread gets its own isolated, persistent
+    Chromium engine that is reused across thousands of pages without cross-thread violations.
     """
-    global _PLAYWRIGHT_INSTANCE, _CHROMIUM_BROWSER
-    with _BROWSER_LOCK:
-        if force_restart and _CHROMIUM_BROWSER is not None:
+    if force_restart and getattr(_THREAD_LOCAL, 'browser', None) is not None:
+        try:
+            _THREAD_LOCAL.browser.close()
+        except Exception:
+            pass
+        _THREAD_LOCAL.browser = None
+        if getattr(_THREAD_LOCAL, 'playwright', None) is not None:
             try:
-                _CHROMIUM_BROWSER.close()
+                _THREAD_LOCAL.playwright.stop()
             except Exception:
                 pass
-            _CHROMIUM_BROWSER = None
+            _THREAD_LOCAL.playwright = None
 
-        if _CHROMIUM_BROWSER is None or not _CHROMIUM_BROWSER.is_connected():
-            from playwright.sync_api import sync_playwright
-            if _PLAYWRIGHT_INSTANCE is None:
-                _PLAYWRIGHT_INSTANCE = sync_playwright().start()
-            _CHROMIUM_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
-                headless=True,
-                timeout=30000,
-                args=[
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-gpu",
-                    "--no-zygote",
-                    "--single-process",
-                    "--disable-extensions",
-                    "--disable-background-networking",
-                    "--disable-default-apps",
-                    "--disable-sync",
-                    "--hide-scrollbars",
-                    "--metrics-recording-only",
-                    "--mute-audio",
-                    "--no-first-run"
-                ]
-            )
-        return _CHROMIUM_BROWSER
+    if getattr(_THREAD_LOCAL, 'browser', None) is None or not getattr(_THREAD_LOCAL, 'browser').is_connected():
+        from playwright.sync_api import sync_playwright
+        if getattr(_THREAD_LOCAL, 'playwright', None) is None:
+            _THREAD_LOCAL.playwright = sync_playwright().start()
+        _THREAD_LOCAL.browser = _THREAD_LOCAL.playwright.chromium.launch(
+            headless=True,
+            timeout=30000,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--no-zygote",
+                "--single-process",
+                "--disable-extensions",
+                "--disable-background-networking",
+                "--disable-default-apps",
+                "--disable-sync",
+                "--hide-scrollbars",
+                "--metrics-recording-only",
+                "--mute-audio",
+                "--no-first-run"
+            ]
+        )
+    return _THREAD_LOCAL.browser
 
 def strip_complex_css_for_pdf(html_string, fallback_title="SharePoint Page"):
     safe_title = html.escape(str(fallback_title))
