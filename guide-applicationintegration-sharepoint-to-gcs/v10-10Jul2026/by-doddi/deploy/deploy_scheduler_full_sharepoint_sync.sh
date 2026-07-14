@@ -53,7 +53,7 @@ print(json.dumps(payload))
 ")
 
 echo "🔍 Setting Cloud Run Job execution URI dynamically for '${FUNCTION_NAME}'..."
-FUNCTION_URL="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}:run"
+FUNCTION_URL="https://run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${LOCATION}/jobs/${FUNCTION_NAME}:run"
 
 echo "⏰ Creating or updating Cloud Scheduler job '${SCHEDULER_JOB_NAME}' pointing to Cloud Run Job '${FUNCTION_NAME}'..."
 if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
