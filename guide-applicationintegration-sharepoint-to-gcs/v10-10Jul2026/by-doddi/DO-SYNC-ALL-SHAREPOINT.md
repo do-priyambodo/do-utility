@@ -206,8 +206,8 @@ python3 check/check_syncall_before.py
 
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
-### Option A: Cloud Scheduler (Recommended Unattended Production Execution)
-Trigger your deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
+### Option A: Cloud Scheduler Trigger (`Recommended to Verify Cron Pipeline`)
+Use this option to test your Cloud Scheduler connection. When you run this command, you force Cloud Scheduler to trigger on-demand as if the scheduled time (e.g., 11:00 PM or hourly cron) has arrived. This verifies that your automated cron trigger has the correct OAuth IAM permissions and payload headers to successfully wake up the Cloud Run Job:
 
 ```bash
 gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))") \
@@ -215,8 +215,8 @@ gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('param
   --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
 
-### Option B: Cloud Run Job Execution (`24-Hour Continuous One-Shot Traversal`)
-Trigger the 24-Hour Cloud Run Job directly from your terminal to run continuously in the background right now for up to 24 hours without any 60-minute HTTP timeout limit:
+### Option B: Direct Cloud Run Job Execution (`Recommended for On-Demand Sync`)
+Use this option when you want to bypass Cloud Scheduler and launch the 24-Hour Cloud Run Job directly from your terminal immediately. This is the fastest, cleanest way for an administrator or engineer to start a one-shot sync on-demand right after deployment or after updating configurations:
 
 ```bash
 gcloud run jobs execute "${FUNCTION_NAME}" \
@@ -224,8 +224,8 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
   --project="${PROJECT_ID}"
 ```
 
-### Option C: Interactive Python Runner (Manual Debug & Console Tracking)
-Runs the complete synchronization interactively in your terminal shell:
+### Option C: Interactive Python Runner (`Manual Debug & Local Terminal Tracking`)
+Runs the complete synchronization interactively right on your local machine/terminal shell:
 
 ```bash
 python3 sync/sync_sharepoint_to_gcs.py
