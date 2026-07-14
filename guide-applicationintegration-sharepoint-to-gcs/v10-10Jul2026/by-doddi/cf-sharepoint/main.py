@@ -32,8 +32,13 @@ def main(request):
         pass
     start_time = time.time()
     max_execution_seconds = 3300  # 55 minutes Wall-Clock safety circuit breaker (< 3600s Cloud Run ceiling)
-    # 1. Parse JSON payload or query parameters
-    req_data = request.get_json(silent=True) or {}
+    # 1. Parse JSON payload or query parameters (null-safe for direct Cloud Run Job invocation where request=None)
+    req_data = {}
+    if request is not None and hasattr(request, "get_json"):
+        try:
+            req_data = request.get_json(silent=True) or {}
+        except Exception:
+            pass
     
     # Load parameters.json if it exists in local context
     params = {}
