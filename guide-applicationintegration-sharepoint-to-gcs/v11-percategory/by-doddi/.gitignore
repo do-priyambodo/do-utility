@@ -1,2 +1,4 @@
 .agentwork/
 temp/
+*hideme*
+hideme/
