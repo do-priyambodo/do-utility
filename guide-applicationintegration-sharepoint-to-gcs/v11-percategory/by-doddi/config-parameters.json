@@ -23,5 +23,7 @@
   "CONFIG_Datastore_Id": "doddi-sharepoint-gcs-datastore_1782668342491_gcs_store",
   "CONFIG_Datastore_Location": "global",
   "CONFIG_Developer_Group_Or_User": "user:admin@priyambodo.altostrat.com",
-  "CONFIG_PDF_Conversion_Engine": "playwright"
+  "CONFIG_PDF_Conversion_Engine": "playwright",
+  "CONFIG_Max_Execution_Seconds": 86400,
+  "CONFIG_Max_Discovery_Seconds": 86400
 }
