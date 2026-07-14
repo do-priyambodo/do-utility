@@ -42,3 +42,32 @@ def validate_parameters(params: Dict[str, Any]) -> Dict[str, Any]:
     params.setdefault("CONFIG_PDF_Conversion_Engine", "playwright")
 
     return params
+
+CATEGORY_SCHEMA = {
+    "type": "object",
+    "required": ["category_id", "display_name", "sharepoint_site", "gcs_destination_prefix"],
+    "properties": {
+        "category_id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "display_name": {"type": "string"},
+        "sharepoint_site": {
+            "anyOf": [
+                {"type": "string"},
+                {"type": "array", "items": {"type": "string"}}
+            ]
+        },
+        "include_subsites": {"type": "boolean"},
+        "sharepoint_library": {"type": "string"},
+        "gcs_destination_prefix": {"type": "string"},
+        "order_to_sync": {"type": "integer"}
+    }
+}
+
+def validate_category_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Validates V11 per-category configuration structure and sorts categories by order_to_sync.
+    """
+    if not isinstance(config, dict) or "categories" not in config:
+        return config
+    if isinstance(config["categories"], list):
+        config["categories"] = sorted(config["categories"], key=lambda c: c.get("order_to_sync", 9999) if isinstance(c, dict) else 9999)
+    return config

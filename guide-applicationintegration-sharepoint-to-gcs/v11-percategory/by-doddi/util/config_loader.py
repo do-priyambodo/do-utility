@@ -30,6 +30,8 @@ def load_sites_sync_config(params: Optional[Dict[str, Any]] = None) -> Dict[str,
                 with open(p, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, dict) and "categories" in data:
+                        if isinstance(data["categories"], list):
+                            data["categories"] = sorted(data["categories"], key=lambda c: c.get("order_to_sync", 9999) if isinstance(c, dict) else 9999)
                         return data
             except Exception as e:
                 print(f"Warning: Could not parse local {p}: {e}")
@@ -48,6 +50,8 @@ def load_sites_sync_config(params: Optional[Dict[str, Any]] = None) -> Dict[str,
                         content = blob.download_as_text()
                         data = json.loads(content)
                         print(f"✅ Loaded config-category.json from gs://{bucket_name}/{gcs_path}")
+                        if isinstance(data, dict) and "categories" in data and isinstance(data["categories"], list):
+                            data["categories"] = sorted(data["categories"], key=lambda c: c.get("order_to_sync", 9999) if isinstance(c, dict) else 9999)
                         return data
             except Exception as e:
                 print(f"Warning: Could not fetch config-category.json from GCS bucket {bucket_name}: {e}")
