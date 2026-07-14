@@ -77,113 +77,17 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 Before deploying to Cloud Run, run this exact dynamic one-liner in your terminal to pull the latest release tag and verify in 2 seconds that your local repository and `pdf_renderer.py` have 100% parity with our verified Playwright-exclusive release:
 
 ```bash
-git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, subprocess; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); tag = subprocess.getoutput('git describe --tags --abbrev=0 2>/dev/null') or 'latest'; commit = subprocess.getoutput('git rev-parse --short HEAD 2>/dev/null') or 'unknown'; print(f'✅ VERIFIED: Your local app is 100% identical to {tag} (Commit {commit}) with 0 syntax or legacy library errors.')"
-```
-
----
-
-## Step 4: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
+git pull origin main --tags && git log -1 --oneline && python3 -c "import ast, subprocess; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); tag = subprocess.getoutput('git describe --tags --abbrev=0 2>/dev/null') or 'latest'; commit = subprocess.getoutput('git rev-parse --short HEAD 2>/dev/null') or 'unknown'; print(f'✅ VERIFIED: Your local app is 100% identical to {tag} (Commit {commit}) with 0 syntax or legacy library errors.')## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`8 GiB / 4 vCPUs / 24-Hour Timeout`)
 
 > [!IMPORTANT]
-> **Revision 00025 Architectural Sizing (`100% Playwright Chromium Exclusive`)**
-> Our backend runs a **Persistent Singleton Chromium Browser Pool** (`get_persistent_browser()`) protected by thread locks (`_BROWSER_LOCK`). Instead of launching a new browser per page and wrapping around the Linux PID counter at 65,536 (`Uncaught signal: 5 / SIGTRAP`), exactly **ONE Chromium browser (`4–6 PIDs total`)** runs across the entire 60-minute container lifecycle. It converts all `.aspx` layouts cleanly in a 3-Stage Playwright Chromium hierarchy (`0.1s/page`) without any third-party PDF libraries.
+> **Revision 00026 Architectural Sizing (`24-Hour Cloud Run Job & Playwright Chromium Pool`)**
+> Our backend runs as a **Google Cloud Run Job** (`batch processing engine`) rather than a Web Service, completely bypassing Google's 60-minute HTTP timeout ceiling so that large-scale enterprise traversals (**100,000+ assets**) can run continuously inside a single container for up to **24 hours (`86,400s`)** straight. Furthermore, it enforces a **Persistent Singleton Chromium Browser Pool** (`get_persistent_browser()`) protected by thread locks (`_BROWSER_LOCK`) with strict `--tasks=1` (zero sharding). This converts all `.aspx` layouts cleanly (`~0.1s/page`) while maintaining a polite, steady 10-thread flow rate (`10-15 items/sec`) that keeps Microsoft Graph API and SharePoint Online 100% stable without triggering `HTTP 429` tenant-wide throttling.
 
-Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service and apply Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **3600s timeout**) so complex `.aspx` pages render without memory limits:
+Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **86,400s timeout**):
 
 ```bash
-# 1. Build & Deploy the high-fidelity Playwright container service
+# 1. Build & Deploy the high-fidelity 24-hour Playwright Cloud Run Job
 ./deploy/deploy_cloud_run.sh
-
-# 2. Apply Enterprise 8 GiB Memory / 4 vCPUs / 60-Minute (1-Hour) Timeout / Startup CPU Boost Sizing
-gcloud run services update "${FUNCTION_NAME}" \
-  --region="${LOCATION}" \
-  --memory=8192Mi \
-  --cpu=4 \
-  --timeout=3600 \
-  --cpu-boost
-
-# 3. Grant invoker IAM permissions (with auto-retry fallback for Google Cloud Identity groups vs users)
-if [[ "${DEV_MEMBER}" == "group:"* ]]; then
-  gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}" || \
-  gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="user:${DEV_MEMBER#group:}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-else
-  gcloud run services add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-fi
-```
-
-### Step 4.B: (Alternative for 100,000+ Assets) Deploy as a Google Cloud Run Job (`24-Hour Continuous One-Shot Sync`)
-
-If you have a massive enterprise repository (**100,000+ to 500,000+ assets**) and want the entire traversal to run continuously inside a single container **from start to finish without waiting 1 hour for the next scheduled cron cycle**, deploy our exact same codebase as a **Google Cloud Run Job** instead of a Web Service. 
-
-Cloud Run Jobs (`batch processing engines`) are not subject to the 60-minute HTTP handler ceiling and can run continuously for up to **24 hours (`86,400 seconds`)**. We strictly set `--tasks=1` (`zero sharding`) to ensure our 10-thread connection pool converts assets steadily (`~10-15 items/sec`), keeping Microsoft Graph API and SharePoint Online 100% stable without triggering `HTTP 429` tenant-wide throttling:
-
-```bash
-# 1. Copy context parameters for Docker build
-cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true && [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
-
-# 2. Build and create the 24-Hour Continuous Cloud Run Job (Single-Instance / Zero Sharding)
-gcloud run jobs create "${FUNCTION_NAME}-job" \
-  --source=./cf-sharepoint \
-  --region="${LOCATION}" \
-  --tasks=1 \
-  --max-retries=0 \
-  --task-timeout=86400s \
-  --memory=8192Mi \
-  --cpu=4 \
-  --service-account="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}" || \
-gcloud run jobs update "${FUNCTION_NAME}-job" \
-  --source=./cf-sharepoint \
-  --region="${LOCATION}" \
-  --tasks=1 \
-  --max-retries=0 \
-  --task-timeout=86400s \
-  --memory=8192Mi \
-  --cpu=4 \
-  --service-account="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}"
-
-# 3. Grant Job Execution IAM permissions (roles/run.invoker) to Cloud Scheduler Service Account & Developer Member
-gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
-  --region="${LOCATION}" \
-  --member="serviceAccount:${SERVICE_ACCOUNT}" \
-  --role="roles/run.invoker" \
-  --project="${PROJECT_ID}"
-
-if [[ "${DEV_MEMBER}" == "group:"* ]]; then
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}" || \
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
-    --region="${LOCATION}" \
-    --member="user:${DEV_MEMBER#group:}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-else
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}-job" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-fi
-
-# 4. Clean up local Docker context copy
-rm -f cf-sharepoint/parameters.json && [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true && [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
-echo "✅ Cloud Run Job (${FUNCTION_NAME}-job) deployed with 24-hour continuous timeout and full IAM execution permissions!"
 ```
 
 ---
@@ -200,35 +104,10 @@ python3 deploy/deploy_workflows.py
 
 ## Step 6: Deploy Cloud Scheduler Automated Trigger Job
 
-Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that links your configured cron schedule (`CONFIG_Scheduler_Cron_Schedule`) to the deployed Cloud Run Playwright service with full OIDC authentication (`roles/run.invoker`):
+Deploy the automated Cloud Scheduler job (`doddi-sharepoint-sync-hourly`) that links your configured cron schedule (`CONFIG_Scheduler_Cron_Schedule`) directly to our deployed 24-Hour Cloud Run Job (`jobs/...:run`) with full OAuth authentication:
 
 ```bash
 ./deploy/deploy_scheduler_full_sharepoint_sync.sh
-```
-
-### Step 6.B: (Alternative for Step 4.B Cloud Run Job) Deploy Daily 11 PM Malaysia Time Scheduler Trigger
-
-If you deployed the alternative 24-Hour Cloud Run Job in **Step 4.B** and want it to run automatically **once every day at exactly 11:00 PM Malaysia Time (`Asia/Kuala_Lumpur`)**, deploy this dedicated Cloud Scheduler trigger pointing to the Job execution API (`jobs/...:run`):
-
-```bash
-gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}-job" \
-  --location="${LOCATION}" \
-  --schedule="0 23 * * *" \
-  --time-zone="Asia/Kuala_Lumpur" \
-  --uri="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}-job:run" \
-  --http-method=POST \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}" || \
-gcloud scheduler jobs update http "${SCHEDULER_JOB_NAME}-job" \
-  --location="${LOCATION}" \
-  --schedule="0 23 * * *" \
-  --time-zone="Asia/Kuala_Lumpur" \
-  --uri="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}-job:run" \
-  --http-method=POST \
-  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}"
-
-echo "✅ Cloud Scheduler Job (${SCHEDULER_JOB_NAME}-job) scheduled for every day at 11:00 PM Malaysia Time!"
 ```
 
 ---
@@ -262,25 +141,25 @@ Initiate the full enterprise synchronization (`100,000+ assets`). Standard regul
 Trigger your deployed Cloud Scheduler cron job (`doddi-sharepoint-sync-hourly`):
 
 ```bash
-gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'full-sharepoint-sync'))") \
+gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))") \
   --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") \
   --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
 
-### Option B: Interactive Python Runner (Manual Debug & Console Tracking)
+### Option B: Cloud Run Job Execution (`24-Hour Continuous One-Shot Traversal`)
+Trigger the 24-Hour Cloud Run Job directly from your terminal to run continuously in the background right now for up to 24 hours without any 60-minute HTTP timeout limit:
+
+```bash
+gcloud run jobs execute "${FUNCTION_NAME}" \
+  --region="${LOCATION}" \
+  --project="${PROJECT_ID}"
+```
+
+### Option C: Interactive Python Runner (Manual Debug & Console Tracking)
 Runs the complete synchronization interactively in your terminal shell:
 
 ```bash
 python3 sync/sync_sharepoint_to_gcs.py
-```
-
-### Option C: Cloud Run Job Execution (`24-Hour Continuous One-Shot Traversal`)
-If you deployed the alternative Cloud Run Job in **Step 4.B**, trigger the job to run continuously in the background right now for up to 24 hours without any 60-minute HTTP timeout limit:
-
-```bash
-gcloud run jobs execute "${FUNCTION_NAME}-job" \
-  --region="${LOCATION}" \
-  --project="${PROJECT_ID}"
 ```
 
 > [!TIP]

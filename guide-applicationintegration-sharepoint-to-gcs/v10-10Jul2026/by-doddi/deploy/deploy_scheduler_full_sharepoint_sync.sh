@@ -52,18 +52,10 @@ payload = {
 print(json.dumps(payload))
 ")
 
-echo "🔍 Resolving Cloud Run Service / Cloud Function URL dynamically for '${FUNCTION_NAME}'..."
-FUNCTION_URL=$(gcloud run services describe "${FUNCTION_NAME}" --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(status.url)" 2>/dev/null || true)
-if [ -z "$FUNCTION_URL" ]; then
-  FUNCTION_URL=$(gcloud functions describe "${FUNCTION_NAME}" --gen2 --region="${LOCATION}" --project="${PROJECT_ID}" --format="value(serviceConfig.uri)" 2>/dev/null || true)
-fi
+echo "🔍 Setting Cloud Run Job execution URI dynamically for '${FUNCTION_NAME}'..."
+FUNCTION_URL="https://run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${FUNCTION_NAME}:run"
 
-if [ -z "$FUNCTION_URL" ]; then
-  echo "❌ Error: Could not resolve Cloud Run Service or Cloud Function URI. Is '${FUNCTION_NAME}' deployed?"
-  exit 1
-fi
-
-echo "⏰ Creating or updating Cloud Scheduler job '${SCHEDULER_JOB_NAME}'..."
+echo "⏰ Creating or updating Cloud Scheduler job '${SCHEDULER_JOB_NAME}' pointing to Cloud Run Job '${FUNCTION_NAME}'..."
 if gcloud scheduler jobs describe "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
   echo "🗑️ Deleting existing scheduler job..."
   gcloud scheduler jobs delete "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}" --quiet
@@ -75,11 +67,11 @@ gcloud scheduler jobs create http "${SCHEDULER_JOB_NAME}" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
   --message-body="${MESSAGE_BODY}" \
-  --oidc-service-account-email="${SERVICE_ACCOUNT}" \
-  --oidc-token-audience="${FUNCTION_URL}" \
+  --oauth-service-account-email="${SERVICE_ACCOUNT}" \
   --attempt-deadline=1800s \
   --max-retry-attempts=0 \
   --location="${LOCATION}" \
   --project="${PROJECT_ID}"
 
-echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active (Schedule: ${CRON_SCHEDULE})!"
+echo "🎉 Cloud Scheduler job '${SCHEDULER_JOB_NAME}' successfully created and active pointing to Job '${FUNCTION_NAME}' (Schedule: ${CRON_SCHEDULE})!"
+
