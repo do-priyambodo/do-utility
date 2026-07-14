@@ -1,16 +1,5 @@
 # 🚀 Version 11 (`v11-percategory`) Enterprise Per-Category Synchronization Guide (`DO-SYNC-SELECTED-CATEGORY.md`)
 
-> [!IMPORTANT]
-> **Version 11 Production Milestone: Per-Category Sharded Architecture & Option 1 Master Loop**
-> This exact release (`V11 Per-Category`) is our hardened, production-verified release designed to cleanly handle massive enterprise SharePoint topologies (`38,800+ assets across 23+ subsite departments`). It incorporates all historical resilience fixes (`_THREAD_LOCAL` greenlet isolation, VPC-SC immune `--async` builds, and 24-hour continuous Cloud Run Jobs) while introducing three critical structural upgrades:
-> * **Configuration Decoupling (`config/sites-sync.json`)**: Shards large enterprise site collections into manageable category tiers (`tier1-den-root-only`, `tier1-business`, `tier1-consumer`, `tier2-medium-departments`, etc.) targeting `"sharepoint_library": "all"`.
-> * **Fast Subsite Discovery (`check/discover_categories.py`)**: Resolves all child subsite categories under any root portal in **<3 seconds** without crawling libraries or counting items.
-> * **Master Serial Category Loop & RAM Isolation**: `main.py` iterates sequentially over each category in `sites-sync.json`, wiping local memory buffers (`all_list.clear()`, `sync_list.clear()`, `target_sites.clear()`) after every category to guarantee O(1) memory safety (<8 GB Cloud Run limit).
-
-This comprehensive copy-paste production runbook covers the end-to-end V11 workflow: authenticating your account to GCP, validating your IAM credentials and `parameters.json`, discovering your categories, deploying our hardened Playwright Cloud Run backend, deploying Application Integration workflows, deploying the Option 1 Master Cloud Scheduler job, and executing pre/post-flight verification.
-
----
-
 ## Step 1: Authenticate Your Account to GCP (`Pre-Requirement`)
 
 Before running deployment or verification scripts, ensure your local terminal session is cleanly authenticated to Google Cloud SDK (`gcloud`) and Application Default Credentials (`ADC`):
