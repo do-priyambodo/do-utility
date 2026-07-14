@@ -31,11 +31,17 @@ if os.path.join(ROOT_DIR, "util") not in sys.path:
     sys.path.insert(0, os.path.join(ROOT_DIR, "util"))
 
 try:
-    from util.config_loader import load_sites_sync_config
+    from util.config_loader import load_sites_sync_config, is_category_active
 except ImportError:
     try:
-        from config_loader import load_sites_sync_config
+        from config_loader import load_sites_sync_config, is_category_active
     except ImportError:
+        def is_category_active(cat):
+            if not isinstance(cat, dict): return False
+            val = cat.get("active", True)
+            if isinstance(val, bool): return val
+            return str(val).strip().lower() not in ("no", "false", "0", "inactive", "disabled")
+
         def load_sites_sync_config(params=None):
             for p in ["config-category.json", "config/config-category.json", "../config-category.json", "../config/config-category.json"]:
                 if os.path.exists(p):
@@ -116,8 +122,9 @@ def main(request):
         categories_to_sync = [c for c in categories if c.get("category_id") == target_category_id]
         print(f"🎯 Single-Category Override Active: Running strictly for category '{target_category_id}' ({len(categories_to_sync)} matched)", flush=True)
     elif len(categories) > 0:
-        categories_to_sync = categories
-        print(f"🔄 Option 1 Master Loop Active: Sequentially running {len(categories_to_sync)} categories from config-category.json", flush=True)
+        categories_to_sync = [c for c in categories if is_category_active(c)]
+        skipped_count = len(categories) - len(categories_to_sync)
+        print(f"🔄 Option 1 Master Loop Active: Sequentially running {len(categories_to_sync)} active categories from config-category.json ({skipped_count} skipped/inactive)", flush=True)
     else:
         # Legacy fallback if config-category.json is empty
         legacy_site = req_data.get("site_name") or params.get("CONFIG_Sharepoint_Sites", "sites/DEN")
@@ -201,6 +208,9 @@ def main(request):
         # OPTION 1 MASTER SERIAL CATEGORY LOOP
         # ==============================================================================
         for cat_idx, category in enumerate(categories_to_sync, 1):
+            if not is_category_active(category) and not target_category_id:
+                print(f"⏭️ Skipping inactive category '{category.get('category_id')}' (active: no)...", flush=True)
+                continue
             cat_id = category.get("category_id", f"category-{cat_idx}")
             disp_name = category.get("display_name", cat_id)
             sharepoint_site_input = category.get("sharepoint_site", "sites/DEN")

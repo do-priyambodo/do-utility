@@ -35,8 +35,14 @@ except Exception:
     pass
 
 try:
-    from util.config_loader import load_sites_sync_config
+    from util.config_loader import load_sites_sync_config, is_category_active
 except ImportError:
+    def is_category_active(cat):
+        if not isinstance(cat, dict): return False
+        val = cat.get("active", True)
+        if isinstance(val, bool): return val
+        return str(val).strip().lower() not in ("no", "false", "0", "inactive", "disabled")
+
     def load_sites_sync_config(params=None):
         for p in ["config-category.json", "config/config-category.json", "../config-category.json"]:
             if os.path.exists(p):
@@ -286,6 +292,18 @@ def main():
     for idx, cat in enumerate(categories, 1):
         cat_id = cat.get("category_id", f"category-{idx}")
         disp_name = cat.get("display_name", cat_id)
+        if not is_category_active(cat) and not target_category_id:
+            print(f"   ⏭️ [{idx}/{len(categories)}] {disp_name[:32]:<32} -> SKIPPED (active: no)")
+            summary_rows.append({
+                "idx": idx,
+                "id": cat_id,
+                "name": f"{disp_name[:14]} (active:no)",
+                "target": 0,
+                "synced": 0,
+                "missing": 0,
+                "time": 0.0
+            })
+            continue
         
         start_c = time.time()
         c_items, c_miss = run_category_after_check(cat, params, token, headers, gcs_cache)

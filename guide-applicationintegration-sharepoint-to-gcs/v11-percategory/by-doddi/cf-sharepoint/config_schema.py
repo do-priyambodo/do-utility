@@ -58,9 +58,28 @@ CATEGORY_SCHEMA = {
         "include_subsites": {"type": "boolean"},
         "sharepoint_library": {"type": "string"},
         "gcs_destination_prefix": {"type": "string"},
-        "order_to_sync": {"type": "integer"}
+        "order_to_sync": {"type": "integer"},
+        "active": {
+            "anyOf": [
+                {"type": "boolean"},
+                {"type": "string"}
+            ]
+        }
     }
 }
+
+def is_category_active(cat: Dict[str, Any]) -> bool:
+    """
+    Evaluates whether a category is enabled for synchronization.
+    Supports boolean (True/False) or string ('yes'/'no', 'true'/'false', '1'/'0').
+    Defaults to True if 'active' is omitted.
+    """
+    if not isinstance(cat, dict):
+        return False
+    val = cat.get("active", True)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() not in ("no", "false", "0", "inactive", "disabled")
 
 def validate_category_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """

@@ -9,6 +9,19 @@ import os
 import json
 from typing import Dict, Any, Optional
 
+def is_category_active(cat: Dict[str, Any]) -> bool:
+    """
+    Evaluates whether a category is enabled for synchronization.
+    Supports boolean (True/False) or string ('yes'/'no', 'true'/'false', '1'/'0').
+    Defaults to True if 'active' is omitted.
+    """
+    if not isinstance(cat, dict):
+        return False
+    val = cat.get("active", True)
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() not in ("no", "false", "0", "inactive", "disabled")
+
 def load_sites_sync_config(params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Loads config-category.json category configuration.

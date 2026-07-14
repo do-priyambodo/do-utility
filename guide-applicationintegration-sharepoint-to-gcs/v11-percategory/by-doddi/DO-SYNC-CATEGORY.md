@@ -177,6 +177,34 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
 > [!NOTE]
 > When `TARGET_CATEGORY_ID` is removed or unset, the V11 engine automatically runs in **Mode B (Master Serial Loop)**, executing every category listed in `config-category.json` sequentially with strict RAM garbage collection between categories.
 
+### Option D: Fine-Grained Category Activation & Execution Sequencing (`active: yes/no` & `order_to_sync`)
+To manage complex enterprise deployments without deleting or commenting out large JSON blocks inside `config-category.json` (since standard JSON does not support comments), every category object supports two built-in control flags:
+
+1. **Dynamic Activation Toggle (`"active": "yes" | "no" | true | false`):**
+   * Setting `"active": "yes"` (default) enables the category for synchronization during the Master Serial Loop (`Option A` & `Option C`) and pre/post-flight audits (`Step 8`).
+   * Setting `"active": "no"` cleanly skips the category with an informative log (`⏭️ Skipping inactive category...`). This allows you to test or re-run a single department while keeping your full category matrix intact.
+2. **Execution Sequencing (`"order_to_sync": 1..X`):**
+   * Assign an integer (`1, 2, 3...`) to control exact execution order across all tools (`main.py`, `check_syncall_before.py`, `check_syncall_after.py`).
+   * Assign `1` to your smallest/fastest department to get immediate verification within seconds before the pipeline progresses to larger, multi-hour department crawls (`order_to_sync: 7`).
+
+```json
+{
+  "category_id": "tier1-den-root-only",
+  "display_name": "DEN Root Portal Documents & Guides ONLY",
+  "sharepoint_site": "sites/DEN",
+  "include_subsites": false,
+  "active": "yes",
+  "order_to_sync": 1
+},
+{
+  "category_id": "tier3-specialized-teams",
+  "display_name": "Specialized Teams (Long Crawl)",
+  "sharepoint_site": [ "sites/DEN/MEPS", ... ],
+  "active": "no",
+  "order_to_sync": 7
+}
+```
+
 ---
 
 ## Step 9.5: Active Real-Time Monitoring While Running (`During Step 9 Sync`)
