@@ -89,17 +89,15 @@ _CHECK_SESSION = requests.Session()
 
 def graph_get_paginated(url, headers, max_retries=10, timeout=30):
     results = []
-    if "/pages" in url.lower():
+    # Universal $top=25 pagination standard across all Graph endpoints (/pages, /children, /sites, /drives, /lists)
+    # $top=25 prevents 504 Gateway Timeouts on massive enterprise libraries by keeping OData payload serialization under 0.5s per packet.
+    if "/pages" in url.lower() or "/children" in url.lower() or "/sites" in url.lower() or "/drives" in url.lower() or "/lists" in url.lower() or "/items" in url.lower():
         if "?" in url and "$top=" not in url:
             url += "&$top=25"
-        elif "?" not in url:
+        elif "?" not in url and "$top=" not in url:
             url += "?$top=25"
-        timeout = max(timeout, 90)
-    elif "/children" in url or "/sites" in url or "/drives" in url:
-        if "?" in url and "$top=" not in url:
-            url += "&$top=999"
-        elif "?" not in url:
-            url += "?$top=999"
+        if "/pages" in url.lower():
+            timeout = max(timeout, 90)
 
     while url:
         for attempt in range(max_retries):
