@@ -48,6 +48,33 @@ python3 -m json.tool config-parameters.json > /dev/null && echo "✅ config-para
 python3 -m json.tool config-category.json > /dev/null && echo "✅ config-category.json valid"
 ```
 
+#### Controlling Category Toggles & Execution Sequence inside `config-category.json`
+To manage complex enterprise deployments without deleting JSON blocks (since standard JSON does not support comments), every category object inside `config-category.json` supports two built-in control properties:
+1. **Dynamic Activation Toggle (`"active": "yes" | "no"` or `true | false`):**
+   * `"active": "yes"` (default) enables the category for synchronization during the Master Serial Loop (`Step 9 Option A`) and pre/post-flight audits (`Step 8`).
+   * `"active": "no"` cleanly skips the category with an informative log (`⏭️ Skipping inactive category...`). This allows you to test or re-run a single department while keeping your full category matrix intact.
+2. **Execution Sequencing (`"order_to_sync": 1..X`):**
+   * Assign an integer (`1, 2, 3...`) to control exact execution order across all tools (`main.py`, `check_syncall_before.py`, `check_syncall_after.py`).
+   * Assign `1` to your smallest/fastest department to get immediate verification within seconds before the pipeline progresses to larger, multi-hour department crawls (`order_to_sync: 7`).
+
+```json
+{
+  "category_id": "tier1-den-root-only",
+  "display_name": "DEN Root Portal Documents & Guides ONLY",
+  "sharepoint_site": "sites/DEN",
+  "include_subsites": false,
+  "active": "yes",
+  "order_to_sync": 1
+},
+{
+  "category_id": "tier3-specialized-teams",
+  "display_name": "Specialized Teams (Long Crawl)",
+  "sharepoint_site": [ "sites/DEN/MEPS", ... ],
+  "active": "no",
+  "order_to_sync": 7
+}
+```
+
 ---
 
 ## Step 3: Fast Subsite Discovery & Category Onboarding (`<3s Discovery`)
@@ -138,8 +165,14 @@ python3 check/check_syncall_before.py --category=tier1-business
 
 Initiate the synchronization across your categories. Standard regular files scale automatically to **100 items/batch**, `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently:
 
-### Option A: Cloud Scheduler Trigger (`Recommended Unattended 24-Hour Master Loop`)
-Cloud Scheduler job to trigger immediately on demand, executing all categories sequentially with RAM isolation between each category:
+> [!RECOMMENDED]
+> **What to run with your Customer (And for Tomorrow's Demo): Run Option A**  
+> For 99% of customer executions, **you should only run Option A (`Cloud Scheduler Trigger`)**. It executes all active categories sequentially across your 24-hour timeout and allows you to safely close your laptop within 2 seconds.
+
+---
+
+### Option A (RECOMMENDED FOR CUSTOMERS): Unattended 24-Hour Master Loop (`Cloud Scheduler Trigger`)
+Run this single command to trigger the complete per-category synchronization across all `"active": "yes"` categories in your `config-category.json`:
 
 ```bash
 gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --project="${PROJECT_ID}"
@@ -148,7 +181,25 @@ gcloud scheduler jobs run "${SCHEDULER_JOB_NAME}" --location="${LOCATION}" --pro
 > **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
 > This command sends an asynchronous trigger and exits in `~2 seconds`. The 24-hour traversal runs unattended inside Google Cloud's infrastructure. **You can safely close your terminal or shut down your laptop right after running this command!**
 
-### Option B: On-Demand Single-Category Emergency Override (`Targeted Sync`)
+---
+
+### Alternative / Advanced CLI Commands (For Troubleshooting Only)
+
+<details>
+<summary><b>Click to expand Advanced CLI Overrides (Only use if directly troubleshooting without Cloud Scheduler)</b></summary>
+
+#### Alternative 1: Direct Cloud Run Job Execution (`Bypasses Cloud Scheduler`)
+If you want to directly trigger the Cloud Run Job via CLI instead of Cloud Scheduler (and ensure any previous single-category override is cleanly cleared), execute:
+
+```bash
+gcloud run jobs execute "${FUNCTION_NAME}" \
+  --region="${LOCATION}" \
+  --remove-env-vars="TARGET_CATEGORY_ID" 2>/dev/null || \
+gcloud run jobs execute "${FUNCTION_NAME}" \
+  --region="${LOCATION}"
+```
+
+#### Alternative 2: Single-Category Emergency Override (`Targeted Sync`)
 If a specific department (e.g. `tier1-business`) needs immediate synchronization without running all other categories, set `TARGET_CATEGORY_ID` via `--update-env-vars`:
 
 ```bash
@@ -163,47 +214,7 @@ gcloud run jobs execute "${FUNCTION_NAME}" \
 >   --region="${LOCATION}" \
 >   --remove-env-vars="TARGET_CATEGORY_ID"
 > ```
-
-### Option C: Direct On-Demand All-Categories Master Sequential Sync (`Cloud Run Job Execution`)
-If you want to directly trigger the Cloud Run Job to run **all categories sequentially** without going through Cloud Scheduler (and ensure any previous single-category override is cleanly cleared), execute:
-
-```bash
-gcloud run jobs execute "${FUNCTION_NAME}" \
-  --region="${LOCATION}" \
-  --remove-env-vars="TARGET_CATEGORY_ID" 2>/dev/null || \
-gcloud run jobs execute "${FUNCTION_NAME}" \
-  --region="${LOCATION}"
-```
-> [!NOTE]
-> When `TARGET_CATEGORY_ID` is removed or unset, the V11 engine automatically runs in **Mode B (Master Serial Loop)**, executing every category listed in `config-category.json` sequentially with strict RAM garbage collection between categories.
-
-### Option D: Fine-Grained Category Activation & Execution Sequencing (`active: yes/no` & `order_to_sync`)
-To manage complex enterprise deployments without deleting or commenting out large JSON blocks inside `config-category.json` (since standard JSON does not support comments), every category object supports two built-in control flags:
-
-1. **Dynamic Activation Toggle (`"active": "yes" | "no" | true | false`):**
-   * Setting `"active": "yes"` (default) enables the category for synchronization during the Master Serial Loop (`Option A` & `Option C`) and pre/post-flight audits (`Step 8`).
-   * Setting `"active": "no"` cleanly skips the category with an informative log (`⏭️ Skipping inactive category...`). This allows you to test or re-run a single department while keeping your full category matrix intact.
-2. **Execution Sequencing (`"order_to_sync": 1..X`):**
-   * Assign an integer (`1, 2, 3...`) to control exact execution order across all tools (`main.py`, `check_syncall_before.py`, `check_syncall_after.py`).
-   * Assign `1` to your smallest/fastest department to get immediate verification within seconds before the pipeline progresses to larger, multi-hour department crawls (`order_to_sync: 7`).
-
-```json
-{
-  "category_id": "tier1-den-root-only",
-  "display_name": "DEN Root Portal Documents & Guides ONLY",
-  "sharepoint_site": "sites/DEN",
-  "include_subsites": false,
-  "active": "yes",
-  "order_to_sync": 1
-},
-{
-  "category_id": "tier3-specialized-teams",
-  "display_name": "Specialized Teams (Long Crawl)",
-  "sharepoint_site": [ "sites/DEN/MEPS", ... ],
-  "active": "no",
-  "order_to_sync": 7
-}
-```
+</details>
 
 ---
 
