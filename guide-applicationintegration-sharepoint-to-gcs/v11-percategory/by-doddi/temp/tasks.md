@@ -32,5 +32,5 @@ This checklist tracks our step-by-step engineering progression across the V11 Pe
 ### Phase 4: Deployment Automation & Operator Runbooks (`deploy/` & documentation)
 - [x] **Task 4.1:** Update `deploy/deploy_cloud_run.sh` to deploy the V11 container without hardcoded SharePoint site variables, setting `CONFIG_SITES_SYNC_PATH=config/config-category.json`.
 - [x] **Task 4.2:** Create `deploy/deploy_category_scheduler.sh` helper to deploy and check the single Option 1 daily Cloud Scheduler job (`yourorg-sharepoint-sync-daily`).
-- [x] **Task 4.3:** Create `DO-SYNC-SELECTED-CATEGORY.md` comprehensive operator runbook detailing `discover_categories.py`, Option 1 master loop, single-category overrides (`--update-env-vars`), and diagnostic verification.
+- [x] **Task 4.3:** Create `DO-SYNC-CATEGORY.md` comprehensive operator runbook detailing `discover_categories.py`, Option 1 master loop, single-category overrides (`--update-env-vars`), and diagnostic verification.
 - [x] **Task 4.4:** Perform final git status audit across both `customer-maxis` and `do-utility` repositories, guaranteeing 100% 1-to-1 mirroring and pushing all commits to `origin main`.

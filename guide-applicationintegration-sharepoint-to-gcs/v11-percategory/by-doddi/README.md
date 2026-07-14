@@ -16,7 +16,7 @@ Features **Rugged Enterprise Best Practices (`v11-percategory`)**, including:
 To prevent duplication and keep instructions authoritative, all deployment, operational, and architectural procedures are maintained in dedicated topic documents. **Select your operational task below:**
 
 ### 🚀 1. Production Per-Category Sharded Synchronization (`Start Here - Recommended V11 Guide`)
-👉 **Open Runbook:** [DO-SYNC-SELECTED-CATEGORY.md](DO-SYNC-SELECTED-CATEGORY.md)
+👉 **Open Runbook:** [DO-SYNC-CATEGORY.md](DO-SYNC-CATEGORY.md)
 
 Follow the comprehensive **10-Step Per-Category Operations Runbook** for end-to-end setup, authentication, prerequisites, fast category discovery, and both Option 1 Master Loop and single-category override execution:
 1. **GCP & IAM Prerequisites (Steps 1–2)**: Authenticate, validate `config-parameters.json` and `config-category.json`.
@@ -31,7 +31,7 @@ Follow the comprehensive **10-Step Per-Category Operations Runbook** for end-to-
 ### 🏛️ 2. Legacy Monolithic Full Site Collection Synchronization (`Single Target Traversal - DO NOT USE IN V11`)
 👉 **Open Runbook:** [DO-SYNC-ALL-SHAREPOINT-DONOTUSE.md](DO-SYNC-ALL-SHAREPOINT-DONOTUSE.md)
 
-Our classical monolithic 10-step operations guide that synchronizes an entire SharePoint site collection (`CONFIG_Sharepoint_Sites`) in a single continuous 24-hour Cloud Run traversal without per-category subsite sharding. Note: In V11, please use `DO-SYNC-SELECTED-CATEGORY.md` above instead.
+Our classical monolithic 10-step operations guide that synchronizes an entire SharePoint site collection (`CONFIG_Sharepoint_Sites`) in a single continuous 24-hour Cloud Run traversal without per-category subsite sharding. Note: In V11, please use `DO-SYNC-CATEGORY.md` above instead.
 
 ---
 

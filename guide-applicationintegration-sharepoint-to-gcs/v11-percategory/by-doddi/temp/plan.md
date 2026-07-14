@@ -166,7 +166,7 @@ Update the Cloud Run Job deployment script so it deploys the container with gene
 #### Step 4.2: Create Cloud Scheduler Helper (`deploy/deploy_category_scheduler.sh`)
 Create a simple helper script to deploy or check the single Option 1 daily Cloud Scheduler job (`yourorg-sharepoint-sync-daily`).
 
-#### Step 4.3: Create Standardized Operator Runbook (`DO-SYNC-SELECTED-CATEGORY.md`)
+#### Step 4.3: Create Standardized Operator Runbook (`DO-SYNC-CATEGORY.md`)
 Create a comprehensive, copy-pasteable operator guide for Janice detailing:
 1. How to run `discover_categories.py` to onboard new child departments.
 2. How the nightly Option 1 Master Loop works.

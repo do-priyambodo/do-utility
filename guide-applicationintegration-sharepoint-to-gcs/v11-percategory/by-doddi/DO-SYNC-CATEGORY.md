@@ -1,4 +1,4 @@
-# 🚀 Version 11 (`v11-percategory`) Enterprise Per-Category Synchronization Guide (`DO-SYNC-SELECTED-CATEGORY.md`)
+# 🚀 Version 11 (`v11-percategory`) Enterprise Per-Category Synchronization Guide (`DO-SYNC-CATEGORY.md`)
 
 ## Step 1: Authenticate Your Account to GCP (`Pre-Requirement`)
 
