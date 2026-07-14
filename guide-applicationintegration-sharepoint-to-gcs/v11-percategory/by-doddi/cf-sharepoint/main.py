@@ -86,7 +86,7 @@ def main(request):
     except Exception:
         pass
     start_time = time.time()
-    max_execution_seconds = 3300  # 55 minutes Wall-Clock safety circuit breaker (< 3600s Cloud Run ceiling)
+    max_execution_seconds = params.get("CONFIG_Max_Execution_Seconds", 85000)  # ~23.6 hours Wall-Clock safety circuit breaker (< 86400s Cloud Run Job ceiling)
     
     # 1. Parse JSON payload or query parameters (null-safe for direct Cloud Run Job invocation where request=None)
     req_data = {}
@@ -260,7 +260,8 @@ def main(request):
 
             discovery_start_time = time.time()
             for site_info in target_sites:
-                if time.time() - discovery_start_time > 2100 or time.time() - start_time > max_execution_seconds:
+                max_discovery_seconds = params.get("CONFIG_Max_Discovery_Seconds", 80000)
+                if time.time() - discovery_start_time > max_discovery_seconds or time.time() - start_time > max_execution_seconds:
                     print(f"⏱️ Wall-Clock Time Guard reached. Finalizing discovered category inventory ({len(sync_list)} delta items)...", flush=True)
                     break
 
