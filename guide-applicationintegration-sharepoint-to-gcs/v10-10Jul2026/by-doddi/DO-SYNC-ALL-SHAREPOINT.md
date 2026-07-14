@@ -69,7 +69,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 Before deploying to Cloud Run, run this exact one-liner in your terminal to pull the latest release (`Revision 00025`) and verify in 2 seconds that your local repository and `pdf_renderer.py` have 100% parity with our verified Playwright-exclusive release:
 
 ```bash
-git pull origin main --tags && git log -1 --oneline && python3 -c "import ast; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); print('✅ VERIFIED: Your local app is 100% identical to Revision 00025 (Commit cfa08e5) with 0 syntax or legacy library errors!')"
+git pull origin main --tags && git log -1 --oneline && python3 -c "import ast; ast.parse(open('cf-sharepoint/pdf_renderer.py').read()); assert 'xhtml2pdf' not in open('cf-sharepoint/pdf_renderer.py').read() and 'get_persistent_browser' in open('cf-sharepoint/pdf_renderer.py').read(); print('✅ VERIFIED: Your local app is 100% identical to Revision 00025 (Commit cfa08e5) with 0 syntax or legacy library errors.')"
 ```
 
 ---
