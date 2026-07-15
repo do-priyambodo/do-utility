@@ -221,9 +221,12 @@ def main(request):
                         if bucket_obj:
                             try:
                                 stale_blob = bucket_obj.get_blob(rel_path)
-                                if stale_blob:
+                                enable_orphan = parse_bool_flag(params.get("CONFIG_Enable_Orphan_Cleanup", False), default=False)
+                                if stale_blob and enable_orphan:
                                     stale_blob.delete()
                                     print(f"✅ Successfully deleted inactive file from GCS: gs://{bucket_name}/{rel_path}")
+                                elif stale_blob and not enable_orphan:
+                                    print(f"⏭️ Skipping deletion of inactive target page {rel_path} (CONFIG_Enable_Orphan_Cleanup disabled).")
                                 else:
                                     print(f"ℹ️ File already absent in GCS: gs://{bucket_name}/{rel_path}")
                             except Exception as ex_del:
