@@ -311,8 +311,8 @@ def main(request):
                         td_id = target_drive.get("id")
                         td_url = target_drive.get("webUrl")
                         base_file_url = f"{td_url.rstrip('/')}/" if td_url else f"https://{site_hostname}/sites/{site_info['name']}/{target_drive.get('name', 'Documents')}/"
-                        # Pass combined prefix (gcs_prefix + site_prefix) to list_drive_items_recursive
-                        combined_prefix = f"{gcs_prefix}{site_prefix}" if gcs_prefix else site_prefix
+                        # Pass combined prefix (gcs_prefix + files/ + site_prefix) to list_drive_items_recursive
+                        combined_prefix = f"{gcs_prefix}files/{site_prefix}" if gcs_prefix else site_prefix
                         list_drive_items_recursive(token, td_id, "root", combined_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
 
                 if time.time() - discovery_start_time > 2100: break
@@ -496,7 +496,7 @@ def main(request):
                         doc_id = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
                         ext = raw_name.rsplit('.', 1)[-1].lower() if '.' in raw_name else ''
                         mime_val = "application/pdf" if (item.get("IsPage") or rel_path.startswith("pages/") or ext == 'pdf') else "application/octet-stream"
-                        full_gcs_path = rel_path if (item.get("IsPage") or "pages/" in rel_path or "files/" in rel_path) else f"files/{rel_path}"
+                        full_gcs_path = rel_path if (item.get("IsPage") or "pages/" in rel_path or "files/" in rel_path or "categories/" in rel_path) else f"files/{rel_path}"
                         full_gcs_path = full_gcs_path.replace("//", "/")
                         gcs_uri = f"gs://{bucket_name}/{full_gcs_path}"
                         meta_record = {
