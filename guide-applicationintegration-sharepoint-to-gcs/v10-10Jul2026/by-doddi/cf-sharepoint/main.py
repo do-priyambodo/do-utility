@@ -5,6 +5,7 @@ import urllib.parse
 import datetime
 import re
 import time
+import gc
 from collections import deque
 import threading
 import concurrent.futures
@@ -724,6 +725,7 @@ def main(request):
                 # Immediate memory eviction after dispatching chunk
                 for item in chunk:
                     item.pop("VirtualContent", None)
+                gc.collect()
         elif len(sync_list) > 0:
             print(f"⚙️ [Step 6/7] Rendering pages & uploading files in parallel ({len(sync_list)} items)...", flush=True)
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
