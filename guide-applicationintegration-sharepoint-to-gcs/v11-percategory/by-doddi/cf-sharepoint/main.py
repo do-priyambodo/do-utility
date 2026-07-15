@@ -311,9 +311,8 @@ def main(request):
                         td_id = target_drive.get("id")
                         td_url = target_drive.get("webUrl")
                         base_file_url = f"{td_url.rstrip('/')}/" if td_url else f"https://{site_hostname}/sites/{site_info['name']}/{target_drive.get('name', 'Documents')}/"
-                        # Pass combined prefix (gcs_prefix + files/ + site_prefix) to list_drive_items_recursive
-                        combined_prefix = f"{gcs_prefix}files/{site_prefix}" if gcs_prefix else site_prefix
-                        list_drive_items_recursive(token, td_id, "root", combined_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+                        # Pass site_prefix as parent_path and gcs_prefix explicitly for GCS destination paths
+                        list_drive_items_recursive(token, td_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items, gcs_prefix=gcs_prefix)
 
                 if time.time() - discovery_start_time > 2100: break
 

@@ -32,7 +32,7 @@ import threading
 import concurrent.futures
 
 # Iterative multi-threaded BFS file enumeration in a SharePoint folder (guarantees high-speed OData discovery and 0% stack overflow on >15,000 items)
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None):
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None, gcs_prefix=""):
     if all_results is None:
         all_results = []
     if sync_results is None:
@@ -86,29 +86,30 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                     else:
                         if item_name.lower().endswith(".aspx"):
                             pdf_name = item_name.replace(".aspx", ".pdf")
-                            relative_path = f"pages/{p_path}{pdf_name}"
+                            sp_page_path = f"{p_path}{pdf_name}"
+                            gcs_page_path = f"{gcs_prefix}pages/{sp_page_path}" if gcs_prefix else f"pages/{sp_page_path}"
                             page_item = {
                                 "Name": pdf_name,
                                 "Url": item.get("webUrl", ""),
-                                "RelativePath": relative_path,
+                                "RelativePath": gcs_page_path,
                                 "IsPage": True,
                                 "_page_id": item.get("id"),
                                 "_raw_url": item.get("webUrl", ""),
                                 "_filename": pdf_name
                             }
                             needs_sync = True
-                            if gcs_cache is not None and relative_path in gcs_cache:
+                            if gcs_cache is not None and gcs_page_path in gcs_cache:
                                 sp_mod = item.get("lastModifiedDateTime")
                                 if sp_mod:
                                     try:
                                         sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
-                                        if gcs_cache[relative_path] >= sp_dt:
+                                        if gcs_cache[gcs_page_path] >= sp_dt:
                                             needs_sync = False
                                     except Exception:
                                         pass
                             elif bucket_obj and gcs_cache is None:
                                 try:
-                                    blob = bucket_obj.get_blob(relative_path)
+                                    blob = bucket_obj.get_blob(gcs_page_path)
                                     sp_mod = item.get("lastModifiedDateTime")
                                     if blob and blob.updated and sp_mod:
                                         sp_dt = datetime.datetime.fromisoformat(sp_mod.replace("Z", "+00:00"))
@@ -119,23 +120,24 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
 
                             with lock:
                                 # Ensure no duplicate relative paths
-                                if not any(x.get("RelativePath") == relative_path for x in all_results):
+                                if not any(x.get("RelativePath") == gcs_page_path for x in all_results):
                                     all_results.append(page_item)
                                     if needs_sync:
                                         sync_results.append(page_item)
                         else:
-                            relative_path = f"{p_path}{item_name}"
-                            relative_path_encoded = "/".join([urllib.parse.quote(part) for part in relative_path.split("/")]) if "/" in relative_path else urllib.parse.quote(relative_path)
-                            direct_url = f"{base_file_url}{relative_path_encoded}"
+                            sp_rel_path = f"{p_path}{item_name}"
+                            sp_rel_path_encoded = "/".join([urllib.parse.quote(part) for part in sp_rel_path.split("/")]) if "/" in sp_rel_path else urllib.parse.quote(sp_rel_path)
+                            direct_url = item.get("webUrl") or f"{base_file_url}{sp_rel_path_encoded}"
+                            gcs_rel_path = f"{gcs_prefix}files/{sp_rel_path}" if gcs_prefix else f"files/{sp_rel_path}"
                             
                             file_item = {
                                 "Name": item_name,
                                 "Url": direct_url,
-                                "RelativePath": relative_path,
+                                "RelativePath": gcs_rel_path,
                                 "IsPage": False
                             }
                             needs_sync = True
-                            gcs_check_path = f"files/{relative_path}"
+                            gcs_check_path = gcs_rel_path
                             if gcs_cache is not None and gcs_check_path in gcs_cache:
                                 sp_mod = item.get("lastModifiedDateTime")
                                 if sp_mod:
