@@ -265,10 +265,6 @@ def main(request):
         target_sites_to_scan = target_sites if not target_urls else []
         discovery_start_time = time.time()
         for site_info in target_sites_to_scan:
-            if time.time() - discovery_start_time > 2100:
-                print(f"⏱️ Wall-Clock Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Finalizing discovered inventory ({len(sync_list)} delta items) and initiating processing/upload pipeline immediately...", flush=True)
-                break
-
             curr_site_id = site_info["id"]
             site_prefix = site_info["prefix"] # e.g. "Consumer/" or "Business/"
             site_label = site_info.get("name") or curr_site_id

@@ -57,7 +57,7 @@ def verify():
         print("✅ Pillar 3 (Tortoise Concurrency Clamping & Polite Inter-Batch Pacing): ACTIVE")
 
     # Pillar 4 check: 15-Page Playwright Chromium Auto-Recycling
-    if "render_count >= 15" not in renderer_code:
+    if "render_cnt >= 15" not in renderer_code:
         errors.append("Pillar 4 FAILED: 15-page Playwright Chromium recycling not found in pdf_renderer.py!")
     else:
         print("✅ Pillar 4 (Hardened 15-Page Playwright Memory & IPC Pipe Recycling): ACTIVE")
