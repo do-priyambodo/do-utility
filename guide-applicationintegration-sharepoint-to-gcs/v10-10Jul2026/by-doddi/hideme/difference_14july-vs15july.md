@@ -4,6 +4,21 @@ This document provides a comprehensive, transparent technical breakdown of every
 
 ---
 
+## 🕒 14 July Timeline & Revision Context (`Why afternoon logs differed from Revision 00028`)
+
+When auditing local terminal histories versus Cloud Run execution logs from **14 July 2026**, operators may observe two distinct revision states:
+1. **Morning Baseline (`Revision 00028` / commit `1836ab9` at 05:37 UTC / 1:37 PM MYT):**  
+   The local Cloud Shell folder (`~/july13/.../v10-10Jul2026/by-doddi`) was originally checked out at this revision. At this stage, the code lacked unbuffered real-time discovery heartbeats and used larger `$top=100/200` OData page sizes.
+2. **Afternoon / Evening Deployment (`Revisions 00038..00047` executed around 10:49 UTC / 6:49 PM MYT):**  
+   Between 1:37 PM and 6:49 PM MYT, we deployed iterative upgrades (`Revisions 00038..00047`) to the live Cloud Run Job (`july1st-sharepoint-list-files`) that introduced **unbuffered real-time discovery heartbeats (`line_buffering=True`)**, **explicit batch dispatch logs**, and **standardized `$top=25` page sizes**. When the customer executed the job in the evening (~6:49 PM MYT), the container ran with these detailed logging capabilities active, but still operated under the original **1-hour (`3400s`) circuit breaker**.
+
+### 🌟 What the 15 July Hardened Release (`Revision 00048+`) Delivers:
+By performing today's safe sync and container re-deployment, the customer unites both milestones into a single, hardened production release:
+* It **retains 100% of the real-time unbuffered logging heartbeats and `$top=25` Graph API stability** (`Revisions 00038..00047`) observed during yesterday evening's successful run.
+* It **upgrades the execution ceiling to the 24-hour (`86400s`) circuit breaker** (`Revision 00048+`), guaranteeing the job will not terminate at the 57-minute mark like yesterday's run.
+
+---
+
 ## 📊 High-Level Comparison Matrix
 
 | Feature / Architectural Component | 14 July 2026 Release (`Revision 00028`) | 15 July 2026 Release (`Revision 00048+`) | Technical & Operational Impact |
