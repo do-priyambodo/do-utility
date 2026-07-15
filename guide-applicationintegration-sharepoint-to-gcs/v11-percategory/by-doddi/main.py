@@ -5,6 +5,8 @@ import urllib.parse
 import datetime
 import re
 import time
+import gc
+import concurrent.futures
 import functions_framework
 from google.cloud import storage
 
@@ -110,7 +112,8 @@ def main(request):
 
         sync_files_flag = parse_bool_flag(req_data.get("sync_files", params.get("CONFIG_Sync_SharePoint_Files", True)))
         sync_pages_flag = parse_bool_flag(req_data.get("sync_pages", params.get("CONFIG_Sync_SharePoint_Pages", True)))
-        print(f"⚙️ Sync Scope Settings -> Files: {sync_files_flag} | Pages: {sync_pages_flag}")
+        orphan_cleanup_flag = parse_bool_flag(req_data.get("orphan_cleanup", params.get("CONFIG_Enable_Orphan_Cleanup", False)), default=False)
+        print(f"⚙️ Sync Scope Settings -> Files: {sync_files_flag} | Pages: {sync_pages_flag} | Orphan Cleanup: {orphan_cleanup_flag}")
 
         target_urls = req_data.get("target_urls", [])
         
@@ -414,35 +417,41 @@ def main(request):
         print(json.dumps(structured_metric))
 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
-        # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages and integration is triggered
-        if trigger_integration and bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None:
-            print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
-            active_gcs_paths = set()
-            for item in all_list:
-                rel = item.get("RelativePath")
-                if not rel:
-                    continue
-                if item.get("IsPage") or rel.startswith("pages/") or rel.startswith("files/"):
-                    active_gcs_paths.add(rel)
-                else:
-                    active_gcs_paths.add(f"files/{rel}")
-            deleted_count = 0
-            for cached_path in list(gcs_cache.keys()):
-                if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
-                    try:
-                        stale_blob = bucket_obj.get_blob(cached_path)
-                        if stale_blob:
-                            stale_blob.delete()
-                            deleted_count += 1
-                            print(f"🗑️ Status Log: Deleted inactive file from GCS: gs://{bucket_name}/{cached_path}")
-                    except Exception as ex_del:
-                        print(f"Warning: Could not delete orphaned GCS file {cached_path}: {ex_del}")
-            if deleted_count > 0:
-                print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
+        # Only run cleanup if explicitly enabled and a 100% full, unskipped traversal was performed across both files and pages
+        if trigger_integration and bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None and orphan_cleanup_flag:
+            if len(gcs_cache) > 0 and len(all_list) < (len(gcs_cache) * 0.8):
+                print(f"🛡️ SAFETY CIRCUIT BREAKER TRIPPED: Discovered items ({len(all_list)}) dropped below 80% of existing GCS cache ({len(gcs_cache)}). Aborting all deletions to prevent data wipe!")
             else:
-                print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
+                print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
+                active_gcs_paths = set()
+                for item in all_list:
+                    rel = item.get("RelativePath")
+                    if not rel:
+                        continue
+                    if item.get("IsPage") or rel.startswith("pages/") or rel.startswith("files/"):
+                        active_gcs_paths.add(rel)
+                    else:
+                        active_gcs_paths.add(f"files/{rel}")
+                deleted_count = 0
+                for cached_path in list(gcs_cache.keys()):
+                    if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
+                        try:
+                            stale_blob = bucket_obj.get_blob(cached_path)
+                            if stale_blob:
+                                stale_blob.delete()
+                                deleted_count += 1
+                                print(f"🗑️ Status Log: Deleted inactive file from GCS: gs://{bucket_name}/{cached_path}")
+                        except Exception as ex_del:
+                            print(f"Warning: Could not delete orphaned GCS file {cached_path}: {ex_del}")
+                if deleted_count > 0:
+                    print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
+                else:
+                    print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
         else:
-            print("⏭️ Status Log: Skipping orphaned GCS file cleanup (Partial/Scoped/Dry-Run Sync detected).")
+            if not orphan_cleanup_flag:
+                print("⏭️ Status Log: Skipping orphaned GCS file cleanup (CONFIG_Enable_Orphan_Cleanup is False).")
+            else:
+                print("⏭️ Status Log: Skipping orphaned GCS file cleanup (Partial/Scoped/Dry-Run Sync detected).")
 
         # Phase 4a.1: Generate config/metadata.jsonl Manifest for Vertex AI Discovery Engine / CCAI GKA
         if trigger_integration and bucket_obj and len(all_list) > 0:
@@ -628,10 +637,14 @@ def main(request):
                 # Immediate memory eviction after dispatching chunk
                 for item in chunk:
                     item.pop("VirtualContent", None)
+                gc.collect()
+                time.sleep(0.3)
         elif len(sync_list) > 0:
             print(f"⚡ Rendering pages in parallel without Integration trigger ({len(sync_list)} items)...")
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 list(executor.map(_render_lazy_page, sync_list))
+            for item in sync_list: item.pop("VirtualContent", None)
+            gc.collect()
 
         # Clean helper keys from output lists
         clean_all_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in all_list]

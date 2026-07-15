@@ -12,7 +12,7 @@ except ImportError:
 # Helper to recursively enumerate all child subsites (e.g., DEN/Consumer, DEN/Business)
 def get_all_subsites_recursive(root_site_id, headers, current_prefix=""):
     subsites = []
-    url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/sites"
+    url = f"https://graph.microsoft.com/v1.0/sites/{root_site_id}/sites?$top=5000"
     try:
         children = graph_get_paginated(url, headers)
         for child in children:
@@ -59,9 +59,9 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                 
             def fetch_folder(folder_tuple):
                 f_id, f_path = folder_tuple
-                url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{f_id}/children"
+                url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{f_id}/children?$top=5000"
                 if f_id == "root":
-                    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+                    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children?$top=5000"
                 try:
                     return f_path, graph_get_paginated(url, headers)
                 except Exception:

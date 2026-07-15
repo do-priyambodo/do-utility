@@ -6,7 +6,7 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/doddi-sharepoint-gcs-parent-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-parent-20260709-v2-trigger",
       "startTaskId": "1"
     }
   ],
@@ -17,10 +17,10 @@
       "label": "ForEach Loop",
       "parameters": {
         "subIntegrationName": {
-          "stringValue": "doddi-sharepoint-gcs-child"
+          "stringValue": "doddi-sharepoint-gcs-child-20260709-v2"
         },
         "subIntegrationTriggerId": {
-          "stringValue": "api_trigger/doddi-sharepoint-gcs-child-trigger"
+          "stringValue": "api_trigger/doddi-sharepoint-gcs-child-20260709-v2-trigger"
         },
         "subIntegrationMapCurrentElementTo": {
           "stringValue": "INPUT_Loop_Item"
@@ -48,12 +48,12 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "doddi-bucket-sharepoint-sync"
+          "stringValue": "doddi-bucket-sharepoint-sync-20260709-v2"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       },
       "value": {
-        "stringValue": "doddi-bucket-sharepoint-sync"
+        "stringValue": "doddi-bucket-sharepoint-sync-20260709-v2"
       }
     },
     {

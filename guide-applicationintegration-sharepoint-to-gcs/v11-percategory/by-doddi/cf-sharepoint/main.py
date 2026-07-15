@@ -6,6 +6,7 @@ import urllib.parse
 import datetime
 import re
 import time
+import gc
 from collections import deque
 import threading
 import concurrent.futures
@@ -528,7 +529,9 @@ def main(request):
             file_batch_size = params.get("CONFIG_File_Batch_Size", 20 * raw_batch_size if raw_batch_size <= 10 else raw_batch_size)
             page_batch_size = params.get("CONFIG_Page_Batch_Size", raw_batch_size)
             max_workers = max(1, raw_workers)
-            chunk_size = max(100, file_batch_size * max_workers)
+            if conv_engine == "playwright" or any(item.get("IsPage") for item in sync_list):
+                max_workers = min(3, max(1, max_workers // 2))
+            chunk_size = min(30, max(20, file_batch_size * max_workers))
 
             def _render_lazy_page(item):
                 if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):
@@ -612,10 +615,14 @@ def main(request):
                                 print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
 
                     for item in chunk: item.pop("VirtualContent", None)
+                    gc.collect()
+                    time.sleep(0.3)
             elif len(sync_list) > 0:
                 print(f"   ⚙️ Rendering pages in parallel without parent trigger ({len(sync_list)} items)...", flush=True)
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     list(executor.map(_render_lazy_page, sync_list))
+                for item in sync_list: item.pop("VirtualContent", None)
+                gc.collect()
 
             total_global_all += len(all_list)
             total_global_sync += len(sync_list)
@@ -623,6 +630,7 @@ def main(request):
             all_list.clear()
             sync_list.clear()
             target_sites.clear()
+            gc.collect()
 
         # ==============================================================================
         # MASTER AGGREGATOR AT JOB COMPLETION

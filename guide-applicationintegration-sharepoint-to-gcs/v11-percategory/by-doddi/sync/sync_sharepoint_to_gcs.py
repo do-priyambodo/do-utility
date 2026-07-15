@@ -14,6 +14,7 @@ import os
 import sys
 import threading
 import time
+import gc
 
 def run_with_heartbeat(msg, func, *args, **kwargs):
     stop_event = threading.Event()
@@ -139,7 +140,8 @@ def run_sync():
         "sync_files": params.get("CONFIG_Sync_SharePoint_Files", True),
         "sync_pages": params.get("CONFIG_Sync_SharePoint_Pages", True),
         "pdf_conversion_engine": params.get("CONFIG_PDF_Conversion_Engine", "playwright"),
-        "force_full_sync": force_sync
+        "force_full_sync": force_sync,
+        "trigger_integration": True
     }
     
     cf_request_bytes = json.dumps(payload_cf).encode("utf-8")
@@ -207,6 +209,9 @@ def run_sync():
                 execution_id = resp_data.get("executionId")
                 execution_ids.append(execution_id)
                 print(f" 🟢 Batch {batch_num}/{total_batches} ({len(batch)} items) scheduled -> Execution ID: {execution_id}")
+                for item in batch: item.pop("VirtualContent", None)
+                gc.collect()
+                time.sleep(0.3)
         except urllib.error.HTTPError as e:
             print(f"❌ Application Integration batch {batch_num} execution failed (Code {e.code}): {e.reason}")
             print(e.read().decode("utf-8"))
