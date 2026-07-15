@@ -81,7 +81,7 @@ import time
 import random
 
 # Helper to handle OData paginated Microsoft Graph API requests with automatic 429 backoff & $top=999 maximization
-def graph_get_paginated(url, headers, max_retries=3, timeout=20):
+def graph_get_paginated(url, headers, max_retries=5, timeout=30):
     results = []
     # Universal $top=25 pagination standard across all Graph endpoints (/pages, /children, /sites, /drives, /lists)
     # $top=25 prevents 504 Gateway Timeouts on massive enterprise libraries by keeping OData payload serialization under 0.5s per packet.
@@ -103,7 +103,7 @@ def graph_get_paginated(url, headers, max_retries=3, timeout=20):
                     break
                 elif response.status_code in [429, 502, 503, 504]:
                     retry_after = response.headers.get("Retry-After")
-                    wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(10, (2 ** attempt) + random.uniform(0, 1))
+                    wait_time = int(retry_after) if (retry_after and retry_after.isdigit()) else min(30, (2 ** attempt) + random.uniform(0, 2))
                     print(f"⏳ Microsoft Graph API throttled/delayed (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait_time)
                     continue

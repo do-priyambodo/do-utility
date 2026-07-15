@@ -140,9 +140,9 @@ def render_html_to_pdf_base64(html_string, fallback_title="SharePoint Page", eng
     
     with _PLAYWRIGHT_SEMAPHORE:
         try:
-            # Auto-purge Node/IPC memory every 25 page renders per worker thread to prevent RAM exhaustion (Signal 9)
+            # Auto-purge Node/IPC memory every 15 page renders per worker thread to prevent RAM exhaustion (Signal 9)
             render_cnt = getattr(_THREAD_LOCAL, 'render_count', 0) + 1
-            if render_cnt >= 25:
+            if render_cnt >= 15:
                 get_persistent_browser(force_restart=True)
                 render_cnt = 1
             _THREAD_LOCAL.render_count = render_cnt

@@ -302,8 +302,6 @@ def main(request):
                 for target_drive in drives_to_scan:
                     if max_items is not None and len(all_list) >= max_items:
                         break
-                    if time.time() - discovery_start_time > 2100:
-                        break
                     td_id = target_drive.get("id")
                     td_url = target_drive.get("webUrl")
                     if td_url:
@@ -315,10 +313,6 @@ def main(request):
                     list_drive_items_recursive(token, td_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
-                
-            if time.time() - discovery_start_time > 2100:
-                print(f"⏱️ Discovery Time Guard reached ({time.time() - discovery_start_time:.1f}s). Skipping remaining pages/subsites to guarantee processing pipeline completion...")
-                break
 
             # 7. Query modern site pages under Option B (4-Strategy Robust Merged Discovery via concurrent execution)
             if sync_pages_flag and (max_items is None or len(all_list) < max_items):
@@ -328,7 +322,7 @@ def main(request):
 
                 def _strat1_pages():
                     try:
-                        p_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
+                        p_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/pages", headers, max_retries=5, timeout=30)
                         with page_lock:
                             for p in p_list:
                                 u = p.get("webUrl", "")
@@ -340,7 +334,7 @@ def main(request):
 
                 def _strat1_5_pages():
                     try:
-                        p_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/sitePages/pages", headers, max_retries=2, timeout=15)
+                        p_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/sitePages/pages", headers, max_retries=5, timeout=30)
                         with page_lock:
                             for p in p_list:
                                 u = p.get("webUrl", "")
@@ -352,7 +346,7 @@ def main(request):
 
                 def _strat2_pages():
                     try:
-                        p_list = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=2, timeout=15)
+                        p_list = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{curr_site_id}/pages", headers, max_retries=5, timeout=30)
                         with page_lock:
                             for p in p_list:
                                 u = p.get("webUrl", "")
@@ -364,20 +358,16 @@ def main(request):
 
                 def _strat3_pages():
                     try:
-                        drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives", headers, max_retries=2, timeout=15)
+                        drives_list = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives", headers, max_retries=5, timeout=30)
                         for sp_drive in drives_list:
-                            if time.time() - discovery_start_time > 2100:
-                                break
                             try:
                                 queue = deque([("root", "")])
                                 while queue:
-                                    if time.time() - discovery_start_time > 2100:
-                                        break
                                     curr_id, parent_path = queue.popleft()
                                     url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/items/{curr_id}/children"
                                     if curr_id == "root":
                                         url = f"https://graph.microsoft.com/v1.0/drives/{sp_drive['id']}/root/children"
-                                    items = graph_get_paginated(url, headers, max_retries=2, timeout=15)
+                                    items = graph_get_paginated(url, headers, max_retries=5, timeout=30)
                                     for item in items:
                                         iname = item.get("name", "")
                                         if "folder" in item:
@@ -395,12 +385,10 @@ def main(request):
 
                 def _strat4_pages():
                     try:
-                        lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists", headers, max_retries=2, timeout=15)
+                        lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists", headers, max_retries=5, timeout=30)
                         for lst in lists:
-                            if time.time() - discovery_start_time > 2100:
-                                break
                             try:
-                                items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=2, timeout=15)
+                                items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items?expand=fields", headers, max_retries=5, timeout=30)
                                 for itm in items:
                                     fields = itm.get("fields", {})
                                     iname = fields.get("FileLeafRef") or fields.get("LinkFilename") or ""
@@ -413,7 +401,7 @@ def main(request):
                             except Exception:
                                 # Fallback when expand=fields fails (common for SitePages canvas layout items)
                                 try:
-                                    raw_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items", headers, max_retries=2, timeout=15)
+                                    raw_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/items", headers, max_retries=5, timeout=30)
                                     for itm in raw_items:
                                         web_url = itm.get("webUrl", "")
                                         if web_url.lower().endswith(".aspx"):
@@ -427,7 +415,7 @@ def main(request):
                             # Strategy 4.5: Direct Drive query for lists named SitePages / Site Pages / Pages
                             if any(k in lst.get("name", "").lower() for k in ["sitepages", "site pages", "pages"]):
                                 try:
-                                    drive_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/drive/root/children", headers, max_retries=2, timeout=15)
+                                    drive_items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/lists/{lst['id']}/drive/root/children", headers, max_retries=5, timeout=30)
                                     for di in drive_items:
                                         iname = di.get("name", "")
                                         if iname.lower().endswith(".aspx"):
@@ -441,7 +429,7 @@ def main(request):
                     except Exception:
                         pass
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                     futures = [
                         executor.submit(_strat1_pages),
                         executor.submit(_strat1_5_pages),
@@ -449,7 +437,7 @@ def main(request):
                         executor.submit(_strat3_pages),
                         executor.submit(_strat4_pages),
                     ]
-                    concurrent.futures.wait(futures, timeout=120)
+                    concurrent.futures.wait(futures, timeout=300)
 
                 for p in pages:
                     if max_items is not None and len(all_list) >= max_items:
@@ -517,34 +505,40 @@ def main(request):
 
         # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
         # Only run cleanup if a 100% full, unskipped traversal was performed across both files and pages and integration is triggered
-        if trigger_integration and bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None:
-            print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
-            active_gcs_paths = set()
-            for item in all_list:
-                rel = item.get("RelativePath")
-                if not rel:
-                    continue
-                if item.get("IsPage") or rel.startswith("pages/") or rel.startswith("files/"):
-                    active_gcs_paths.add(rel)
-                else:
-                    active_gcs_paths.add(f"files/{rel}")
-            deleted_count = 0
-            for cached_path in list(gcs_cache.keys()):
-                if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
-                    try:
-                        stale_blob = bucket_obj.get_blob(cached_path)
-                        if stale_blob:
-                            stale_blob.delete()
-                            deleted_count += 1
-                            print(f"🗑️ Status Log: Deleted inactive file from GCS: gs://{bucket_name}/{cached_path}")
-                    except Exception as ex_del:
-                        print(f"Warning: Could not delete orphaned GCS file {cached_path}: {ex_del}")
-            if deleted_count > 0:
-                print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
+        # 7b. Cleanup orphaned/deleted SharePoint items from GCS bucket during full traversal
+        # Only run cleanup if explicitly enabled and a 100% full, unskipped traversal was performed across both files and pages
+        enable_orphan_cleanup = parse_bool_flag(params.get("CONFIG_Enable_Orphan_Cleanup", False), default=False)
+        if trigger_integration and bucket_obj and gcs_cache and not target_urls and sync_files_flag and sync_pages_flag and max_items is None and enable_orphan_cleanup:
+            if len(all_list) < len(gcs_cache) * 0.8:
+                print(f"🛑 Safety Circuit Breaker: Discovered items ({len(all_list)}) significantly smaller than cached GCS inventory ({len(gcs_cache)}). Aborting orphan cleanup to prevent accidental data loss from partial scans/timeouts!", flush=True)
             else:
-                print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
+                print("🔍 Status Log: Checking GCS inventory for deleted/inactive SharePoint files...")
+                active_gcs_paths = set()
+                for item in all_list:
+                    rel = item.get("RelativePath")
+                    if not rel:
+                        continue
+                    if item.get("IsPage") or rel.startswith("pages/") or rel.startswith("files/"):
+                        active_gcs_paths.add(rel)
+                    else:
+                        active_gcs_paths.add(f"files/{rel}")
+                deleted_count = 0
+                for cached_path in list(gcs_cache.keys()):
+                    if cached_path not in active_gcs_paths and not cached_path.startswith("config/") and not cached_path.startswith("status/"):
+                        try:
+                            stale_blob = bucket_obj.get_blob(cached_path)
+                            if stale_blob:
+                                stale_blob.delete()
+                                deleted_count += 1
+                                print(f"🗑️ Status Log: Deleted inactive file from GCS: gs://{bucket_name}/{cached_path}")
+                        except Exception as ex_del:
+                            print(f"Warning: Could not delete orphaned GCS file {cached_path}: {ex_del}")
+                if deleted_count > 0:
+                    print(f"✅ Status Log: Cleaned up {deleted_count} inactive/deleted file(s) from GCS bucket.")
+                else:
+                    print("✅ Status Log: No inactive/deleted files found in GCS bucket.")
         else:
-            print("⏭️ Status Log: Skipping orphaned GCS file cleanup (Partial/Scoped/Dry-Run Sync detected).")
+            print("⏭️ Status Log: Skipping orphaned GCS file cleanup (CONFIG_Enable_Orphan_Cleanup disabled or safety check triggered).")
 
         # Phase 4a.1: Generate config/metadata.jsonl Manifest for Vertex AI Discovery Engine / CCAI GKA
         if bucket_obj and len(all_list) > 0:
@@ -624,8 +618,12 @@ def main(request):
         file_batch_size = params.get("CONFIG_File_Batch_Size", 20 * raw_batch_size if raw_batch_size <= 10 else raw_batch_size)
         # Keep heavy Base64 PDF pages safely at raw_batch_size (5 items/batch ~1.0 MB payload)
         page_batch_size = params.get("CONFIG_Page_Batch_Size", raw_batch_size)
-        max_workers = max(1, raw_workers)
-        chunk_size = max(100, file_batch_size * max_workers)
+        raw_workers = params.get("CONFIG_Max_Parallel_Workers", 2)
+        # Layer 5: Ultra-Conservative Batching & Pacing (Tortoise vs. Hare strategy for 24-hour Cloud Run Jobs)
+        file_batch_size = params.get("CONFIG_File_Batch_Size", 10)
+        page_batch_size = params.get("CONFIG_Page_Batch_Size", raw_batch_size)
+        max_workers = min(3, max(1, raw_workers))
+        chunk_size = min(30, max(20, file_batch_size * max_workers))
 
         def _render_lazy_page(item):
             if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):
@@ -647,7 +645,7 @@ def main(request):
             return item
 
         if trigger_integration and len(sync_list) > 0:
-            print(f"⚡ Pipelined Execution: Processing {len(sync_list)} items (File Batch: {file_batch_size}, Page Batch: {page_batch_size}, Workers: {max_workers})...", flush=True)
+            print(f"⚡ Pipelined Execution: Processing {len(sync_list)} items (File Batch: {file_batch_size}, Page Batch: {page_batch_size}, Workers: {max_workers}, Chunk: {chunk_size})...", flush=True)
             credentials, credentials_project_id = google.auth.default()
             project_id = project_id_override or credentials_project_id or params.get("CONFIG_ProjectId")
             if not project_id:
@@ -686,6 +684,7 @@ def main(request):
                     elif resp.status_code == 200:
                         data = resp.json()
                         eids = data.get("executionInfoIds", [])
+                        time.sleep(0.3)  # Polite inter-batch pacing to guarantee 0% quota rejections
                         return data.get("executionId") or (eids[0] if isinstance(eids, list) and len(eids) > 0 else "triggered")
                     elif resp.status_code in [429, 500, 502, 503, 504]:
                         time.sleep(2 ** attempt)
@@ -699,8 +698,12 @@ def main(request):
 
                 chunk = sync_list[c_start : c_start + chunk_size]
                 print(f"🚀 Processing Pipelined Chunk {c_start + 1} to {min(c_start + chunk_size, len(sync_list))} of {len(sync_list)}...", flush=True)
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    list(executor.map(_render_lazy_page, chunk))
+                
+                # Targeted thread-pool rendering only on SitePages requiring conversion
+                pages_to_render = [item for item in chunk if item.get("IsPage") and not item.get("VirtualContent")]
+                if pages_to_render:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        list(executor.map(_render_lazy_page, pages_to_render))
 
                 # Separate chunk items into files vs pages for smart adaptive batching
                 files_in_chunk = [item for item in chunk if not item.get("IsPage")]
@@ -722,9 +725,10 @@ def main(request):
                         except Exception as ex_sched:
                             print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
 
-                # Immediate memory eviction after dispatching chunk
+                # Immediate memory eviction after dispatching chunk + gentle pacing breather
                 for item in chunk:
                     item.pop("VirtualContent", None)
+                time.sleep(0.5)
                 gc.collect()
         elif len(sync_list) > 0:
             print(f"⚙️ [Step 6/7] Rendering pages & uploading files in parallel ({len(sync_list)} items)...", flush=True)

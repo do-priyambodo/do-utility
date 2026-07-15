@@ -48,7 +48,7 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
     queue = deque([(item_id, parent_path)])
     lock = threading.Lock()
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while queue:
             if max_items is not None and len(all_results) >= max_items:
                 break
@@ -64,7 +64,8 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                     url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
                 try:
                     return f_path, graph_get_paginated(url, headers)
-                except Exception:
+                except Exception as ex_folder:
+                    print(f"Warning: Failed to enumerate folder '{f_path or 'root'}' ({url}) after all retries: {ex_folder}", flush=True)
                     return f_path, []
 
             futures = [executor.submit(fetch_folder, item) for item in batch]
