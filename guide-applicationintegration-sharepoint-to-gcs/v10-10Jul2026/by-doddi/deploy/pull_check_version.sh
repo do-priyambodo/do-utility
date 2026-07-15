@@ -8,11 +8,19 @@ echo "==========================================================================
 echo "🔍 STEP 1: PULL LATEST CODE & ASSERT VERSION / PARAMETERS"
 echo "================================================================================"
 
-echo "📥 1. Fetching latest remote branch and performing safe hard reset to origin/main..."
+echo "📥 1. Backing up parameters/hideme, performing top-level hard reset to origin/main, and restoring credentials..."
+cp parameters.json /tmp/parameters.json 2>/dev/null || true
+cp -r hideme /tmp/hideme_backup 2>/dev/null || true
+rm -f parameters.json 2>/dev/null || true
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+pushd "${REPO_ROOT}" >/dev/null
 git fetch origin --tags --force 2>/dev/null || git fetch origin --force
 git checkout main 2>/dev/null || git checkout -b main origin/main || true
 git reset --hard origin/main
-git clean -fd -e parameters.json -e hideme/ 2>/dev/null || true
+git clean -fd
+popd >/dev/null
+cp /tmp/parameters.json ./parameters.json 2>/dev/null || true
+cp -r /tmp/hideme_backup/* ./hideme/ 2>/dev/null || true
 
 echo -e "\n🏷️  2. Inspecting current Git commit and revision tag..."
 CURRENT_COMMIT=$(git log -1 --format="%h - %s (%ci)")

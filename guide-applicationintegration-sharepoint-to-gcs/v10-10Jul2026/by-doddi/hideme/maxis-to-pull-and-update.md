@@ -26,7 +26,7 @@ To completely eliminate index and modification conflicts, our exact copy-paste c
 Open your terminal inside the Version 10 directory (`v10-10Jul2026/by-doddi`) and copy-paste this **single bulletproof 1-line command** (and press **Enter**) to back up your `parameters.json`, perform a top-level clean reset, and restore your exact settings:
 
 ```bash
-cp parameters.json /tmp/parameters.json 2>/dev/null || true && cp -r hideme /tmp/hideme_backup 2>/dev/null || true && cd $(git rev-parse --show-toplevel) && git fetch origin --tags --force && git add -A && git checkout main 2>/dev/null || git checkout -b main origin/main && git reset --hard origin/main && git clean -fd && cd - && cp /tmp/parameters.json ./parameters.json 2>/dev/null || true && cp -r /tmp/hideme_backup/* ./hideme/ 2>/dev/null || true
+cp parameters.json /tmp/parameters.json 2>/dev/null || true && cp -r hideme /tmp/hideme_backup 2>/dev/null || true && rm -f parameters.json 2>/dev/null || true && cd $(git rev-parse --show-toplevel) && git fetch origin --tags --force && git checkout main 2>/dev/null || git checkout -b main origin/main && git reset --hard origin/main && git clean -fd && cd - && cp /tmp/parameters.json ./parameters.json 2>/dev/null || true && cp -r /tmp/hideme_backup/* ./hideme/ 2>/dev/null || true
 ```
 > [!SUCCESS]
 > **Why this command never fails:** By backing up `parameters.json` and `hideme/` to `/tmp` outside the repository before running `git reset --hard origin/main` from the top-level Git root (`$(git rev-parse --show-toplevel)`), Git will never complain about local modifications or index conflicts. Your files and credentials are restored 100% intact instantly!
