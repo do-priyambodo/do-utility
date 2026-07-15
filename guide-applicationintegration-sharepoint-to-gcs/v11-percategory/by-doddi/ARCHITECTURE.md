@@ -1,160 +1,135 @@
-# Enterprise SharePoint-to-GCS Synchronization & Agent Assist Architecture
+# V11 Enterprise Per-Category Synchronization & Agent Assist Architecture (`v11-percategory`)
 
-This architectural blueprint describes the end-to-end serverless synchronization pipeline, dynamic rendering engine, multi-stage Application Integration flow, and contact center AI integration (Genesys to SharePoint) for enterprise deployments.
-
----
-
-## 1. Traversal Cloud Run Service (Core Engine Mechanism)
-
-The Traversal Cloud Run service (`yourorg-sharepoint-list-files`) is the intelligence hub of the pipeline. Built with a clean modular architecture (`graph_client.py`, `sharepoint_traversal.py`, `sharepoint_engine/discovery.py`, `config_schema.py`, `pdf_renderer.py`, `main.py`), it combines Microsoft Graph API crawl capabilities with full browser automation, strict configuration validation, and a shared Single Source of Truth discovery package (`sharepoint_engine.discovery`).
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       TRAVERSAL CLOUD RUN SERVICE                                           │
-│                                                                                                             │
-│  ┌─────────────────────────┐     ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │   1. M365 Authentication│     │                     2. Traversal & Discovery Engine                   │  │
-│  │     (graph_client.py)   │────▶│                                                                       │  │
-│  │ • OAuth2 Token Cache    │     │ • Graph API Site/Drive Crawl   • Target URLs (target_urls.txt)        │  │
-│  │ • Exponential Backoff   │     │ • Document Libraries Inventory • Modern Site Pages (.aspx) Harvest    │  │
-│  └─────────────────────────┘     └───────────────────────────────────┬───────────────────────────────────┘  │
-│                                                                      │                                      │
-│                                                                      ▼                                      │
-│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                             3. O(1) GCS Delta Cache & Orphan Pruning                                  │  │
-│  │                                                                                                       │  │
-│  │ • Compare lastModifiedDateTime against existing GCS object metadata ($delta cache)                    │  │
-│  │ • INSTANT SKIP for unchanged inventory (<60s incremental execution)                                   │  │
-│  │ • Automated Cleanup: Purges deleted/inactive SharePoint files from GCS                                │  │
-│  └───────────────────────────────────────────────────┬───────────────────────────────────────────────────┘  │
-│                                                      │                                                      │
-│                                                      ▼                                                      │
-│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                            4. High-Fidelity PDF Rendering Engine                                      │  │
-│  │                                      (pdf_renderer.py)                                                │  │
-│  │                                                                                                       │  │
-│  │   ┌─────────────────────────────────────────────────┐   ┌─────────────────────────────────────────┐   │  │
-│  │   │     Primary Engine: Playwright Chromium         │   │      Fallback Engine: WeasyPrint        │   │  │
-│  │   │                                                 │   │                                         │   │  │
-│  │   │ • Full Headless Chromium Automation             │   │ • Lightweight HTML5/CSS Compile         │   │  │
-│  │   │ • Executes JS, Accordions & Dynamic Layouts     │   │ • Low Memory Footprint (~100-150MB)     │   │  │
-│  │   │ • Intelligent Image URL Resolver (OData/Thumbs) │   │ • Automatic fallback if binaries absent │   │  │
-│  │   └─────────────────────────────────────────────────┘   └─────────────────────────────────────────┘   │  │
-│  └───────────────────────────────────────────────────┬───────────────────────────────────────────────────┘  │
-│                                                      │                                                      │
-│                                                      ▼                                                      │
-│  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │               5. Streaming Parallel Pipelined Chunk Execution & Micro-Batching                        │  │
-│  │                          (CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers)                            │  │
-│  │                                                                                                       │  │
-│  │ • Pre-Render Delta Cache Filter: Skips unchanged pages instantly before any browser rendering         │  │
-│  │ • Processes items in chunks (e.g. 5x5=25) with parallel Playwright rendering across thread pool       │  │
-│  │ • Immediately dispatches micro-batches per chunk & flushes RAM for continuous incremental progress    │  │
-│  └───────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Detailed Component Breakdown
-
-1. **Authentication & Resiliency (`graph_client.py`)**:
-   * Authenticates against Microsoft Entra ID (M365 Tenant) using OAuth2 client credentials (`CONFIG_M365_Client_Id` + GCP Secret Manager secret).
-   * Implements robust retry policies with exponential backoff and token caching to handle transient throttling (`429 Too Many Requests`).
-
-2. **Recursive Traversal & Layout Harvesting (`sharepoint_traversal.py`)**:
-   * **Full Site Crawl**: Recursively traverses Microsoft Graph API endpoints (`/sites/{site-id}/drives`, `/lists`) to catalog all physical document library files.
-   * **Targeted Site Pages**: Reads `gs://bucket/config/target_urls.txt` to dynamically scope and harvest modern SharePoint site pages (`.aspx`).
-   * Extracts clean semantic DOM structure, page titles, author metadata, inline leadership images, accordions, and custom styles.
-
-3. **O(1) Delta Cache & Orphan Pruning**:
-   * Maintains an O(1) cache lookup against current GCS bucket objects (`gcs_cache`).
-   * Compares SharePoint `lastModifiedDateTime` timestamps against cached GCS generation timestamps. Unchanged items bypass downstream processing instantaneously.
-   * Identifies orphaned or deleted SharePoint files and removes the stale objects from GCS to maintain strict 1:1 parity.
-
-4. **High-Fidelity PDF Rendering Engine (`pdf_renderer.py`)**:
-   * **Playwright Chromium (Primary)**: Runs inside a containerized runtime (`mcr.microsoft.com/playwright/python:v1.44.0-jammy`). Launches a headless Chromium browser instance, loads harvested HTML layouts, executes complex JavaScript/CSS grid layouts, waits for network idle state, and generates pixel-perfect vector `.pdf` executive reports (~300KB–1.2MB per page).
-   * **Intelligent Image URL Resolver**: Automatically resolves enterprise OData endpoints, SharePoint CDN thumbnail tokens, and authenticated inline images before rendering.
-   * **WeasyPrint (Fallback)**: Lightweight HTML5 vector compile engine that executes in <2 seconds per page if headless Chromium binaries are not present in the runtime container.
-
-5. **Streaming Parallel Pipelined Chunk Execution & Micro-Batching (`CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers`)**:
-   * **Pre-Render Delta Cache Filter**: Modern Site Pages (`.aspx`) are checked against `gcs_cache` during discovery *before* any browser rendering occurs. Unchanged pages bypass rendering instantly (<1ms).
-   * **Pipelined Chunk Processing**: Candidate items are processed in self-contained chunks of size `CONFIG_Batch_Size × CONFIG_Max_Parallel_Workers` (e.g., `5 × 5 = 25 items`).
-   * **Parallel Playwright Rendering**: Within each chunk, up to `CONFIG_Max_Parallel_Workers` threads concurrently render modern `.aspx` site pages into high-fidelity PDF base64 payloads, achieving up to a 5x speedup over sequential rendering.
-   * **Immediate Micro-Batch Orchestration**: As soon as a chunk finishes parallel rendering, its items are sliced into micro-batches (`CONFIG_Batch_Size`) and dispatched immediately to Application Integration (`yourorg-sharepoint-gcs-parent`). Memory is flushed after each chunk, ensuring continuous incremental progress and preventing serverless memory bloat or timeouts.
+This architectural blueprint describes the **Version 11 Per-Category Synchronization Pipeline** (`v11-percategory`). Built for massive enterprise footprints (e.g., 35,000+ items across 20+ subsite departments), V11 replaces monolithic crawling with an **isolated, sharded category matrix**, **decoupled transport routing**, and **O(1) sharded metadata aggregation**.
 
 ---
 
-## 2. Integration Pipeline: Cloud Run → Application Integration → GCS & Metadata Maintenance
+## 1. V11 Multi-Tier Category Matrix & Master Serial Loop
 
-The synchronization workflow separates orchestration from data transport via Google Cloud Application Integration and dedicated Integration Connectors.
+Instead of scanning an entire tenant in one monolithic run, V11 divides your SharePoint site collection into manageable, prioritized slices defined in `config-category.json`. The **Traversal Cloud Run Service** (`doddi-sharepoint-list-files-20260709-v2`) executes an **Option 1 Master Serial Loop**, iterating sequentially across each `"active": "yes"` category according to its `"order_to_sync"`.
 
 ```
-       [Cloud Scheduler (Cron Trigger)]
-                      │
-                      ▼ (HTTPS POST / OIDC Auth)
-┌───────────────────────────────────────────────────────────┐
-│              Traversal Cloud Run Service                  │
-│           (yourorg-sharepoint-list-files)                 │
-│                                                           │
-│  1. Performs Traversal & Delta Cache Check                │
-│  2. Renders Modern .aspx Pages directly to GCS (pages/)   │
-│  3. Generates/Updates gs://bucket/config/metadata.jsonl   │
-└─────────────────────────────┬─────────────────────────────┘
-                              │
-                              ▼ (Submits Micro-Batches of Files to Sync)
-┌───────────────────────────────────────────────────────────┐
-│     Application Integration Parent (Orchestrator)         │
-│             (yourorg-sharepoint-gcs-parent)               │
-│                                                           │
-│  • Loops asynchronously over batched file manifest        │
-│  • Emits execution status logs to GCS (config/status/)    │
-└─────────────────────────────┬─────────────────────────────┘
-                              │
-                              ▼ (ForEach File Iteration)
-┌───────────────────────────────────────────────────────────┐
-│      Application Integration Child (Worker)               │
-│              (yourorg-sharepoint-gcs-child)               │
-│                                                           │
-│  ┌────────────────────────┐      ┌─────────────────────┐  │
-│  │  SharePoint Connector  │      │    GCS Connector    │  │
-│  │       (V2 API)         │      │      (V1 API)       │  │
-│  │                        │      │                     │  │
-│  │   Downloads raw stream │────▶ │   Streams uncorrupted│  │
-│  │   bytes from M365      │      │   bytes to target   │  │
-│  └────────────────────────┘      └─────────────────────┘  │
-└───────────────────────────────────────────────────────────┘
+       [ Cloud Scheduler / Manual Execution Trigger ]
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 TRAVERSAL CLOUD RUN SERVICE (main.py)                       │
+│                                                                             │
+│  Loads config-category.json -> Iterates Active Categories Sequentially:     │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ Loop 1: tier1-den-root-only (order_to_sync: 1)                        │  │
+│  │ ├─ Target: sites/DEN (Root only, Include Subsites: False)             │  │
+│  │ └─ Shard Prefix: categories/den-root/                                 │  │
+│  └───────────────────────────────────┬───────────────────────────────────┘  │
+│                                      ▼ [Wipes RAM Buffer & Proceeds]        │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ Loop 2: tier1-business (order_to_sync: 2)                             │  │
+│  │ ├─ Target: sites/DEN/Business (Include Subsites: True)                │  │
+│  │ └─ Shard Prefix: categories/business/                                 │  │
+│  └───────────────────────────────────┬───────────────────────────────────┘  │
+│                                      ▼ [Wipes RAM Buffer & Proceeds]        │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ Loop 3..X: tier2-medium / tier3-specialized (Multi-Site Arrays)       │  │
+│  │ ├─ Target: ["sites/DEN/Channels", "sites/DEN/MEPS", ...]              │  │
+│  │ └─ Shard Prefix: categories/medium-departments/ | specialized-teams/  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Pipeline Execution & Metadata File Lifecycle
-
-1. **Orchestrator Handoff (Parent Integration)**:
-   * The Traversal Cloud Run service posts structured JSON micro-batches to the **Parent Integration** (`yourorg-sharepoint-gcs-parent`).
-   * The Parent Integration acts as an asynchronous orchestrator, iterating through the file manifest and dispatching individual tasks to the child worker.
-
-2. **Binary Data Streaming (Child Worker & Connectors)**:
-   * The **Child Integration** (`yourorg-sharepoint-gcs-child`) invokes the **SharePoint Integration Connector V2** (`CONFIG_SharePoint_Connection`) to stream raw, uncorrupted file bytes directly from Microsoft 365.
-   * Bytes are piped instantly through the **GCS Integration Connector V1** (`CONFIG_GCS_Connection`) into the target GCS bucket (`CONFIG_GCS_Bucket`), avoiding memory buffering bottlenecks.
-
-3. **Continuous Metadata File Maintenance (`config/metadata.jsonl`)**:
-   * Alongside binary synchronization, the Traversal Service continuously compiles and maintains `gs://YOUR_BUCKET/config/metadata.jsonl`.
-   * **Structured JSONL Schema**: Every document and rendered PDF page receives a structured record combining the GCS storage URI (`id`) and custom metadata (`structData`):
-     ```json
-     {
-       "id": "gs://yourorg-bucket-sharepoint-sync/pages/Executive_Strategy.pdf",
-       "structData": {
-         "title": "Executive Strategy Portal",
-         "sharepoint_url": "https://yourorg.sharepoint.com/sites/portal/SitePages/Executive_Strategy.aspx",
-         "lastModified": "2026-07-06T12:00:00Z",
-         "category": "ModernPage"
-       }
-     }
-     ```
-   * Maintaining `sharepoint_url` as a persistent structured attribute guarantees downstream systems can link back to the live SharePoint source instead of raw GCS objects.
+### Key Architectural Advantages:
+* **Multi-Site Array Ingestion:** Categories can accept either a single site (`"sites/DEN/Business"`) or a JSON array of multiple distinct subsites (`["sites/DEN/Channels", "sites/DEN/Quality-Assurance"]`), routing all of them cleanly into one unified GCS prefix shard.
+* **RAM & Timeout Isolation:** After each category completes its discovery, Playwright rendering, and upload handoff, `main.py` explicitly flushes its memory buffers before starting the next category. This eliminates `Out-Of-Memory (OOM)` container crashes and Cloud Run `86,400s` timeout breaches.
 
 ---
 
-## 3. End-to-End Agent Assist Architecture: Genesys to SharePoint
+## 2. Decoupled Transport Routing: SharePoint URL vs. GCS Sharded Storage
 
-When customer service agents handle live interactions inside **Genesys Contact Center**, Google Cloud Generative Knowledge Assist (GKA / CCAI) surfaces contextual answers and citations. The architecture below ensures agents are routed directly to live, interactive SharePoint pages upon clicking citations.
+A critical challenge in category-based synchronization is that while files must be stored in sharded GCS folders (`categories/<id>/files/...`), those sharded prefix folders **do not exist on Microsoft SharePoint**. 
+
+V11 solves this via **Decoupled Transport Routing** between the discovery engine (`sharepoint_traversal.py`), the orchestrator (`parent_workflow`), and the data transport worker (`child_workflow`).
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          DECOUPLED TRANSPORT ROUTING MECHANISM                                    │
+│                                                                                                   │
+│  Discovery Engine (list_drive_items_recursive) emits two decoupled paths per item:               │
+│                                                                                                   │
+│  1️⃣  Url (Remote SharePoint Source)  : https://priyambodo.sharepoint.com/.../Policy.docx         │
+│  2️⃣  RelativePath (GCS Shard Target) : categories/business/files/Business/Policy.docx             │
+└─────────────────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                                  │
+                                                  ▼ (POST Micro-Batches via API Trigger)
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│               APPLICATION INTEGRATION PARENT & CHILD TRANSPORT PIPELINE                           │
+│                                                                                                   │
+│  ┌──────────────────────────────────────────┐      ┌───────────────────────────────────────────┐  │
+│  │        Task 2: SharePoint Connector      │      │          Task 4: GCS Connector            │  │
+│  │                                          │      │                                           │  │
+│  │  Reads: Url                              │      │  Reads: RelativePath (via folderPath)     │  │
+│  │  Action: DownloadDocument                │─────▶│  Action: UploadObject                     │  │
+│  │  Target: https://.../Policy.docx         │      │  Target: categories/business/files/...    │  │
+│  │  Result: 100% Valid (0% 404 Errors)      │      │  Result: Isolated Sharded GCS Storage     │  │
+│  └──────────────────────────────────────────┘      └───────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Exact Routing Logic:
+1. **SharePoint Retrieval (`Url`):** The item's `Url` is strictly constructed using the actual SharePoint folder hierarchy (`https://priyambodo.sharepoint.com/sites/DEN/Business/Policy.docx`). When the Child Integration (`Task 2`) asks the Microsoft Graph connector to download the file, it retrieves the bytes with **0% `HTTP 404` errors**.
+2. **GCS Sharded Storage (`RelativePath`):** The item's `RelativePath` explicitly includes the category shard (`categories/business/files/Business/Policy.docx`). The Child Integration (`Task 3` / `Task 5` Jsonnet mappings) extracts this exact sharded folder path and instructs the GCS connector (`Task 4` / `Task 7`) to drop the uncorrupted stream bytes precisely inside that sharded folder.
+
+---
+
+## 3. Sharded Metadata Aggregation (`combine_metadata_shards`)
+
+To allow Vertex AI Search and Contact Center AI (CCAI) to index your entire enterprise repository in O(1) time without reading tens of thousands of individual GCS blobs, V11 implements **Sharded Manifest Architecture**.
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                            SHARDED METADATA AGGREGATION PIPELINE                                  │
+│                                                                                                   │
+│  During Category Loops (Step 1-6): Every active category writes its own isolated manifest shard:  │
+│                                                                                                   │
+│  • gs://doddi-bucket-v2/categories/den-root/config/metadata_part.jsonl         (20 records)       │
+│  • gs://doddi-bucket-v2/categories/business/config/metadata_part.jsonl         (9,599 records)    │
+│  • gs://doddi-bucket-v2/categories/medium-departments/config/metadata_part.jsonl (4,887 records)  │
+└─────────────────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                                  │
+                                                  ▼ (Final Step 7 of Master Loop)
+┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                             MASTER AGGREGATOR (combine_metadata_shards)                           │
+│                                                                                                   │
+│  Scans gs://doddi-bucket-v2/categories/*/config/metadata_part.jsonl                               │
+│  Stream-merges all category shards and writes the unified master manifest:                        │
+│                                                                                                   │
+│  👉 gs://doddi-bucket-v2/config/metadata.jsonl (100% of all 38,823 enterprise records)            │
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Record Structure inside `metadata.jsonl`:
+Every entry in the final `config/metadata.jsonl` provides exact sharded GCS routing alongside the original live SharePoint web URL:
+```json
+{
+  "id": "Policy_Doc_2026",
+  "structData": {
+    "title": "Business Policy Document 2026",
+    "sharepoint_url": "https://priyambodo.sharepoint.com/sites/DEN/Business/Policy.docx",
+    "category_id": "tier1-business",
+    "category_name": "Business Department Policies & Documents",
+    "relative_path": "categories/business/files/Business/Policy.docx"
+  },
+  "content": {
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "uri": "gs://doddi-bucket-sharepoint-sync-20260709-v2/categories/business/files/Business/Policy.docx"
+  }
+}
+```
+
+---
+
+## 4. End-to-End Agent Assist Architecture: Genesys to SharePoint
+
+When customer service agents handle live interactions inside **Genesys Contact Center**, Google Cloud Generative Knowledge Assist (GKA / CCAI) queries Vertex AI Search and surfaces contextual answers and citations.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -172,7 +147,7 @@ When customer service agents handle live interactions inside **Genesys Contact C
 │                                                         │         3. Vertex AI Discovery Engine         │   │
 │                                                         │            (Generative Knowledge)             │   │
 │                                                         │                                               │   │
-│                                                         │ • Indexes documents & metadata attributes     │   │
+│                                                         │ • Indexes sharded config/metadata.jsonl       │   │
 │                                                         │ • Maps answer snippets to sharepoint_url      │   │
 │                                                         └───────────────────────▲───────────────────────┘   │
 │                                                                                 │                           │
@@ -180,39 +155,25 @@ When customer service agents handle live interactions inside **Genesys Contact C
 │                                                              Cron Scheduler)    │                           │
 │                                                                                 │                           │
 │   ┌───────────────────────────────────────────────┐     ┌───────────────────────┴───────────────────────┐   │
-│   │        5. Microsoft 365 SharePoint Intranet   │     │       4. Synchronized GCS Repository          │   │
-│   │           (https://yourorg.sharepoint.com)      │     │         (gs://yourorg-bucket-sharepoint-sync) │   │
+│   │        5. Microsoft 365 SharePoint Intranet   │     │       4. Synchronized GCS Sharded Storage     │   │
+│   │           (https://yourorg.sharepoint.com)      │     │         (gs://doddi-bucket-...-v2)            │   │
 │   │                                               │     │                                               │   │
-│   │  • Live Interactive Enterprise Page           │◀────│ • Rendered Executive PDFs (pages/*.pdf)       │   │
-│   │  • Enforces M365 Entra ID SSO / Permissions   │     │ • Metadata Manifest (config/metadata.jsonl)   │   │
+│   │  • Live Interactive Enterprise Page / File    │◀────│ • Sharded Files (categories/*/files/*)        │   │
+│   │  • Enforces M365 Entra ID SSO / Permissions   │     │ • Sharded Pages (categories/*/pages/*.pdf)    │   │
 │   └───────────────────────────────────────────────┘     └───────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### End-to-End Workflow & Citation Resolution
-
-1. **Synchronization & Discovery Ingestion**:
-   * **GCS Repository**: The backend Traversal & Integration pipeline keeps PDF snapshots and `config/metadata.jsonl` continuously synchronized in GCS.
-   * **12-Hour Automated Scheduler**: A dedicated Cloud Scheduler job (`yourorg-sharepoint-datastore-sync-12h`) calls `sync_datastore.py` every 12 hours (`0 */12 * * *`) to ingest `metadata.jsonl` into **Vertex AI Discovery Engine** (`importDocuments` in `INCREMENTAL` mode).
-
-2. **Real-Time Agent Query in Genesys**:
-   * During a live customer interaction on **Genesys Agent Desktop**, real-time conversation audio/text triggers **Google Contact Center AI (CCAI) / Agent Assist**.
-   * Vertex AI Discovery Engine semantic search retrieves the relevant policy document or modern SharePoint page snapshot and synthesizes an executive answer.
-
-3. **Dynamic Citation Override (`articleLinkConfig`)**:
-   * By default, raw vector search citations point to the underlying GCS blob (`gs://bucket/pages/page.pdf`).
-   * The Agent Assist widget (`<agent-assist-ui-modules>`) embedded in Genesys is configured with `articleLinkConfig`:
-     ```javascript
-     kaWidget.config = {
-       ...kaWidget.config,
-       articleLinkConfig: {
-         linkMetadataKey: "sharepoint_url",  // Extracts live URL from metadata.jsonl schema
-         target: "_blank"                    // Opens clean new tab in agent browser
-       }
-     };
-     ```
-   * When an agent clicks the citation link, the UI automatically intercepts the default blob URL and redirects the browser directly to `sharepoint_url` (`https://yourorg.sharepoint.com/...`).
-
-4. **Live SharePoint Navigation & SSO Enforcement**:
-   * The agent lands on the official, interactive SharePoint modern page.
-   * Microsoft Entra ID SSO automatically verifies the agent's permissions, ensuring security compliance while delivering the most up-to-date intranet experience.
+### Citation Resolution Workflow:
+1. **Continuous Ingestion:** A dedicated Cloud Scheduler job (`doddi-sharepoint-datastore-sync-20260709-v2`) calls `sync_datastore.py` every 12 hours (`0 */12 * * *`) to ingest the master `config/metadata.jsonl` directly into **Vertex AI Discovery Engine** (`importDocuments` in `INCREMENTAL` mode).
+2. **Dynamic Citation Redirect:** By default, raw vector search citations point to the sharded GCS blob (`uri`). The Agent Assist widget embedded inside Genesys uses `articleLinkConfig` to intercept the citation click:
+   ```javascript
+   kaWidget.config = {
+     ...kaWidget.config,
+     articleLinkConfig: {
+       linkMetadataKey: "sharepoint_url",  // Dynamically extracts live URL from metadata.jsonl structData
+       target: "_blank"                    // Opens clean new tab in agent browser
+     }
+   };
+   ```
+3. **SSO & Live Intranet Access:** When an agent clicks any citation, the browser opens the exact, live Microsoft SharePoint page or document (`sharepoint_url`). Microsoft Entra ID SSO validates the agent's permissions in real time, guaranteeing enterprise governance and security compliance while delivering the most up-to-date intranet experience.
