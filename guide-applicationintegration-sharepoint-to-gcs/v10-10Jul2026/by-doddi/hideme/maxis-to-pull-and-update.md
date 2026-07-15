@@ -33,15 +33,15 @@ cp parameters.json /tmp/parameters.json 2>/dev/null || true && cp -r hideme /tmp
 
 ---
 
-### Step 2: Verify Exact Code & 4-Pillar Hardened Circuit Breakers
-Before deploying, run this 1-line verification check to confirm that your local folder successfully pulled the **4-Pillar Hardened Code** (`zero discovery cutoffs, locked-down Step 7b guard, 3-worker max concurrency, and 15-page Playwright auto-recycling`):
+### Step 2: Verify Exact Code & 4-Pillar Hardened Circuit Breakers (`Pre-Flight Script`)
+Before deploying, run our dedicated pre-flight script to verify your `parameters.json` and confirm that **100% of the 4-Pillar Safety Guards** are active inside your local Python files:
 
 ```bash
-echo -e "\n🔍 1. Current Git Revision:" && git log -1 --format="%h - %s (%ci)" && echo -e "\n🛡️ 2. Verifying 4-Pillar Safety Guards inside Code:" && python3 -c "import re; m=open('cf-sharepoint/main.py').read(); p=open('cf-sharepoint/pdf_renderer.py').read(); (m.count('discovery_start_time > 2100') == 0 and 'max_workers = min(3,' in m and 'CONFIG_Enable_Orphan_Cleanup' in m and 'render_count >= 15' in p) and print('✅ ALL 4 PILLAR SAFETY GUARDS VERIFIED ACTIVE IN LOCAL CODE!') or print('❌ WARNING: Old or unhardened code detected! Please re-run Step 1 pull.')"
+python3 util/verify_v10_pillars.py
 ```
 
 **✅ Expected Output Verification:**
-* The check MUST output `✅ ALL 4 PILLAR SAFETY GUARDS VERIFIED ACTIVE IN LOCAL CODE!`.
+* The check MUST output `🎉 PRE-FLIGHT PASSED: ALL 4 PILLAR SAFETY GUARDS ARE 100% ACTIVE!`.
 * This confirms 100% that the old 35-minute discovery cutoffs are gone, Step 7b is safely locked down behind the 80% circuit breaker, Playwright recycles every 15 pages, and concurrency is safely clamped to prevent `Signal 9 (OOM)` container terminations.
 
 ---
@@ -104,14 +104,14 @@ Whenever guiding Janice to update her Cloud Shell and execute the new 4-Pillar s
 > cp parameters.json /tmp/parameters.json 2>/dev/null || true && cp -r hideme /tmp/hideme_backup 2>/dev/null || true && rm -f parameters.json 2>/dev/null || true && cd $(git rev-parse --show-toplevel) && git fetch origin --tags --force && git checkout main 2>/dev/null || git checkout -b main origin/main && git reset --hard origin/main && git clean -fd && cd - && cp /tmp/parameters.json ./parameters.json 2>/dev/null || true && cp -r /tmp/hideme_backup/* ./hideme/ 2>/dev/null || true
 > ```
 > 
-> ### **Step 2: Verify Local Code & Configuration (`Assurance Check`)**
-> Run this quick verification check to confirm that your project/bucket are ready and that **100% of the 4-Pillar Safety Guards are active in your local code**:
+> ### **Step 2: Verify Local Code & Configuration (`Assurance Script`)**
+> Run our clean, foolproof pre-flight check to verify that your project/bucket are ready and that **100% of the 4-Pillar Safety Guards are active in your local code**:
 > ```bash
-> python3 -c "import json; p=json.load(open('parameters.json')); print(f'✅ Ready to deploy for Project: {p.get(\"CONFIG_ProjectId\")} -> Bucket: gs://{p.get(\"CONFIG_GCS_Bucket\")}')" && echo -e "\n🛡️ Verifying 4-Pillar Safety Guards inside Code:" && python3 -c "import re; m=open('cf-sharepoint/main.py').read(); p=open('cf-sharepoint/pdf_renderer.py').read(); (m.count('discovery_start_time > 2100') == 0 and 'max_workers = min(3,' in m and 'CONFIG_Enable_Orphan_Cleanup' in m and 'render_count >= 15' in p) and print('✅ ALL 4 PILLAR SAFETY GUARDS VERIFIED ACTIVE IN LOCAL CODE!') or print('❌ WARNING: Old or unhardened code detected! Please re-run Step 1 pull.')"
+> python3 util/verify_v10_pillars.py
 > ```
 > 
 > ### **Step 3: Re-Deploy the Cloud Run Job & Execute Continuous Sync**
-> Once the verification check above outputs `✅ ALL 4 PILLAR SAFETY GUARDS VERIFIED ACTIVE IN LOCAL CODE!`, build the hardened container and trigger the continuous 24-hour job:
+> Once the verification check above outputs `🎉 PRE-FLIGHT PASSED: ALL 4 PILLAR SAFETY GUARDS ARE 100% ACTIVE!`, build the hardened container and trigger the continuous 24-hour job:
 > ```bash
 > chmod +x deploy/deploy_cloud_run.sh && ./deploy/deploy_cloud_run.sh && gcloud run jobs execute july1st-sharepoint-list-files --region=asia-southeast1
 > ```
