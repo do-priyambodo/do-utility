@@ -120,7 +120,7 @@ def validate():
 
     print_header("Step 1: Checking parameter presence & formats in config-parameters.json")
     
-    params_file = "config-parameters.json"
+    params_file = "parameters.json" if os.path.exists("parameters.json") else "config-parameters.json"
     if not os.path.exists(params_file) and os.path.exists("../config-parameters.json"):
         params_file = "../config-parameters.json"
         
