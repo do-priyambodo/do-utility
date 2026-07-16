@@ -221,17 +221,27 @@ python3 check/check_syncall_before.py
 
 Initiate the full enterprise synchronization (`100,000+ assets`). Standard regular files scale automatically to **100 items/batch** (`~15 KB payload`), `.aspx` pages batch at **5 items/batch**, and batches dispatch concurrently via 10 keep-alive connection-pooled threads:
 
-### Option A: Cloud Scheduler Trigger (`Recommended Unattended 24-Hour Production Execution`)
-Use this option to test your Cloud Scheduler connection and initiate the full 24-hour synchronization. When you run this command, you force Cloud Scheduler to trigger on-demand as if the scheduled time (e.g., 11:00 PM or hourly cron) has arrived. This verifies that your automated cron trigger has the correct OAuth IAM permissions and payload headers to successfully wake up and run the Cloud Run Job:
+### Option A: Direct Cloud Run Job Execution (`Recommended for Immediate Unattended Execution`)
+Use this option right after running `./deploy/deploy_cloud_run.sh` to immediately launch a fresh 24-hour serverless synchronization container directly on Cloud Run without routing through Cloud Scheduler:
+
+```bash
+gcloud run jobs execute $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))") --region=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
+```
+> [!TIP]
+> **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
+> `gcloud run jobs execute` dispatches the execution directly to Cloud Run's serverless infrastructure and exits your terminal in `~2 seconds`. **You can safely close your terminal or shut down your laptop right after running this command!**
+
+### Option B: Cloud Scheduler Trigger (`Recommended for Automated Production Cron Testing`)
+Use this option when you want to verify that your automated Cloud Scheduler cron job (`CONFIG_Scheduler_Job_Name`) has the correct OAuth IAM permissions and payload headers to successfully trigger the Cloud Run Job on schedule:
 
 ```bash
 gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Scheduler_Job_Name', 'doddi-sharepoint-sync-hourly'))") --location=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_Location', 'asia-southeast1'))") --project=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")
 ```
 > [!TIP]
 > **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
-> This command sends an asynchronous trigger and exits in `~2 seconds`. The 24-hour traversal runs unattended inside Google Cloud's infrastructure. **You can safely close your terminal or shut down your laptop right after running this command!**
+> Just like Option A, this command sends an asynchronous trigger to Cloud Scheduler and exits in `~2 seconds`. The 24-hour traversal runs unattended inside Google Cloud's infrastructure. **You can safely close your terminal or shut down your laptop right after running this command!**
 
-### Option B: Interactive Python Runner (`Manual Debug & Local Terminal Tracking`)
+### Option C: Interactive Python Runner (`Manual Debug & Local Terminal Tracking`)
 Runs the complete synchronization interactively right on your local machine/terminal shell:
 
 ```bash
@@ -239,7 +249,7 @@ python3 sync/sync_sharepoint_to_gcs.py
 ```
 > [!CAUTION]
 > **💻 Laptop / Terminal Closure Safety: DO NOT CLOSE YOUR LAPTOP OR TERMINAL**  
-> Unlike Option A, Option B runs locally right inside your active shell session on your computer. **If you close your terminal window, lose Wi-Fi, or put your laptop to sleep, the process (`SIGHUP`) will be killed instantly and the sync will abort!** Use this only for local interactive debugging or when running inside a persistent screen/tmux session.
+> Unlike Options A & B, Option C runs locally right inside your active shell session on your computer. **If you close your terminal window, lose Wi-Fi, or put your laptop to sleep, the process (`SIGHUP`) will be killed instantly and the sync will abort!** Use this only for local interactive debugging or when running inside a persistent screen/tmux session.
 
 > [!TIP]
 > **Realistic Enterprise Timeline Expectations (`38,000+ Items / 23 Subsites`)**:
