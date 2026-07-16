@@ -268,14 +268,95 @@ def run_category_check(category, params, token, headers, gcs_cache):
                 pass
             return items_found, sync_found
 
+        def scan_subsite_pages_unthrottled(st):
+            items_found = []
+            sync_found = []
+            s_id = st["id"]
+            s_name = st["name"] or "Home"
+            seen_urls = set()
+            pages = []
+            # Strategy 1: /v1.0/sites/{id}/pages
+            try:
+                p_v1 = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/pages", headers)
+                for p in p_v1:
+                    u = p.get("webUrl", "")
+                    if u and u not in seen_urls:
+                        seen_urls.add(u)
+                        pages.append(p)
+            except Exception:
+                pass
+            # Strategy 2: /beta/sites/{id}/pages
+            try:
+                p_beta = graph_get_paginated(f"https://graph.microsoft.com/beta/sites/{s_id}/pages", headers)
+                for p in p_beta:
+                    u = p.get("webUrl", "")
+                    if u and u not in seen_urls:
+                        seen_urls.add(u)
+                        pages.append(p)
+            except Exception:
+                pass
+            # Strategy 4: Query lists for sitepages/wiki/etc
+            try:
+                lists = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists", headers)
+                for lst in lists:
+                    l_name = lst.get("name", "").lower()
+                    l_display = lst.get("displayName", "").lower()
+                    l_tmpl = lst.get("list", {}).get("template", "").lower()
+                    if any(k in l_name or k in l_display for k in ["page", "sitepages", "faq", "article", "kb", "wiki"]) or l_tmpl in ["sitepages", "sitepage", "wikipage"]:
+                        items = graph_get_paginated(f"https://graph.microsoft.com/v1.0/sites/{s_id}/lists/{lst['id']}/items?expand=fields", headers)
+                        for itm in items:
+                            fields = itm.get("fields", {})
+                            iname = fields.get("FileLeafRef") or fields.get("LinkFilename") or ""
+                            if iname.lower().endswith(".aspx"):
+                                u = itm.get("webUrl", "")
+                                if u and u not in seen_urls:
+                                    seen_urls.add(u)
+                                    pages.append(itm)
+            except Exception:
+                pass
+
+            for p in pages:
+                fname = p.get("name") or p.get("fields", {}).get("FileLeafRef") or "Page.aspx"
+                if fname.lower().endswith(".aspx"):
+                    pdf_name = fname[:-5] + ".pdf"
+                    m_time = p.get("lastModifiedDateTime")
+                    gcs_key = f"{category_prefix}/pages/{s_name}/{pdf_name}" if category_prefix else f"pages/{s_name}/{pdf_name}"
+                    gcs_key = gcs_key.replace("//", "/")
+                    item_info = {"id": p.get("id", ""), "Name": pdf_name, "Subsite": s_name, "IsPage": True, "Path": gcs_key}
+                    items_found.append(item_info)
+                    cached_time = gcs_cache.get(gcs_key)
+                    if not cached_time:
+                        sync_found.append(item_info)
+                    elif m_time:
+                        try:
+                            dt_sp = datetime.datetime.fromisoformat(m_time.replace("Z", "+00:00"))
+                            if dt_sp > cached_time:
+                                sync_found.append(item_info)
+                        except Exception:
+                            sync_found.append(item_info)
+            return items_found, sync_found
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
             f_futures = [pool.submit(scan_drive_files, sid, sname, dr) for sid, sname, dr in all_drives]
             p_futures = [pool.submit(scan_page_library, sid, sname, dr) for sid, sname, dr in all_page_drives]
-            for fut in concurrent.futures.as_completed(f_futures + p_futures):
+            s_futures = [pool.submit(scan_subsite_pages_unthrottled, st) for st in target_sites]
+            seen_page_paths = set()
+            for fut in concurrent.futures.as_completed(f_futures + p_futures + s_futures):
                 try:
                     res_all, res_sync = fut.result()
-                    cat_items.extend(res_all)
-                    cat_sync.extend(res_sync)
+                    for item in res_all:
+                        if item.get("IsPage"):
+                            if item["Path"] not in seen_page_paths:
+                                seen_page_paths.add(item["Path"])
+                                cat_items.append(item)
+                        else:
+                            cat_items.append(item)
+                    for item in res_sync:
+                        if item.get("IsPage"):
+                            if not any(x.get("Path") == item["Path"] for x in cat_sync):
+                                cat_sync.append(item)
+                        else:
+                            cat_sync.append(item)
                 except Exception:
                     pass
 
