@@ -11,7 +11,7 @@
 
 The transition from our running **V10/V11 Monolithic Cloud Run Crawler** to the **V13 Inverted Orchestrator Pattern (`AppInt as Crawler + Cloud Run as Stateless Playwright Worker`)** is a significant architectural paradigm shift. To execute this with **zero risk to existing customer production operations**, we enforce a **Five-Phase Surgical Cutover Roadmap**.
 
-We do **not** deprecate or modify `v10-10Jul2026`, `v11-17Jul2026`, or `v12-percategory`. `V13` is built as an independent, side-by-side modular platform inside `/v13-category-appint/`, rigorously benchmarked on a subset of `DEN/Consumer` before any enterprise-wide cutover is scheduled.
+We do **not** deprecate or modify `v10-10Jul2026`, `v11-17Jul2026`, or `v12-category-cloudrun`. `V13` is built as an independent, side-by-side modular platform inside `/v13-category-appint/`, rigorously benchmarked on a subset of `DEN/Consumer` before any enterprise-wide cutover is scheduled.
 
 ---
 
