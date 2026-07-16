@@ -1,0 +1,133 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Error handling strategies for tasks{% endblock %}
+{% block body %}
+
+<p>The error handling strategy for a task specifies the action to take if the task fails
+  due to a temporary error.</p>
+<h2>Configure error handling strategies</h2>
+<p>To configure an error handling strategy for a task, follow these steps:
+</p>
+<ol>
+  <li>Click the existing task in your integration editor. The task configuration
+    pane appears.
+  </li>
+  <li>In the task configuration pane, expand the <b>Error handling</b> section. The following image shows the <b>Error handling</b> section:
+    <p>
+      <img src="/application-integration/images/error-handling-strategy.png" alt="Error handling strategy"
+          data-modal-dialog-id="quick" class="screenshot" width="60%">
+
+    <devsite-lightbox id="quick">
+      <img src="/application-integration/images/error-handling-strategy.png" alt="Error handling strategy" width="60%">
+    </devsite-lightbox>
+    </p>
+   <p>In the <b>Error handling</b> section, follow these steps:</p>
+
+    <ol>
+      <li>To add a new failure policy, click <b>+ Add Failure Policy</b>. If multiple conditional failure policies are configured, they are checked and matched in order.
+      <ol>
+        <li>In the <b>Retry strategy</b> field, select the error handling strategy that you want to use. For a list of strategies, see <a href="#type">Retry strategies</a>.</li>
+        <li>In the <b>Retry condition</b> field, enter the condition that must match the error for this error strategy to execute. For example, for a <a href="/application-integration/docs/configure-call-rest-endpoint-task">Call REST Endpoint task</a>, to execute the error strategy if the error code matches <code>404</code>, enter the following:
+          <pre>$`ErrorInfo.code`$ = 404</pre>
+        For information about how to add these conditions, see <a href="#retry-condition">Retry conditions</a>.</li>
+      </ol>
+      </li>
+      <li>In the <b>Default error policy</b> section, add the default policy that must be applied if no conditional failure policy matches. The default failure policy is optional.</li>
+      <li>In the <b>Error catcher</b> section, add the <a href="/application-integration/docs/error-catcher">error catcher</a> for your integration.</li>
+    </ol>
+  </li>
+  </ol>
+<p>For information about error codes and error handling, see <a href="/application-integration/docs/error-handling">Error handling<a>.
+
+<h2 id="type">Retry strategies</h2>
+  <p>The following tables describes the different error handling strategies that you can use for a task:
+
+    <table>
+      <tr>
+       <th>Strategy type
+       </th>
+       <th>Description
+       </th>
+      </tr>
+      <tr>
+       <td><b>Fatal</b>
+       </td>
+       <td>Stops the execution of the entire integration and marks the execution status as <b>Failed</b>.
+       </td>
+      </tr>
+      <tr>
+       <td><b>Ignore</b>
+       </td>
+       <td>Ignores the failure of the task. The integration continues to run the next tasks assuming the failed task has <b>Succeeded</b>.
+       </td>
+      </tr>
+      <tr>
+       <td><b>None</b>
+       </td>
+       <td>Stops execution of the task and marks the integration status as <b>Failed</b>. If an alternate path to the final task (leaf task) exists, tasks in the alternate path are run. If all tasks in the alternate path run successfully, marks the integration status as <b>Succeeded</b>.
+       </td>
+      </tr>
+      <tr>
+       <td><b>Restart integration with backoff</b>
+       </td>
+       <td>Runs the entire integration from the first task. However, the task might fail again. To avoid repeat failure, specify the time interval between restarts in the Retry interval (in seconds) field and the number of permitted restart attempts in the Maximum retry count field.
+       </td>
+      </tr>
+      <tr>
+       <td><b>Retry task with exponential backoff</b>
+       </td>
+       <td>Runs the integration from the failed task. If the task fails during a retry, the time interval between each retry attempt increases by the power of 2. There is a delay of 1 to 5 seconds that is added to the backoff time.
+    <p>
+    For example, if the specified retry interval is 3 seconds, the first retry occurs after 3 seconds. The second retry occurs after 9 seconds, the third retry after 81 seconds, and so on. The process continues until the maximum number of retries is reached or the task succeeds, whichever is earlier.
+       </td>
+      </tr>
+      <tr>
+       <td><b>Retry task with fixed interval</b>
+       </td>
+       <td>Runs the integration from the failed task. If the task fails during a retry, the time interval between each retry attempt remains constant.
+    <p>
+    For example, if the specified retry interval is 3 seconds, retries occur every 3 seconds. The process continues until the maximum number of retries is reached or the task succeeds, whichever is earlier.
+       </td>
+      </tr>
+      <tr>
+       <td><b>Retry task with linear backoff</b>
+       </td>
+       <td>Runs the integration from the failed task. If the task fails during a retry, the time interval between each retry attempt increases linearly. There is a delay of 1 to 5 seconds that is added to the backoff time.
+    <p>
+    For example, if the specified retry interval is 3 seconds, the first retry occurs after 3 seconds. The second retry occurs after 6 seconds, the third retry after 9 seconds, and so on. The process continues until the maximum number of retries is reached or the task succeeds, whichever is earlier.
+       </td>
+      </tr>
+    </table>
+
+<h3>Backoff retries</h3>
+<p>The default concurrency limit is set to 50 executions for each project and region. Failed executions are queued and retried using an exponential backoff algorithm, which gradually increases the wait time between retries up to 10 times. For example:</p>
+  <ol>
+    <li>Execute an integration.</li>
+    <li>If the request fails, waits 10 minutes and retries
+  the request.</li>
+    <li>If the request fails, waits 20 minutes and retries
+  the request.</li>
+    <li>If the request fails, waits 40 minutes and retries
+  the request.</li>
+    <li>And so on, up to a maximum backoff retries of 10 times.</li>
+  </ol>
+
+<h2 id="retry-condition">Retry conditions</h2>
+<p>The retry condition specifies the condition that must match for the error handling strategy to execute. The following table describes the supported operators and functions that you can use in the retry condition:
+</p>
+<h3 id="operators">Supported operators</h3>
+
+<p>
+  The following table describes the supported operators available for use in retry conditions.
+  </p>
+
+{{supported_operators}}
+
+<h3 id="functions">Supported functions</h3>
+
+<p>
+  The following table describes supported functions available for use in retry conditions.
+  </p>
+
+{{supported_functions}}
+
+{% endblock %}

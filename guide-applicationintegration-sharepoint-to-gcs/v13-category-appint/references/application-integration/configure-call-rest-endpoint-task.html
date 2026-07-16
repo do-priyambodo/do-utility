@@ -1,0 +1,220 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{ apip_task_rest }} task{% endblock %}
+{% block body %}
+
+
+<p>The <strong>{{ apip_task_rest }}</strong> task lets you call any third-party REST
+  API from your integration. The response from the REST API call will be available to
+  you in an integration variable and can be used in other down-stream tasks.
+</p>
+
+<aside class="note"><b>Note:</b>
+
+  <ul>
+    <li>The network configuration of the <strong>{{ apip_task_rest }}</strong> task allows it to call
+      endpoints only available over the public internet. Hence, the task can't connect to hosts
+      or IPs that reside only within a private network such as a VPC, even if that
+      VPC is peered with your other Google Cloud services such as Apigee X.</li>
+    <li>This task can process a maximum of 50 MB of REST response. </li>
+  </ul></aside>
+
+<!-- TODO: Update reference links (using {{baseimagepath}}) to the Configuring Auth profile page -->
+
+<h2>Before you begin</h2>
+
+<ul>
+<li>To connect to an authentication endpoint for the REST API call, ensure that you have either <a href="{{basehrefpath}}/configuring-auth-profile#createAuthProfile">created
+  an OAuth 2.0 profile</a> or <a href="/application-integration/docs/access-control#add-service-account">attached a user-managed service account</a> to your integration. If your API does not require authentication, then the <b>Authentication profile</b> field in the task configuration pane can be left empty. To see a list of configurations, see <a href="#params">Configuration properties</a>.
+<p>If your integration has both OAuth 2.0 profile and a user-managed service account configured, then by default the OAuth 2.0 profile is used for authentication. If neither OAuth 2.0 profile nor user-managed service account is configured, then the execution fails.</p></li>
+
+<li>If your integration has a service account attached, then based on the REST endpoint URL, grant the required {{iam_name_short}} role to that service account. For example, if your REST endpoint URL calls a {{storage_name}} service, then grant the required {{iam_name_short}} role for the {{storage_name}} service.
+
+<p>For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</li>
+
+    <li>Ensure that <a href="/application-integration/docs/vpc-service-controls">{{vpcsvcctl_name}}</a> is <b>NOT</b> setup for {{integration}} in your {{gcp_name}} project.
+      <aside class="warning">
+        <b>Warning:</b> <b>{{ apip_task_cloudfunction }}</b> does not function or stops functioning if <a href="/application-integration/docs/vpc-service-controls">{{vpcsvcctl_name}}</a> is setup for {{integration}} in your {{gcp_name}} project.
+      </aside></li>
+</ul>
+
+<h2>Configure the {{ apip_task_rest }} task</h2>
+
+<p>To configure the <strong>{{ apip_task_rest }}</strong> task:
+<ol>
+  {{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Click and place the <strong>{{apip_task_rest}}</strong> element in the integration editor.</li>
+   <li>Click the <strong>{{apip_task_rest}}</strong> element on the designer to view the <strong>{{ apip_task_rest }}</strong> task
+     configuration pane.</li>
+  <li>Configure the displayed fields using the <a href="#params">configuration properties</a> of the task as detailed in the table below.
+  <p>
+    Changes to the properties are saved automatically.
+    </p>
+    <aside class="note"><b>Note:</b> If you update the authentication profile for a <b>{{ apip_task_rest }}</b> task,
+      and test the integration without publishing the changes, the integration uses the old
+      authentication profile. To ensure that the integration uses the updated authentication profile, you must
+      <a href="https://cloud.google.com/application-integration/docs/test-publish-integrations">publish the integration</a> before testing.
+    </aside>
+  </li>
+</ol>
+
+
+<h2 id="params">Configuration properties</h2>
+
+<p>
+The following table describes the configuration properties of the <b>{{apip_task_rest}}</b> task.
+</p>
+
+<table>
+  <tr>
+   <td><strong>Property</strong>
+   </td>
+   <td><strong>Data type</strong>
+   </td>
+   <td><strong>Description</strong>
+   </td>
+  </tr>
+  <tr>
+    <td>Label</td>
+    <td>String</td>
+    <td>Optional: add a label for your task.</td>
+  </tr>
+  <tr>
+    <td>Authentication</td>
+    <td>String</td>
+    <td>Optional: configures and stores the authentication details for connections to external
+      systems. For more information, see <a href="/application-integration/docs/configuring-auth-profile">Create authentication profiles in {{integration}}</a>.</td>
+  </tr>
+  <tr>
+   <td>Endpoint base URL
+   </td>
+   <td>String
+   </td>
+   <td>REST endpoint URL without the query parameters.
+   </td>
+  </tr>
+  <tr>
+   <td>HTTP method
+   </td>
+   <td>NA
+   </td>
+   <td>HTTP method to use.
+<p>
+You can select any of the following HTTP methods:<ul>
+
+<li>DELETE
+<li>GET
+<li>HEAD
+<li>PATCH
+<li>POST
+<li>PUT</li></ul>
+
+   </td>
+  </tr>
+  <tr>
+   <td>URL query string parameters
+   </td>
+   <td>Query string key : <b>String</b>
+<p>
+Value: <b>String</b>
+   </td>
+   <td>Query parameters required for the REST API call.
+<p>
+The query parameters are in the form of key-value pairs where key is the key name
+  and the value is the corresponding key value. You can enter more than one key-value
+  pair by clicking on the plus icon.
+   </td>
+  </tr>
+  <tr>
+   <td>HTTP headers
+   </td>
+   <td>HTTP header key: <b>String</b>
+<p>
+Value: <b>String</b>
+   </td>
+   <td>HTTP headers required for the REST API call.
+<p>
+The HTTP headers are in the form of key-value pairs where key is the key name and the
+  value is the corresponding key value. You can enter more than one key-value pair
+  by clicking on the plus icon.
+   </td>
+  </tr>
+
+  <tr>
+   <td>Follow redirects
+   </td>
+   <td>Boolean
+   </td>
+   <td>Follow URL redirects.
+<p>
+You can select any one of the values:<ul>
+
+<li><strong>True </strong>: Calls the redirected URL if the Endpoint base URL
+  is forwarded to another URL.</li>
+<li><strong>False</strong>: Does not call the redirected URL if the Endpoint base URL
+  is forwarded to another URL.</li></ul>
+   </td>
+  </tr>
+  <tr>
+   <td>Task should fail on HTTP error
+   </td>
+   <td>Boolean
+   </td>
+   <td>Exception handling strategy when the REST API call fails.
+     The <strong>{{ apip_task_rest }}</strong>  fails if the HTTP response code is <code>4xx</code> or <code>5xx</code>. For a list of error codes, see <a href="/application-integration/docs/error-codes">Error codes</a>. For other HTTP response codes, return error code and error message in the response.
+     <aside class="note"><b>Note:</b> For errors that are not related to REST API call, such as incorrect URL, the task always fail irrespective of what this option is set to.</aside>
+<p>
+You can select any one of the values:
+     <ul>
+     <li><strong>True </strong>: Throws an exception.</li>
+    <li><strong>False</strong>: Does not throw an exception. But returns the
+    error code and the error message in the response. </li>
+     </ul>
+   </td>
+  </tr>
+  <tr>
+   <td>Response header (&lt;Task name>)
+   </td>
+   <td>String
+   </td>
+   <td>Uncompressed response header from the REST APIs response.
+   </td>
+  </tr>
+  <tr>
+   <td>Response body (&lt;Task name>)
+   </td>
+   <td>String
+   </td>
+   <td>Uncompressed response body from the REST APIs response.
+   </td>
+  </tr>
+  <tr>
+   <td>Response status (&lt;Task name>)
+   </td>
+   <td>String
+   </td>
+   <td>HTTP response code and the corresponding code text from the REST APIs response.
+   </td>
+  </tr>
+</table>
+
+<h2>Best practices</h2>
+
+
+<p>For information about the usage limits that apply to the <b>{{ apip_task_rest }}</b> task, see <a href="/application-integration/docs/quotas#usage-limits"> Usage limits</a>.
+</p> 
+
+{% include "application-integration/docs/_shared/_retry_on_failure.html" %}
+<p>To learn how to handle retry strategies for <code>4xx</code> or <code>5xx</code> errors, see the <a href="https://www.googlecloudcommunity.com/gc/Integration-Services/How-to-retry-Rest-Caller-Task-based-on-Response-Status/m-p/618079">How to retry Rest Caller Task based on Response Status</a> blog.</p>
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration</a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}
+

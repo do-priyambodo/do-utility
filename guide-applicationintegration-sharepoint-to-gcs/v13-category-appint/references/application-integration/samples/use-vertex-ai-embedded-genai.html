@@ -1,0 +1,31 @@
+
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Use the Vertex AI task to embed GenAI{% endblock %}
+{% block body %}
+<meta name="keywords" value="docType:Sample,product:CloudApplicationIntegration,language:json" />
+<meta name="description" content="Use the Vertex AI task to embed GenAI in your integrations."/>
+
+<p>
+  This sample integration contains a flow to be used as a sub-integration for interacting with {{gcp_name}} {{vertex_ai_name}} models. Before using the following code sample, ensure that all <a href="https://github.com/GoogleCloudPlatform/application-integration-samples/tree/1391362afa2dbcd35d1de6805ebf940107fa6dc9/src/vertex-ai-task#prerequisites">prerequisites</a> are met.
+</p>
+<h2 id="code-sample">Code sample</h2>
+
+{% include "_shared/widgets/_github_include.html" with project="application-integration-samples"
+file="src/vertex-ai-task/vertex-ai-task.json"%}
+
+<h3 id="flow">Sample integration flow</h3>
+
+<p>The following image shows a sample layout of the integration editor for this integration code sample.</p>
+
+<p><img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/vertex-ai-task/vertex-ai-task.png" alt="image showing the sample integration flow"
+  data-modal-dialog-id="flow1" class="screenshot">
+
+<devsite-lightbox id="flow1">
+<img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/vertex-ai-task/vertex-ai-task.png" alt="image showing the sample integration flow">
+</devsite-lightbox></p>
+
+{{ code_sample_upload_run_steps }}
+  
+
+
+{% endblock %}

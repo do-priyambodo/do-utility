@@ -1,0 +1,106 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Manage templates{% endblock %}
+{% block custom_heading %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Symbols" />
+{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}templates{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>
+  This page describes how to edit and delete project templates in your Google Cloud project.
+</p>
+
+<h2>Required role</h2>
+
+    {% setvar action %}manage templates{% endsetvar %}
+    {% setvar resource %}the project{% endsetvar %}
+    {% setvar role_list %}
+    * All: Application Integration Editor (<code>roles/integrations.integrationEditor</code>)
+    {% endsetvar %}
+    {% setvar permission_list %}
+    * Edit templates: integrations.templates.update
+    * Delete templates: integrations.templates.delete
+    {% endsetvar %}
+    {% include "_shared/_required_roles.html" %}</li>
+
+<h2>Edit templates</h2>
+<p>To edit an existing project template, do the following:
+  <aside class="note"><b>Note:</b> Editing a template does not update the existing integration versions created from the template.
+  </aside>
+</p>
+<ol>
+  <li>In the {{console_name}}, go to the <b>{{integration}}</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to {{integration}}</a></p>
+    </li>
+    <li>In the navigation menu, click <b>Templates</b>.
+    <p>The <b>Templates</b> page appears listing all the templates (global, shared, and project) available in your Google Cloud project.</p>
+  </li>
+  <li>To edit a shared template, click the <b>Shared templates</b> tab. To edit a project template, click the <b>Project templates</b> tab.
+  </li>
+    <li>Click the template that you want to edit from the respective tab selected.</li>
+    <li>In the template details page, click <span class="google-symbols">edit</span> <b>Edit</b>.
+      <p>The <b>Edit template</b> pane appears.</p>
+    <aside class="note">
+      <p><b>Note:</b> {{integration}} currently only supports editing templates through a new intgeration version. You must therefore create a new integration version from the template, modify the integration, and then create a new template from the integration version.</p>
+    </aside>
+    <ul>
+    <li>Enter the name of the new integration version and optionally, a description for the new integration version.
+    </li>
+    <li>Click <b>Create and edit</b>.
+      <p>The integration editor page appears with the <b>Config variables</b> pane open.</p>
+    </p></li>
+    </ul>
+  </li>
+    <li>Modify the config variables for your template (if any) and click <b>Done</b>. Click <b>Cancel</b> to skip this step.</li>
+    <li>In the integration editor page, add or modify the required components: <a href="/application-integration/docs/tasks">tasks</a>, <a href="/application-integration/docs/triggers">triggers</a>, or <a href="/application-integration/docs/configure-connectors-task">connectors</a>. Once your integration template is ready, go to the next step.
+      <aside class="tip"><b>Tip:</b> Use <a href="/application-integration/docs/variables#config_var">Config variables</a> when configuring the input and output parameters of the components of your integration. This allows you to create a template that can be used in multiple environments.</aside>
+      </li>
+    <li>Click <b>Templates {{and_then}} Edit template</b> from the integration editor navigation bar.
+      <p>The integration editor switches to edit template mode, temporaily locking any further actions on the integration, and the <b>Edit Template</b> pane appears.</p>
+      <p> <img src="{{baseimagepath}}/images/edit-template.png" alt="edit template pane"
+            data-modal-dialog-id="dialog" class="screenshot" >
+            <devsite-lightbox id="dialog">
+            <img src="{{baseimagepath}}/images/edit-template.png" alt="edit template pane">
+            </devsite-lightbox></p>
+    </li>
+    <li>Make any changes to the template details and click <b>Preview</b>.</li>
+    <li>Review all your changes made to the template and click <b>Update template</b>.
+    <p>The existing template is updated with the changes you made. To view the updated template, go to the <b>Templates</b> page and click the <a class="external" href="{{console_url}}integrations/templates" target="console">Project Templates</a> tab.
+    </p></li>
+</ol>
+
+<h2>Delete templates</h2>
+<p>To delete a template, do the following:
+</p>
+<ol>
+  <li>In the {{console_name}}, go to the <b>Templates</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations/templates" target="console">Go to Templates</a></p>
+    </li>
+    <li>To delete a shared template, click the <b>Shared templates</b> tab. To delete a project template, click the <b>Project templates</b> tab.
+    </li>
+      <li>Click the template that you want to delete from the respective tab selected.</li>
+      <li>In the template details page, click <span class="google-symbols">delete</span> <b>Remove template</b>.
+            <p>A confirmation dialog appears.</p>
+          </li>
+    <li>Click <b>Delete</b> to permanently delete the template.</li>
+    <aside class="note"><b>Notes:</b> 
+      <ul>
+        <li>Deleting a template does not delete the integrations created from the template.</li>
+        <li>You can only delete the project templates and shared templates that you own or have edit access to. Global templates cannot be deleted.</li>
+      </ul>
+  </aside>
+</ol>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn how to use templates to create an integration, see <a href="/application-integration/docs/create-integration-from-templates">Create integrations from templates</a>.</li>
+  <li>Learn how to import and download templates, see <a href="/application-integration/docs/manage-templates">import and download templates</a>.</li>
+  <li>Learn how to create templates, see <a href="/application-integration/docs/create-templates">create templates</a>.</li>
+  <li>Learn how to share templates, see <a href="/application-integration/docs/share-templates">share templates</a>.</li>
+  </ul>
+
+{% endblock %}

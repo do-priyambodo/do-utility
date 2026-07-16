@@ -1,0 +1,55 @@
+
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Invoke a sub-integration to send an email{% endblock %}
+{% block body %}
+<meta name="keywords" value="docType:Sample,product:CloudApplicationIntegration,language:json" />
+<meta name="description" content="Use the For Each Loop task to invoke a sub-integration that takes input from the main integration to send email notifications."/>
+
+<p>
+Using the For Each Loop task, invoke a sub-integration that takes input from the main integration to send email notifications.
+</p>
+
+<h2 id="code-sample">Code sample: Sub-integration</h2>
+
+{% include "_shared/widgets/_github_include.html" with project="application-integration-samples"
+file="src/foreach-loop-send-email/foreach-loop-send-email-sub.json"%}
+
+<h2 id="code-sample">Code sample: Main Integration</h2>
+
+{% include "_shared/widgets/_github_include.html" with project="application-integration-samples"
+file="src/foreach-loop-send-email/foreach-loop-send-email.json"%}
+
+<h3 id="flow">Sample integration flow</h3>
+
+<p>The following images shows a sample layout of the integration editor for this integration code sample.</p>
+
+<devsite-selector>
+  <section>
+    <h3>Sub-integration</h3>
+    <p>
+    </devsite-selector>
+    <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/foreach-loop-send-email/foreach-loop-send-email-sub-flow.png" alt="image showing the sample sub-integration flow"
+          data-modal-dialog-id="flow1" class="screenshot">
+    
+    <devsite-lightbox id="flow1">
+      <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/foreach-loop-send-email/foreach-loop-send-email-sub-flow.png" alt="image showing the sample sub-integration flow">
+    </devsite-lightbox>
+    </p>
+  </section>
+  <section>
+    <h3>Main Integration</h3>
+    <p>
+    </devsite-selector>
+    <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/foreach-loop-send-email/foreach-loop-send-email-flow.png" alt="image showing the sample main-integration flow"
+          data-modal-dialog-id="flow2" class="screenshot">
+    
+    <devsite-lightbox id="flow2">
+      <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/foreach-loop-send-email/foreach-loop-send-email-flow.png" alt="image showing the sample main-integration flow">
+    </devsite-lightbox>
+    </p>
+  </section>
+</devsite-selector>
+
+{{ code_sample_upload_run_steps }}
+
+{% endblock %}

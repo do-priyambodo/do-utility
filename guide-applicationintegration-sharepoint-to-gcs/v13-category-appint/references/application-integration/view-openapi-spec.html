@@ -1,0 +1,200 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}View OpenAPI Specification for your integration{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}OpenAPI Specification{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>
+{{integration}} provides the ability to dynamically generate and view the OpenAPI Specifications of your published integrations that are configured with one or more <a href="/application-integration/docs/configure-api-trigger">API triggers</a>. Accessing the OpenAPI Specification of your integration allows you to:
+<ul>
+  <li>Gain a comprehensive understanding of your integration's API endpoints, methods, and data structures.</li>
+  <li>Enable more efficient development and troubleshooting by providing a detailed and centralized view of your integration's API.</li>
+  <li>Expose your integration APIs and seamlessly integrate with conversational agents, see <a href="/application-integration/docs/conversational-agents">Build conversational agents with {{integration}}</a>.</li>
+</ul>
+</p>
+
+<h2 id="what-openapi">What is the OpenAPI Specification? </h2>
+
+<img src="/apigee/docs/api-platform/images/OpenAPI_Pantone.png" width="150" alt="OpenAPI Specification logo">
+<p>
+The OpenAPI Specification (OAS) is a standard, language-independent format to describe RESTful APIs. Commonly written in either YAML or JSON formats, the OpenAPI Specification presents a formal description of the API elements such as its base URL, paths and verbs, headers, query parameters, content types, request and response models, and more. For more information about the OpenAPI Specification, see <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md" class="external">OpenAPI Specification</a>.
+</p>
+<aside><b>Note:</b> {{integration}} only supports OpenAPI Specification <b>version 3.0.1</b>.</aside>
+
+<h2>Generate and view the OpenAPI Specification</h2>
+
+<p>You can dynamically generate and view the OpenAPI Specification for your integrations from the {{ apip_designer }} in the {{console_name}} or using an API call.</p>
+
+<h3>Before you begin</h3>
+    <ul>
+      <li>Confirm that your integration is configured with one or more API triggers. For information about configuring API triggers, see <a href="/application-integration/docs/configure-api-trigger">API triggers</a>.</li>
+      <li>Publish your integration. For information about how to publish an integration, see <a href="/application-integration/docs/test-publish-integrations">Test and publish integrations</a>.</li>
+    </ul>
+
+<h3>View OpenAPI Specification</h3>
+<p>
+  To view the OpenAPI Specification for your integration, select one of the options:
+</p>
+  <div>
+  <devsite-selector>
+    <section>
+      <h3>Console</h3>
+      <p>To view the OpenAPI Specification for a specific integration, do the following steps:</p>
+        <ol>
+          <li>Go to the <b>{{product_name}}</b> page.
+            <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to Application Integration</a></p>
+            </li>
+            <li>In the navigation menu, click <b>Integrations</b>.
+              <p>
+                The <b>Integrations</b> page appears, listing all the integrations available in the {{gcp_name}} project.
+                </p></li>
+                <li>Click the integration for which you want to view the OpenAPI Specification. This opens the integration in the {{ apip_designer }}.</li>
+                <li>Click the <span class="material-icons">more_vert</span> (Actions menu) in the {{ apip_designer }} toolbar, and select <b>View OpenAPI spec</b>.
+                <p> The <b>View OpenAPI spec</b> pane appears displaying the OpenAPI Specification of the integration. The generated OpenAPI Specification, by default, contains all the API triggers configured in the integration.
+              <ul>
+                <li>To view the OpenAPI Specification for a specific API trigger, select the API trigger from the <b>APIs</b> drop-down list.</li>
+                <li>To download the OpenAPI Specification as a YAML file, click <span class="material-symbols-outlined">
+                  download
+                  </span> (Download).</li>            
+              </ul>
+            </p>
+              </li>
+        </ol>
+        <aside><b>Note:</b> You can only view and download the OpenAPI Specification, in YAML format, for a single integration from the {{ apip_designer }} at a time. To view and download the OpenAPI Specification, in YAML or JSON formats, follow the instructions in the <b>API</b> section.</aside>
+
+    </section>
+    <section>
+      <h3>API</h3>
+      <p> The <code>generateOpenApiSpec</code> method of the {{integration}} API allows you to view the OpenAPI Specification for your integration using an API call. 
+      </p>
+      <p>Use the following <code>curl</code> command to view the OpenAPI Specification for one or more integrations  in the same region:</p>
+      <aside class="<aside class="tip">
+        <b>Tip:</b> <code>curl</code> typically comes pre-installed for Linux and macOS operating systems. If you don't have <code>curl</code>, you can download it from the <code>curl</code> <a href="https://curl.haxx.se/download.html">releases and downloads page</a>.</aside>
+      
+        <pre class="devsite-terminal devsite-click-to-copy">
+curl -X POST \
+    -H "authorization: Bearer $(gcloud auth print-access-token)" \
+    -H "Content-Type: application/json" \
+    -d '{
+    "apiTriggerResources": [{
+    "integrationResource": "<var>INTEGRATION_NAME</var>",
+    "triggerId": ["api_trigger/<var>TRIGGER_NAME</var>", "api_trigger/<var>TRIGGER_NAME_2</var>", "api_trigger/<var>TRIGGER_NAME_n</var>"]
+    },
+    {
+    "integrationResource": "<var>INTEGRATION_NAME</var>",
+      "triggerId": ["api_trigger/<var>TRIGGER_NAME</var>"]
+    }],
+    "fileFormat": "<var>DOC_TYPE</var>"
+    }' \
+    "https://<var>LOCATION</var>-integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>:generateOpenApiSpec"
+          </pre>
+
+              <p>
+                Replace the following:
+              </p>
+              <ul>
+                <li><code><var>TRIGGER_NAME</var>, <var>TRIGGER_NAME_2</var>, <var>TRIGGER_NAME_n</var></code>: The names of the {{ apip_trigger_api }} in your integration which you want to view the OpenAPI Specification for.</li>
+                <li><code><var>INTEGRATION_NAME</var></code>: The name of your integration.</li>
+                <li><code><var>DOC_TYPE</var></code>: The type of document to generate. The following values are supported: <code>YAML</code> or <code>JSON</code>.</li>
+                <li><code><var>PROJECT_ID</var></code>: The ID of your {{gcp_name}} project.</li>
+                <li><code><var>LOCATION</var></code>: The location of your {{gcp_name}} project.
+                  <aside class="note"><b>Note:</b> You can only view the OpenAPI Specification for multiple integrations in the same region.</aside></li>
+              </ul>
+    </p>
+    </section>
+  </devsite-selector>
+</div>
+
+<h2>Understanding the OpenAPI Specification</h2>
+<p>
+  {{integration}} generates the OpenAPI Specification for your published integrations following the <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md" class="external">OpenAPI Specification 3.0</a> standard. The following table describes the elements of the OpenAPI Specification generated in {{integration}}:
+  <table>
+  <thead>
+  <tr>
+  <th>Element</th>
+  <th>Description</th>
+  </tr>
+  </thead>
+  <tbody class="list">
+  <tr>
+  <td><code>openapi</code></td>
+  <td>The OpenAPI Specification version used.</td>
+  </tr>
+  <tr>
+  <td><code>info</code></td>
+  <td>Information about the integration, such as its name (title), description, and published version.</td>
+  </tr>
+  <tr>
+  <td><code>servers</code></td>
+  <td>The server URLs that host the integration.</td>
+  </tr>
+  <tr>
+  <td><code>paths</code></td>
+  <td>Paths are created for each selected {{ apip_trigger_api }} in the integration. The server URL combined with the path constitutes the API endpoint for making API calls. 
+    <p><code>Request</code> and <code>Response</code> fields are populated based on the input and output variables configured for the corresponding {{ apip_trigger_api }}.
+<p>
+    <aside class="note"><b>Note:</b> {{integration}} currently supports only a limited set of JSON schema keywords. For information on the supported keywords, see <a href="#considerations">Considerations</a>.</aside>
+  </p>
+  </td>
+  </tr>
+  <tr>
+  <td><code>components</code></td>
+  <td>The <code>schemas</code> field contains the JSON schema for the input and output variables of the {{ apip_trigger_api }}.
+  <p>
+    The <code>securitySchemes</code> field contains the authentication information for the {{ apip_trigger_api }}s.
+  </p></td>
+  </tr>
+  </tbody>
+  </table>
+  </devsite-filter>
+</p>
+<h2>Considerations</h2>
+<p>
+  The following considerations apply when viewing the OpenAPI Specification for your integration:
+</p>
+<ul>
+  <li>The OpenAPI Specification is generated only for published integrations.</li>
+  <li>The OpenAPI Specification is generated only for integrations configured with one or more API triggers.</li>
+  <li>The OpenAPI Specification is generated only for integrations in the same region.</li>
+  <li>The OpenAPI Specification is generated in YAML format by default. To generate and view the OpenAPI Specification in JSON format, set the <code>fileFormat</code> parameter to <code>JSON</code> in the API call.</li>
+  <li>{{integration}} currently supports only the following limited set of JSON schema keywords:
+    <ul>
+        <li><code>type</code></li>
+        <li><code>items</code></li>
+        <li><code>properties</code></li>
+        <li><code>description</code></li>
+        <li><code>required</code></li>
+        <li><code>array</code></li>
+        <li><code>object</code></li>
+        <li><code>oneOf</code></li>
+        <li><code>allOf</code></li>
+        <li><code>anyOf</code></li>
+        <li><code>not</code></li>
+        <li><code>null</code></li>
+        <li><code>enum</code></li>
+        <li><code>additionalProperties</code></li>
+        <li><code>default</code></li>
+      </ul>
+      </li>
+      <li>When validating the OpenAPI specification using the <a href="https://editor.swagger.io/" class="external">Swagger Editor</a>, you may encounter semantic errors related to the API paths similar to the following image:
+        <p><img alt="Swagger Editor" src="{{baseimagepath}}/images/swagger_editor.png"
+          data-modal-dialog-id="swagger" class="screenshot">
+          <devsite-lightbox id="swagger">
+              <img src="{{baseimagepath}}/images/swagger_editor.png" alt="Swagger Editor">
+          </devsite-lightbox>
+        </p>
+        <p>These errors can be safely ignored. The OpenAPI Specification is still valid.</p>
+</li>
+</ul>
+
+<h2>What's next</h2>
+<ul>
+  <li><a href="/application-integration/docs/conversational-agents">Build conversational agents with {{integration}}</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/configure-api-trigger">API triggers</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/test-publish-integrations">Test and publish integrations</a>.</li>
+</ul>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+
+<h2><code>MERGE</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>MERGE</code></td>
+       <td>Merges two JSON variables (objects or arrays). If same value is present in both the
+         variables, the function removes the duplicate value.</td>
+       <td><code>MERGE(value)</code></td>
+       <td>JSON value to merge.</td>
+       <td>A JSON object or an array.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>MERGE</code> function supports the following data type:
+</p>
+<ul>
+  <li>JSON</li>
+</ul>
+
+<h2>Example: Merge two JSON objects</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = {"productId": 23} </code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.MERGE({"productName":"radio"})</code>
+</p>Merge the value <code>{"productName":"radio"}</code> with var1.
+
+<p>
+  <strong>Output</strong>: {"productId": 23,"productName": "radio"}
+</p>
+
+
+<h2>Example: Merge two JSON arrays</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = ["first", "second", "third"] </code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.MERGE([4,5])</code>
+</p>Merge the value <code>[4,5]</code> with var1.
+
+<p>
+  <strong>Output</strong>: <code>["first", "second", "third",4,5]</code>
+</p>
+
+

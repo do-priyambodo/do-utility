@@ -1,0 +1,32 @@
+
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Update JSON array at a specified index{% endblock %}
+{% block body %}
+<meta name="keywords" value="docType:Sample,product:CloudApplicationIntegration,language:json" />
+<meta name="description" content="Use the Data Mapping task to update the value of a JSON array at a specified index using an input variable. Store the output in a new JSON variable."/>
+
+<p>
+  Using the Data Mapping task, update the value of a JSON array at a specified index using an input variable. Store the output in a new JSON variable.
+</p>
+
+<h2 id="code-sample">Code sample</h2>
+
+{% include "_shared/widgets/_github_include.html" with project="application-integration-samples"
+file="src/update-json-array/update-json-array.json"%}
+
+<h3 id="flow">Sample integration flow</h3>
+
+<p>The following image shows a sample layout of the integration editor for this integration code sample.</p>
+
+<p>
+  <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/update-json-array/update-json-array-flow.png" alt="image showing the sample integration flow"
+      data-modal-dialog-id="flow1" class="screenshot">
+
+<devsite-lightbox id="flow1">
+  <img src="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-samples/HEAD/src/update-json-array/update-json-array-flow.png" alt="image showing the sample integration flow">
+</devsite-lightbox>
+</p>
+
+{{ code_sample_upload_run_steps }}
+
+{% endblock %}

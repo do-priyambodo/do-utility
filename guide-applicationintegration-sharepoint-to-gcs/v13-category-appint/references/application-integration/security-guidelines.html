@@ -1,0 +1,66 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}{{application_integration_name}} security guidelines{% endblock %}
+{% block body %}
+
+<p>
+  This document describes the security guidelines and considerations for the
+  {{application_integration_name}} product. If you are new to
+  {{application_integration_name}}, we suggest that you start with
+  <a href="/application-integration/docs/overview">Application Integration overview</a>.
+</p>
+
+
+
+<h2>Service accounts</h2>
+
+<p>A service account is a special kind of account used by an application, rather than a person.
+  A service account is identified by a unique email address. For more information, see
+  <a href="/iam/docs/service-accounts">Service accounts</a>.
+</p>
+
+<p>
+  Service accounts can be used to provide secure access to the Google Cloud resources without
+  sharing your own login credentials. This prevents unauthorized access to your resources.
+</p>
+
+<p>The following are some of the best practices that you can follow when using a service account:</p>
+
+<ul>
+  <li>Create a separate service account for each task or application. This lets you better manage
+    access and keep track of which service accounts are being used for which tasks.</li>
+  <li>Grant the service account only the permissions that it needs to perform its intended tasks.</li>
+  <li>{% include "_shared/iam/_sa_keys_are_risky.html" %}</li>
+  <li>Monitor the usage of your service accounts and review the audit logs to ensure that
+    they are being used as intended. This can help you to detect any unauthorized access or
+    misuse of service accounts.</li>
+</ul>
+<p>For more information, see <a href="/iam/docs/best-practices-service-accounts">
+  Best practices for working with service accounts</a>.</p>
+
+<h2>Custom roles</h2>
+<p>Custom roles let you create fine-grained permissions that are tailored to your specific
+needs. For example, you may create a custom role that allows a service account to read
+and write data to a Cloud Storage bucket, but not delete it.
+  Custom roles are useful in managing access to your Google Cloud resources and ensuring that
+  users and applications have only the permissions required to perform their intended tasks.</p>
+<p>
+  You can create custom roles using the <a href="/iam/docs/">Identity and Access Management (IAM)</a>
+  and assign the roles to users, groups, or service accounts. For more information,
+  see <a href="/iam/docs/creating-custom-roles#creating_a_custom_role">Creating a custom role</a>.</p>
+
+
+<h2>Authentication profiles</h2>
+
+<p>An authentication profile lets you configure and store the authentication details
+  for the connection in an integration. So, instead of using a hard-coded authentication
+  configuration, you can use the in-built authentication profile configuration which provides
+  enhanced security. {{application_integration_name}} supports various
+  authentication types depending on the task. For more information, see
+  <a href="/application-integration/docs/configure-authentication-profiles#compatibleTasks">Compatibility
+    of authentication types with tasks</a>.</p>
+
+<p>To prevent unauthorized access and provide enhanced security, it's recommended
+to use an authentication profile if a task supports it.</p>
+
+
+{% endblock %}

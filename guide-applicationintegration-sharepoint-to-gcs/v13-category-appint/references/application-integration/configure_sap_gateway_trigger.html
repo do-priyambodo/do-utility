@@ -1,0 +1,165 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}SAP Gateway trigger{% endblock %}
+
+{% block body %}
+
+<p>The <b>SAP Gateway trigger</b> is a <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a> SAP Gateway connector lets you perform insert, delete, update, and read operations on SAP Gateway data.</p>
+
+<aside class="note"><b>Important:</b> Integration Connectors is a billable component of Google Cloud. For information about the costs and charges of using Integration Connectors, see <a href="/integration-connectors/docs/pricing">Integration Connectors pricing</a>.</aside>
+
+<h2 id="iam">Before you begin</h2>
+
+<ul>
+<li>If you plan to create or configure a new connection for the <b>SAP Gateway trigger</b>, make sure that you have the following IAM role on the project:
+<ul>
+  <li>Connector Admin (<code>roles/connectors.admin</code>) </li>
+  <p>For information about granting roles, see <a href="/iam/docs/granting-changing-revoking-access">Manage access</a>.</p>
+</ul></p>
+
+<li>Grant the following IAM roles to the service account that you want to use for the <b>SAP Gateway trigger</b>:
+<ul>
+  <li>Application Integration Invoker (<code>roles/integrations.integrationInvoker</code>) </li>
+  <p>For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</p>
+</ul></li>
+
+<h2>Add the SAP Gateway trigger</h2>
+
+<p>
+To add a <b>SAP Gateway trigger</b> to your integration, perform the following steps:
+</p>
+
+<ol>
+  {{apip_apigee_steps_trigger}}
+  {{ apip_sa_steps_trigger }}
+<li>Click and place the <b>SAP Gateway trigger</b> element in the integration editor.</li>
+<p>To configure the <b>SAP Gateway trigger</b>, you can either use an existing SAP Gateway connection available in Integration Connectors, or create a new SAP Gateway connection using the inline connection creation option.</p>
+</ol>
+
+<h2>Configure SAP Gateway trigger using an existing connection</h2>
+
+<p>The <b>SAP Gateway trigger</b> is an <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a>, therefore you can only use a SAP Gateway connection with event subscription enabled to configure the trigger. 
+</p>
+<p>For information about how to configure a <b>SAP Gateway trigger</b> using a new SAP Gateway connection, see <a href="#create">Configure SAP Gateway trigger using a new connection</a></p>
+<p>To configure a <b>SAP Gateway trigger</b> using an existing SAP Gateway connection, perform the following steps:</p>
+
+<ol>
+  <li>Click the <b>SAP Gateway trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Provide the following configuration details in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li><b>Region:</b> Select the region of your SAP Gateway connection.</li>
+      <li><b>Connection:</b> Select the SAP Gateway connection that you want to use.
+      <p>{{integration}} only displays those SAP Gateway connections that are active and have an event subscription enabled. 
+      </p>
+    </li>
+    <li>Enter the event type field name. This field identifies the type of event
+      associated with the incoming event request.
+    <pre class="prettyprint lang-json">{
+    "event_type": "user.created",
+    ...
+    // other request fields
+    ...
+    }</pre>
+    </li>
+      <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the SAP Gateway trigger.</li>
+    </ol>
+  </li>
+  <li>Click <b>Done</b> to complete the trigger configuration and close the page.</li>
+</ol>
+
+
+<h2 id="create">Configure SAP Gateway trigger using a new connection</h2>
+<ol>
+  <li>Click the <b>SAP Gateway trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Skip the <b>Region</b> field.</li>
+  <li>Click <b>Connection</b> and select the <b>Create Connection</b> option from the drop-down menu.</li>
+  {{sap_gateway_configure_connector}}
+  </ol>
+
+  {{sap_gateway_auth_eventing_step}}
+
+  <h2>Configure authentication in SAP</h2>
+  <p>Configure the authentication in SAP by following the instructions in the <a href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication">Authentication overview for the on-premises or any cloud edition of ABAP SDK for Google Cloud</a> guide.
+
+    <h2>Validate the trigger</h2>
+<p>To validate the trigger, you can create an ABAP program. The following is a sample ABAP program that you can use as a reference. The <code>ls_event_payload</code> field changes based on your requirements:</p>
+
+<pre>
+*&---------------------------------------------------------------------*
+*& Report ZR_TEST_INT_CONNECTOR
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zr_test_int_connector.
+PARAMETERS: p_auth TYPE char1 RADIOBUTTON GROUP rbg1 USER-COMMAND uc DEFAULT 'X',
+ p_apik TYPE char1 RADIOBUTTON GROUP rbg1.
+DATA:
+ lv_p_projects_id TYPE string,
+ lv_p_locations_id TYPE string,
+ lv_p_connections_id TYPE string,
+ ls_input TYPE /goog/cl_connectors_v1=>ty_103.
+TYPES: BEGIN OF event_payload,
+ event_type TYPE string,
+ event_id TYPE string,
+ name TYPE string,
+ org_id TYPE string,
+ END OF event_payload.
+DATA: ls_event_payload TYPE event_payload.
+ls_event_payload = VALUE #(
+ event_type = 'create-entity'
+ event_id = '1'
+ name = 'demo-org'
+ org_id = 'SAP'
+ ).
+TRY.
+ IF p_Auth = abap_true.
+ DATA(lv_client_key) = 'IC_DEMO_GOOGLE_AUTH'.
+ lv_p_connections_id = 'conn-event-triggers-from-sap-gateway'.
+ ELSE.
+ lv_client_key = 'IC_DEMO_GOOGLE_APIK'.
+ lv_p_connections_id = 'conn-event-triggers-from-sap-gateway-apik'.
+ ENDIF.
+* Open HTTP Connection
+ DATA(lo_client) = NEW /goog/cl_connectors_v1( iv_key_name = CONV #( lv_client_key ) ).
+* Populate relevant parameters
+ lv_p_projects_id = lo_client->gv_project_id.
+ lv_p_locations_id = 'us-central1'.
+ GET REFERENCE OF ls_event_payload INTO ls_input-payload .
+* Call API method: connectors.projects.locations.connections.listenEvent
+ CALL METHOD lo_client->listen_event_connections
+ EXPORTING
+
+
+iv_p_projects_id = lv_p_projects_id
+ iv_p_locations_id = lv_p_locations_id
+ iv_p_connections_id = lv_p_connections_id
+ is_input = ls_input
+ IMPORTING
+* es_raw =
+ es_output = DATA(ls_output)
+ ev_ret_code = DATA(lv_ret_code)
+ ev_err_text = DATA(lv_err_text)
+ es_err_resp = DATA(ls_err_resp).
+ IF lo_client->is_success( lv_ret_code ).
+ MESSAGE 'Success' TYPE 'S'.
+ ELSE.
+ MESSAGE lv_err_text TYPE 'E'.
+ ENDIF.
+* Close HTTP Connection
+ lo_client->close( ).
+ CATCH /goog/cx_sdk INTO DATA(lo_exception).
+ MESSAGE lo_exception->get_text( ) TYPE 'E'.
+ENDTRY.
+</pre>
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}

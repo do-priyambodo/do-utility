@@ -1,0 +1,2499 @@
+{% setvar sub_int %}sub-integration{% endsetvar %}
+
+
+{# Tasks#}
+
+{% setvar apip_task_sqlinsert %}Insert Row into Cloud SQL{% endsetvar %}
+{% setvar apip_task_sqlupdate %}Update Rows in Cloud SQL{% endsetvar %}
+{% setvar apip_task_sqlselect %}Select Rows from Cloud SQL{% endsetvar %}
+{% setvar apip_task_sqldelete %}Delete Rows from Cloud SQL{% endsetvar %}
+
+{% setvar apip_task_foreachpar %}For Each Parallel{% endsetvar %}
+{% setvar apip_task_foreachloop %}For Each Loop{% endsetvar %}
+{% setvar apip_task_whileloop %}While Loop{% endsetvar %}
+{% setvar apip_task_callintegration %}Call Integration{% endsetvar %}
+{% setvar apip_task_datamapping %}Data Mapping{% endsetvar %}
+{% setvar apip_task_datatransformer %}Data Transformer{% endsetvar %}
+
+{% setvar apip_task_salescreate %}Create Salesforce Record{% endsetvar %}
+{% setvar apip_task_salesread %}Read Salesforce Record{% endsetvar %}
+{% setvar apip_task_salesupdate %}Update Salesforce Record{% endsetvar %}
+{% setvar apip_task_salesdelete %}Delete Salesforce Record{% endsetvar %}
+
+{% setvar apip_task_sendemail %}Send Email{% endsetvar %}
+{% setvar apip_task_approval %}Approval{% endsetvar %}
+{% setvar apip_task_rest %}Call REST Endpoint{% endsetvar %}
+{% setvar apip_task_pubtopic %}Publish to Pub/Sub Topic{% endsetvar %}
+{% setvar apip_task_appsscript %}Apps Script{% endsetvar %}
+{% setvar apip_task_connector %}Connectors{% endsetvar %}
+{% setvar apip_task_cloudfunction %}Cloud Function{% endsetvar %}
+{% setvar apip_task_suspension %}Suspend{% endsetvar %}
+{% setvar apip_task_timer %}Timer{% endsetvar %}
+{% setvar apip_task_javascript %}JavaScript{% endsetvar %}
+
+{# Trigger#}
+{% setvar apip_trigger_cron %}Schedule trigger{% endsetvar %}
+{% setvar apip_trigger_scheduler %}Cloud Scheduler trigger{% endsetvar %}
+{% setvar apip_trigger_api %}API trigger{% endsetvar %}
+{% setvar apip_trigger_pubsub %}Cloud Pub/Sub trigger{% endsetvar %}
+{% setvar apip_trigger_salescdc %}Salesforce trigger{% endsetvar %}
+
+{% setvar basehrefpath %}{% endsetvar %}
+{% setvar apip_apigee_steps%}{% endsetvar %}
+{% setvar apip_sa_steps%}{% endsetvar %}
+{% setvar baseimagepath %}{% endsetvar %}
+
+{% setvar apip_apigee_steps_trigger%}{% endsetvar %}
+{% setvar apip_sa_steps_trigger%}{% endsetvar %}
+
+
+{# START variables for Connectors documentation#}
+
+
+
+
+
+{% setvar connectors_launch %}
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}BigQuery Connector{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+{% endsetvar %}
+
+{% setvar connector_regions %}
+
+<p>For the list of all the supported regions, see <a href="/integration-connectors/docs/locations">Locations</a>.</p>
+
+{% endsetvar %}
+
+{# START variables for Connectors documentation#}
+
+{% setvar connectors_launch %}
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}BigQuery Connector{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+{% endsetvar %}
+
+{% setvar connectors_name %}connectors{% endsetvar %}
+{% setvar connectors_name_initcap %}Connectors{% endsetvar %}
+{% setvar bq_name %}BigQuery{% endsetvar %}
+{% setvar bq_connect %}BigQuery connection{% endsetvar %}
+{% setvar postgres_connect %}Cloud SQL for PostgreSQL connection{% endsetvar %}
+{% setvar cloud_postgres %}Cloud SQL - PostgreSQL {% endsetvar %}
+{% setvar mysql_connect %}Cloud SQL for MySQL connection{% endsetvar %}
+{% setvar cloud_mysql %}Cloud SQL - MySQL{% endsetvar %}
+{% setvar pubsub_connect %}Pub/Sub connection{% endsetvar %}
+{% setvar pubsub_name %}Pub/Sub{% endsetvar %}
+{% setvar salesforce_connect %}Salesforce connection{% endsetvar %}
+{% setvar salesforce_name %}Salesforce{% endsetvar %}
+{% setvar spanner_connect %}Spanner connection{% endsetvar %}
+{% setvar spanner_name %}Spanner{% endsetvar %}
+{% setvar cloudsqlserver_connect %}Cloud SQL for SQL Server connection{% endsetvar %}
+{% setvar cloudsqlserver_name %}Cloud SQL - SQL Server{% endsetvar %}
+{% setvar redis_connect %}Redis connection{% endsetvar %}
+{% setvar redis_name %}Redis{% endsetvar %}
+{% setvar kafka_connect %}Apache Kafka connection{% endsetvar %}
+{% setvar kafka_name %}Apache Kafka{% endsetvar %}
+{% setvar servicenow_connect %}ServiceNow connection{% endsetvar %}
+{% setvar servicenow_name %}ServiceNow{% endsetvar %}
+{% setvar nativemysql_connect %}MySQL connection{% endsetvar %}
+{% setvar nativemysql_name %}MySQL{% endsetvar %}
+{% setvar nativepostgresql_connect %}PostgreSQL connection{% endsetvar %}
+{% setvar nativepostgresql_name %}PostgreSQL{% endsetvar %}
+{% setvar bigcommerce_connect %}BigCommerce connection{% endsetvar %}
+{% setvar bigcommerce_name %}BigCommerce{% endsetvar %}
+{% setvar jiracloud_connect %}Jira Cloud connection{% endsetvar %}
+{% setvar jiracloud_name %}Jira Cloud{% endsetvar %}
+{% setvar apachecassandra_connect %}Apache Cassandra connection{% endsetvar %}
+{% setvar apachecassandra_name %}Apache Cassandra{% endsetvar %}
+{% setvar email_connect %}Email connection{% endsetvar %}
+{% setvar email_name %}Email{% endsetvar %}
+{% setvar zendesk_connect %}Zendesk connection{% endsetvar %}
+{% setvar zendesk_name %}Zendesk{% endsetvar %}
+{% setvar splunk_connect %}Splunk connection{% endsetvar %}
+{% setvar splunk_name %}Splunk{% endsetvar %}
+{% setvar sftp_connect %}SFTP connection{% endsetvar %}
+{% setvar sftp_name %}SFTP{% endsetvar %}
+{% setvar twilio_connect %}Twilio connection{% endsetvar %}
+{% setvar twilio_name %}Twilio{% endsetvar %}
+{% setvar mariadb_connect %}MariaDB connection{% endsetvar %}
+{% setvar mariadb_name %}MariaDB{% endsetvar %}
+{% setvar ldap_connect %}LDAP connection{% endsetvar %}
+{% setvar ldap_name %}LDAP{% endsetvar %}
+{% setvar elasticsearch_connect %}Elasticsearch connection{% endsetvar %}
+{% setvar elasticsearch_name %}Elasticsearch{% endsetvar %}
+{% setvar mongodb_connect %}MongoDB connection{% endsetvar %}
+{% setvar mongodb_name %}MongoDB{% endsetvar %}
+{% setvar apachecouchdb_connect %}Apache CouchDB connection{% endsetvar %}
+{% setvar apachecouchdb_name %}Apache CouchDB{% endsetvar %}
+{% setvar sqlserver_connect %}SQL Server connection{% endsetvar %}
+{% setvar sqlserver_name %}SQL Server{% endsetvar %}
+{% setvar activedirectory_connect %}Active Directory connection{% endsetvar %}
+{% setvar activedirectory_name %}Active Directory{% endsetvar %}
+{% setvar paypal_connect %}PayPal connection{% endsetvar %}
+{% setvar paypal_name %}PayPal{% endsetvar %}
+{% setvar workday_connect %}Workday connection{% endsetvar %}
+{% setvar workday_name %}Workday{% endsetvar %}
+{% setvar cockroachdb_connect %}CockroachDB connection{% endsetvar %}
+{% setvar cockroachdb_name %}CockroachDB{% endsetvar %}
+{% setvar onedrive_name %}OneDrive{% endsetvar %}
+{% setvar oracledb_name %}Oracle DB{% endsetvar %}
+{% setvar box_connect %}Box connection{% endsetvar %}
+{% setvar box_name %}Box{% endsetvar %}
+
+{% setvar hl7_name%}HL7{% endsetvar %}
+{% setvar ibmmq_name%}IBM MQ{% endsetvar %}
+{% setvar kintone_name%}Kintone{% endsetvar %}
+{% setvar mailchimp_name%}MailChimp{% endsetvar %}
+{% setvar neo4j_name%}Neo4J{% endsetvar %}
+{% setvar redshift_name%}Redshift{% endsetvar %}
+{% setvar sapgateway_name%}SAP Netweaver Gateway{% endsetvar %}
+{% setvar saphana_name%}SAP HANA{% endsetvar %}
+{% setvar sendgrid_name%}SendGrid{% endsetvar %}
+{% setvar shopify_name%}Shopify{% endsetvar %}
+{% setvar singlestore_name%}SingleStore{% endsetvar %}
+{% setvar snowflake_name%}Snowflake{% endsetvar %}
+{% setvar solace_name%}Solace{% endsetvar %}
+{% setvar streak_name%}Streak{% endsetvar %}
+{% setvar stripe_name%}Stripe{% endsetvar %}
+{% setvar taxjar_name%}TaxJar{% endsetvar %}
+{% setvar gcs_name%}Cloud Storage{% endsetvar %}
+{% setvar ftp_name%}FTP{% endsetvar %}
+{% setvar tibcoems_name%}TIBCO EMS{% endsetvar %}
+{% setvar trello_name%}Trello{% endsetvar %}
+
+{% setvar hubspot_name%}HubSpot{% endsetvar %}
+{% setvar magento_name%}Magento{% endsetvar %}
+{% setvar teradata_name%}Teradata{% endsetvar %}
+{% setvar couchbase_name%}Couchbase{% endsetvar %}
+{% setvar rabbitmq_name%}RabbitMQ{% endsetvar %}
+
+{% setvar http_name %}HTTP{% endsetvar %}
+
+
+
+{% setvar connector_types %}
+
+<h2 id="google-connectors">Connectors for Google services</h2>
+<ul>
+<li><a href="/integration-connectors/docs/connectors/bigquery/configure">{{bq_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cloudsqlformysql/configure">{{cloud_mysql}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cloudsqlforpostgresql/configure">{{cloud_postgres}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cloudsqlforsqlserver/configure">{{cloudsqlserver_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cloudstorage/configure">{{gcs_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/pubsub/configure">{{pubsub_name}}</a></li>
+</ul>
+
+<h2 id="other-connectors">Connectors for other applications</h2>
+<ul>
+<li><a href="/integration-connectors/docs/connectors/activedirectory/configure">{{activedirectory_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/apachecassandra/configure">{{apachecassandra_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/apachekafka/configure">{{kafka_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/apachecouchdb/configure">{{apachecouchdb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/bigcommerce/configure">{{bigcommerce_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/box/configure">{{box_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cloudspanner/configure">{{spanner_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/cockroachdb/configure">{{cockroachdb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/couchbase/configure">{{couchbase_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/elasticsearch/configure">{{elasticsearch_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/email/configure">{{email_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/ftp/configure">{{ftp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/http/configure">{{http_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/hubspot/configure">{{hubspot_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/ibmmq/configure">{{ibmmq_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/jiracloud/configure">{{jiracloud_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/kintone/configure">{{kintone_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/ldap/configure">{{ldap_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/magento/configure">{{magento_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/mailchimp/configure">{{mailchimp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/mariadb/configure">{{mariadb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/mongodb/configure">{{mongodb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/mysql/configure">{{nativemysql_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/neo4j/configure">{{neo4j_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/onedrive/configure">{{onedrive_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/oracledb/configure">{{oracledb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/paypal/configure">{{paypal_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/postgresql/configure">{{nativepostgresql_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/rabbitmq/configure">{{rabbitmq_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/redis/configure">{{redis_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/redshift/configure">{{redshift_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/salesforce/configure">{{salesforce_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapgateway/configure">{{sapgateway_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/saphana/configure">{{saphana_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sendgrid/configure">{{sendgrid_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/servicenow/configure">{{servicenow_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sftp/configure">{{sftp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/shopify/configure">{{shopify_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/singlestore/configure">{{singlestore_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/snowflake/configure">{{snowflake_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/splunk/configure">{{splunk_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sqlserver/configure">{{sqlserver_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/streak/configure">{{streak_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/stripe/configure">{{stripe_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/taxjar/configure">{{taxjar_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/teradata/configure">{{teradata_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/trello/configure">{{trello_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/twilio/configure">{{twilio_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/workday/configure">{{workday_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/zendesk/configure">{{zendesk_name}}</a></li>
+
+{% endsetvar %}
+
+
+{%setvar apip_sa_steps %}{% endsetvar %}
+{%setvar apip_apigee_steps %}{% endsetvar %}
+{%setvar apip_apigee_pubsub_note %}{% endsetvar %}
+{%setvar apip_apigee_pubsub_prereq %}{% endsetvar %}
+{%setvar apip_apigee_schedule_prereq %}{% endsetvar %}
+
+
+{%setvar apip_common_dest_config_connectors%}
+          <li><b>Destinations</b>: Enter details of the remote host (backend system) you want to connect.
+          <ul>
+            <li><b>Destination Type</b>: You can specify the destination details either
+              as a host address or a service attachment. Select any of the following destination types:
+        <ul>
+          <li><b>Host address</b>: If you want to specify the hostname or IP address of the destination.</li>
+          <li><b>Service attachment</b>:  If you want to specify the private endpoint for your internal IP addresses.
+            The service attachment, lets you hide your
+            internal IP addresses from the external network. You can create a service attachment
+            in Google Cloud, by using the Private Service Connect feature. For information on configuring a
+            Private Service Connect, see <a href="/vpc/docs/configure-private-service-connect-producer">Publish managed services</a>.</li>
+          </ul>
+            <p> Based on your selection of destination type,
+              enter the host address or the service attachment name.</p>
+
+            </li>
+          </ul>
+          <ul>
+            <li>To enter additional destinations, click <b>+Add Destination</b>.</li></ul>
+          <ul><li>Click <b>Next</b>.</li></ul>
+        </li>
+  {%endsetvar%}
+
+
+
+{% setvar connector_types_apigee %}
+<p>The following connectors are supported:</p>
+
+<h3 id="google-connectors">Connectors for Google services</h3>
+<ul>
+<li><a href="/apigee/docs/api-platform/connectors/bigquery/configure">{{bq_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cloudsqlformysql/configure">{{cloud_mysql}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cloudsqlforpostgresql/configure">{{cloud_postgres}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cloudsqlforsqlserver/configure">{{cloudsqlserver_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cloudstorage/configure">{{gcs_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/pubsub/configure">{{pubsub_name}}</a></li>
+</ul>
+
+<h3 id="other-connectors">Connectors for other applications</h3>
+<ul>
+<li><a href="/apigee/docs/api-platform/connectors/activedirectory/configure">{{activedirectory_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/apachecassandra/configure">{{apachecassandra_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/apachekafka/configure">{{kafka_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/apachecouchdb/configure">{{apachecouchdb_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/bigcommerce/configure">{{bigcommerce_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/box/configure">{{box_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cloudspanner/configure">{{spanner_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/cockroachdb/configure">{{cockroachdb_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/couchbase/configure">{{couchbase_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/elasticsearch/configure">{{elasticsearch_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/email/configure">{{email_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/ftp/configure">{{ftp_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/http/configure">{{http_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/hubspot/configure">{{hubspot_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/ibmmq/configure">{{ibmmq_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/jiracloud/configure">{{jiracloud_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/kintone/configure">{{kintone_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/ldap/configure">{{ldap_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/magento/configure">{{magento_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/mailchimp/configure">{{mailchimp_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/mariadb/configure">{{mariadb_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/mongodb/configure">{{mongodb_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/mysql/configure">{{nativemysql_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/neo4j/configure">{{neo4j_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/onedrive/configure">{{onedrive_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/oracledb/configure">{{oracledb_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/paypal/configure">{{paypal_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/postgresql/configure">{{nativepostgresql_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/rabbitmq/configure">{{rabbitmq_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/redis/configure">{{redis_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/redshift/configure">{{redshift_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/salesforce/configure">{{salesforce_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/sapgateway/configure">{{sapgateway_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/saphana/configure">{{saphana_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/sendgrid/configure">{{sendgrid_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/servicenow/configure">{{servicenow_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/sftp/configure">{{sftp_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/shopify/configure">{{shopify_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/singlestore/configure">{{singlestore_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/snowflake/configure">{{snowflake_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/splunk/configure">{{splunk_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/sqlserver/configure">{{sqlserver_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/streak/configure">{{streak_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/stripe/configure">{{stripe_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/taxjar/configure">{{taxjar_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/teradata/configure">{{teradata_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/trello/configure">{{trello_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/twilio/configure">{{twilio_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/workday/configure">{{workday_name}}</a></li>
+<li><a href="/apigee/docs/api-platform/connectors/zendesk/configure">{{zendesk_name}}</a></li>
+</ul>
+
+
+{% endsetvar %}
+
+
+{% setvar apigee_integration_name %}Apigee Integration{% endsetvar %}
+{% setvar apigee_integration_name_short %}{{apigee_integration_name}}{% endsetvar %}
+
+{%setvar connectors_integration_steps %}{% endsetvar %}
+{%setvar connectors_apigee_steps %}{% endsetvar %}
+
+
+{% setvar entities_operations_actions %}
+
+<devsite-expandable expanded id="exp3">
+
+<h2 class="showalways" id="eoa">Entities, operations, and actions</h2>
+
+<p>
+All the {{integration_connectors_name}} provide a layer of abstraction for the objects of
+the connected application. You can access an application's objects only through
+  this abstraction. The abstraction is exposed to you as entities, operations, and actions.</p>
+
+<aside class="note"><b>Note:</b> You can view the entities, operations, and actions of a
+  connector in the <a href="/application-integration/docs/connectors-task">Connectors task</a>.</aside>
+
+<ul>
+  <li><b>Entity: </b>An entity can be thought of as an object, or a collection of properties, in the
+connected application or service. The definition of an entity differs from a connector to a
+    connector. For example, in a database connector, tables are the entities, in a
+    file server connector, folders are the entities, and in a messaging system connector,
+    queues are the entities.
+
+    <p>However, it is possible that a connector doesn't support or have any entities, in which case the
+      <code>Entities</code> list will be empty.</p>
+</li>
+
+  <li><b>Operation: </b>An operation is the activity that you can perform on an entity. You can perform
+any of the following operations on an entity:
+
+    <ul>
+    <li><a href="/application-integration/docs/configure-connectors-task#config-prop">List</a></li>
+    <li><a href="/application-integration/docs/configure-connectors-task#config-prop">Get</a></li>
+    <li><a href="/application-integration/docs/configure-connectors-task#config-prop">Create</a></li>
+    <li><a href="/application-integration/docs/configure-connectors-task#config-prop">Update</a></li>
+    <li><a href="/application-integration/docs/configure-connectors-task#config-prop">Delete</a></li>
+    </ul>
+
+  <p>Selecting an entity from the available list, generates a list of
+operations available for the entity. For a detailed description of the operations, see the Connectors task's
+      <a href="/application-integration/docs/connectors-task#config-prop">entity operations</a>.
+    However, if a connector doesn't support any of the entity operations, such unsupported
+    operations aren't listed in the <code>Operations</code> list.</p>
+  </li>
+
+  <li><b>Action: </b>An action is a first class function that is made available to the integration
+through the connector interface. An action lets you make changes to an entity or entities, and
+    vary from connector to connector. Normally, an action will have some input parameters, and an output
+    parameter. However, it is possible
+    that a connector doesn't support any action, in which case the <code>Actions</code> list will be empty.
+</li>
+</ul>
+
+<aside class="note"><b>Note: </b>All entities and actions will have a schema associated with them. For example, an action schema will have the parameter details such as; the parameter
+names, and its corresponding data type. The schema (metadata) for entities and actions is fetched by the connection at
+runtime from your backend. If there are any updates to the schema, such updates won't be
+  automatically reflected in your existing connections; you must manually refresh the schema. To refresh
+the schema for a connection, open the <b>Connection details</b> page of the connection, and then click
+ <b>Refresh connection schema</b>. </aside>
+
+</devsite-expandable>
+{% endsetvar %}
+
+{% setvar get_community_help %}
+<h2>Get help from the Google Cloud community</h2>
+You can post your questions and discuss this connector in the Google Cloud
+community at <a href="https://www.googlecloudcommunity.com/gc/Integration-Services/bd-p/cloud-integration-services">Cloud Forums</a>.
+
+<h2>What's next</h2>
+  <ul>
+    <li>Understand how to <a href="/integration-connectors/docs/suspend-resume-connection">suspend and resume a connection</a>.</li>
+    <li>Understand how to <a href="/integration-connectors/docs/cloud-monitoring">monitor connector usage</a>.</li>
+    <li>Understand how to <a href="/integration-connectors/docs/view-connector-logs">view connector logs</a>.</li>
+  </ul>
+
+
+{% endsetvar %}
+
+{% setvar actcrm_name %}Act CRM{% endsetvar %}
+{% setvar acumatica_name %}Acumatica{% endsetvar %}
+{% setvar alloydb_name %}AlloyDB{% endsetvar %}
+{% setvar apachehbase_name %}HBase{% endsetvar %}
+{% setvar apachehive_name %}Apache Hive{% endsetvar %}
+{% setvar apachephoenix_name %}Phoenix{% endsetvar %}
+{% setvar authorizenet_name %}Authorize.Net{% endsetvar %}
+{% setvar avalara_name %}Avalara AvaTax{% endsetvar %}
+{% setvar basecamp_name %}Basecamp{% endsetvar %}
+{% setvar db2_name %}DB2{% endsetvar %}
+{% setvar enterprisedb_name %}EnterpriseDB{% endsetvar %}
+{% setvar epicorerp_name %}Epicor ERP{% endsetvar %}
+{% setvar financialforce_name %}FinancialForce{% endsetvar %}
+{% setvar harperdb_name %}HarperDB{% endsetvar %}
+{% setvar marklogic_name %}MarkLogic{% endsetvar %}
+{% setvar odata_name %}OData{% endsetvar %}
+{% setvar oracleeloqua_name %}Oracle Eloqua{% endsetvar %}
+{% setvar oraclesalescloud_name %}Oracle Sales{% endsetvar %}
+{% setvar oracleservicecloud_name %}Oracle Service Cloud{% endsetvar %}
+{% setvar quickbase_name %}QuickBase{% endsetvar %}
+{% setvar quickbooks_name %}QuickBooks{% endsetvar %}
+{% setvar quickbookspos_name %}QuickBooks POS{% endsetvar %}
+{% setvar reckon_name %}Reckon{% endsetvar %}
+{% setvar sage50uk_name %}Sage 50 UK{% endsetvar %}
+{% setvar sapbusinessobjectsbi_name %}SAP BusinessObjects BI{% endsetvar %}
+{% setvar sapbusinessone_name %}SAP Business One{% endsetvar %}
+{% setvar sapconcur_name %}SAP Concur{% endsetvar %}
+{% setvar sapfieldglass_name %}SAP Fieldglass{% endsetvar %}
+{% setvar saphybrisc4c_name %}SAP Hybris C4C{% endsetvar %}
+{% setvar sfmarketingcloud_name %}Salesforce Marketing Cloud{% endsetvar %}
+{% setvar shipstation_name %}ShipStation{% endsetvar %}
+{% setvar sparksql_name %}Spark{% endsetvar %}
+{% setvar ssas_name %}SQL Analysis Services{% endsetvar %}
+{% setvar sugarcrm_name %}Sugar CRM{% endsetvar %}
+{% setvar suitecrm_name %}SuiteCRM{% endsetvar %}
+{% setvar sybaseiq_name %}Sybase IQ{% endsetvar %}
+{% setvar veevavault_name %}Veeva{% endsetvar %}
+{% setvar woocommerce_name %}WooCommerce{% endsetvar %}
+{% setvar wordpress_name %}WordPress{% endsetvar %}
+{% setvar greenplum_name %}Greenplum{% endsetvar %}
+{% setvar netsuite_name %}NetSuite{% endsetvar %}
+{% setvar saperp_name %}SAP ERP{% endsetvar %}
+{% setvar googleads_name %}Google Ads{% endsetvar %}
+{% setvar sapsuccessfactors_name %}SAP SuccessFactors{% endsetvar %}
+
+{% setvar private_preview_connectors %}
+<p>The following connectors are available in private preview:</p>
+<ul>
+<li><a href="/integration-connectors/docs/connectors/actcrm/configure">{{actcrm_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/acumatica/configure">{{acumatica_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/alloydb/configure">{{alloydb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/hbase/configure">{{apachehbase_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/apachehive/configure">{{apachehive_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/phoenix/configure">{{apachephoenix_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/authorize.net/configure">{{authorizenet_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/avalaraavatax/configure">{{avalara_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/basecamp/configure">{{basecamp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/db2/configure">{{db2_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/enterprisedb/configure">{{enterprisedb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/epicorerp/configure">{{epicorerp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/financialforce/configure">{{financialforce_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/googleads/configure">{{googleads_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/greenplum/configure">{{greenplum_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/harperdb/configure">{{harperdb_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/marklogic/configure">{{marklogic_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/netsuite/configure">{{netsuite_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/odata/configure">{{odata_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/oracleeloqua/configure">{{oracleeloqua_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/oraclesalescloud/configure">{{oraclesalescloud_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/oracleservicecloud/configure">{{oracleservicecloud_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/quickbase/configure">{{quickbase_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/quickbooks/configure">{{quickbooks_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/quickbookspos/configure">{{quickbookspos_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/reckon/configure">{{reckon_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sage50uk/configure">{{sage50uk_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapbusinessobjectsbi/configure">{{sapbusinessobjectsbi_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapbusinessone/configure">{{sapbusinessone_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapconcur/configure">{{sapconcur_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/saperp/configure">{{saperp_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapfieldglass/configure">{{sapfieldglass_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/saphybrisc4c/configure">{{saphybrisc4c_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sapsuccessfactors/configure">{{sapsuccessfactors_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/salesforcemarketingcloud/configure">{{sfmarketingcloud_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/shipstation/configure">{{shipstation_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/spark/configure">{{sparksql_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sqlanalysisservices/configure">{{ssas_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sugarcrm/configure">{{sugarcrm_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/suitecrm/configure">{{suitecrm_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/sybaseiq/configure">{{sybaseiq_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/veeva/configure">{{veevavault_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/woocommerce/configure">{{woocommerce_name}}</a></li>
+<li><a href="/integration-connectors/docs/connectors/wordpress/configure">{{wordpress_name}}</a></li>
+</ul>
+
+{% endsetvar %}
+
+{% setvar code_sample_upload_run_steps %}
+
+<h2>Upload and run the sample integration</h2>
+<p>To upload and run the sample integration, do the following steps:</p>
+<ol>
+  <li>Save the <a href="#code-sample">integration sample</a> as a .json file on your system.</li>
+  {{apip_common_steps}}
+   <li>Select an existing integration or create a new integration by clicking <b>Create integration</b>.<p>
+     If you are creating a new integration:
+     <ol>
+       <li>Enter a name and description in the <b>Create Integration</b> dialog.</li>
+      <li>Select a region for the integration.
+        <aside class="note"><b>Note:</b> The <b>Regions</b> dropdown only lists the regions provisioned in your Google Cloud project. To provision a new region, Click <b>Enable Region</b>. See <a href="/application-integration/docs/enable-new-region">Enable new region</a> for more information.
+        </aside>
+      </li>
+      <li>Select a service account for the integration. You can change or update the service account details of an integration any time from the <span class="material-icons">info</span> <b>Integration summary</b> pane in the integration toolbar.
+        <aside class="note"><b>Note:</b> The option to select a service account is displayed only if you have enabled integration governance for the selected region.
+        </aside>
+      </li>
+       <li>Click <b>Create</b>.</li>
+     </ol>
+     <p>
+       This opens the integration in the <i>integration editor</i>.</p></li>
+  <li>In the <i>integration editor</i>, click <span class="material-icons">publish</span><b>Upload/download menu</b> and then select <b>Upload integration</b>.</li>
+  <li>In the file browser dialog, select the file that you saved in step 1, and then click <b>Open</b>.
+    <p>A new version of the integration is created using the uploaded file.</p>
+  </li>
+  <li>In the <i>integration editor</i>, click <b>Test</b>.
+  <li>Click <b>Test integration</b>. This runs the integration and displays the execution result in the <b>Test Integration</b> pane.</li>
+</ol>
+
+{% endsetvar %}
+
+
+{% setvar db_connector_supported_datatypes %}
+
+<devsite-expandable id="exp1">
+<h2 class="showalways">Supported data types</h2>
+<p>The following are the supported data types for this connector:</p>
+<ul>
+<li>BIGINT</li>
+<li>BINARY</li>
+<li>BIT</li>
+<li>BOOLEAN</li>
+<li>CHAR</li>
+<li>DATE</li>
+<li>DECIMAL</li>
+<li>DOUBLE</li>
+<li>FLOAT</li>
+<li>INTEGER</li>
+<li>LONGN VARCHAR</li>
+<li>LONG VARCHAR</li>
+<li>NCHAR</li>
+<li>NUMERIC</li>
+<li>NVARCHAR</li>
+<li>REAL</li>
+<li>SMALL INT</li>
+<li>TIME</li>
+<li>TIMESTAMP</li>
+<li>TINY INT</li>
+<li>VARBINARY</li>
+<li>VARCHAR</li>
+</ul>
+</devsite-expandable>
+
+{% endsetvar %}
+
+
+{% setvar greenplum_db_connector_supported_datatypes %}
+
+<devsite-expandable id="exp1">
+<h2 class="showalways">Supported data types</h2>
+<p>The following are the supported data types for this connector:</p>
+<ul>
+  <li>BIGINT</li>
+  <li>BIGSERIAL</li>
+  <li>BIT</li>
+  <li>BOOLEAN</li>
+  <li>BOX</li>
+  <li>BYTEA</li>
+  <li>CHARACTER</li>
+  <li>CIDR</li>
+  <li>CIRCLE</li>
+  <li>DATE</li>
+  <li>DECIMAL</li>
+  <li>DOUBLE PRECISION</li>
+  <li>INET</li>
+  <li>INTEGER</li>
+  <li>INTERVAL [FIELDS] [(P)]</li>
+  <li>JSON</li>
+  <li>JSONB</li>
+  <li>LSEG</li>
+  <li>MACADDR</li>
+  <li>MACADDR8</li>
+  <li>MONEY</li>
+  <li>PATH</li>
+  <li>POINT</li>
+  <li>POLYGON</li>
+  <li>REAL</li>
+  <li>SERIAL</li>
+  <li>SMALLINT</li>
+  <li>TEXT</li>
+  <li>TIME</li>
+  <li>TIMESTAMP</li>
+  <li>UUID</li>
+  <li>XML</li>
+  <li>TXID_SNAPSHOT</li>
+</ul>
+</devsite-expandable>
+
+{% endsetvar %}
+
+{% setvar about_connection %}
+<p>A connection is specific to a data source. It
+means that if you have many data sources, you must create a separate connection
+for each data source. To create a connection, do the following:</p>
+{% endsetvar%}
+
+{% setvar about_connection_hl7 %}
+<p>Configuring the connector requires you to create a connection to your
+Healthcare System or the Google Cloud Healthcare API. A connection is specific to a data source. It
+means that if you have many data sources, you must create a separate connection
+for each data source. To create a connection, do the following steps:</p>
+{% endsetvar%}
+
+{% setvar connector_node_config %}
+        <li>Optionally, configure the <b>Connection node settings</b>:
+        <p>
+        <ul>
+          <li> <b>Minimum number of nodes</b>:  Enter the minimum number of connection nodes.</li>
+          <li> <b>Maximum number of nodes</b>: Enter the maximum number of connection nodes.</li>
+        </ul>
+        <p>A node is a unit (or replica) of a connection that processes transactions.
+         More nodes are required to process more transactions for a connection and conversely,
+         fewer nodes are required to process fewer transactions.
+         To understand how the nodes affect your connector pricing, see
+         <a href="/integration-connectors/docs/pricing#pricing-for-connection-nodes">
+         Pricing for connection nodes</a>. If you don't enter any values, by default
+         the minimum nodes are set to 2 (for better availability) and the maximum nodes are set to 50.</p>
+        </li>
+
+  <aside class="note"><b>Note:</b> You can customize the connection node values only if you are
+  a Pay-as-you-go customer.</aside>
+{% endsetvar %}
+
+{% setvar connector_proxy_config %}
+
+
+  <li>
+            <b>Use proxy</b>: Select this checkbox to configure a proxy server for the connection and
+            configure the following values:
+          </li>
+  <ul>
+          <li>
+            <b>Proxy Auth Scheme</b>: Select the authentication type to authenticate with the proxy server. The following authentication types are supported:
+
+            <ul>
+              <li><b>Basic</b>: Basic HTTP authentication.</li>
+                <li><b>Digest</b>: Digest HTTP authentication.</li>
+            </ul>
+
+          </li>
+          <li>
+            <b>Proxy User</b>: A user name to be used to authenticate with the proxy server.
+          </li>
+          <li>
+            <b>Proxy Password</b>: The Secret manager secret of the user's password.
+          </li>
+          <li>
+            <b>Proxy SSL Type</b>: The SSL type to use when connecting to the proxy server. The following authentication types are supported:
+
+            <ul>
+              <li><b>Auto</b>: Default setting. If the URL is an HTTPS URL, then the Tunnel option is used. If the URL is an HTTP URL, then the NEVER option is used.</li>
+              <li><b>Always</b>: The connection is always SSL enabled.</li>
+              <li><b>Never</b>: The connection is not SSL enabled.</li>
+                <li><b>Tunnel</b>: The connection is through a tunneling proxy. The proxy server opens a connection to the remote host and traffic flows back and forth through the proxy.</li>
+            </ul>
+
+          </li>
+
+	     <li> In the <b>Proxy Server</b> section, enter details of the proxy server.
+	        <ol>
+
+			 <li>Click <b>+ Add destination</b>.</li>
+
+	          <li>Select a <b>Destination Type</b>.
+	            <ul>
+	              <li><b>Host address</b>: Specify the hostname or IP address of the destination.
+                <p>If you want to establish a private connection to your backend system, do the following:</p>
+                <ul>
+                  <li>Create a <a href="/integration-connectors/docs/configure-psc">PSC service attachment</a>.</li>
+                  <li>Create an <a href="/integration-connectors/docs/create-ep-attachment">endpoint attachment</a> and
+                  then enter the details of the endpoint attachment in the <b>Host address</b> field.</li>
+                </ul>
+
+                </li>
+	            </ul>
+	          </li>
+	        </ol>
+	      </li>
+</ul>
+
+{% endsetvar %}
+
+
+{% setvar connector_dest_type_config %}
+ <ul>
+	              <li>Select <b>Host address</b> from the list to specify the hostname or IP address of the destination.</li>
+
+             <li>If you want to establish a private connection to your backend systems,
+               select <b>Endpoint attachment</b> from the list, and then select the required endpoint attachment
+               from the <b>Endpoint Attachment</b> list.
+
+               <aside class="note"><b>Note: </b>To understand how to create an endpoint attachment, see
+              <a href="/integration-connectors/docs/configure-psc">PSC service attachment</a>
+              and <a href="/integration-connectors/docs/create-ep-attachment">endpoint attachment</a>. After you
+            have created the endpoint attachment, it will be visible in the <b>Endpoint Attachment</b> list.</aside>
+               </li>
+
+
+	            </ul>
+
+              <p>If you want to establish a public connection to your backend systems with additional security, you can
+                consider <a href="/integration-connectors/docs/configure-static-ip">configuring static outbound
+                   IP addresses for your connections</a>, and then configure
+               your firewall rules to allowlist only the specific static IP addresses. </p>
+
+
+{% endsetvar %}
+
+{% setvar connector_node_scaling %}
+
+  <p>For information on the limits applicable to {{product_name}}, see <a href="/integration-connectors/docs/quotas">Limits</a>.</p>
+
+  <aside class="note"><b>Note:</b> The number of <a href="/integration-connectors/docs/pricing#pricing-for-connection-nodes">Integration Connectors nodes</a> will autoscale dynamically
+  based on your usage. However, if you want to reserve capacity for large volumes without
+  waiting for autoscaling, you can adjust the minimum node value for a connection. More
+  nodes are required to process more transactions for a connection. Conversely, fewer nodes
+  are required if a connection processes fewer transactions. To configure the node
+  values, do the following:
+
+  <ul>
+  <li>If you are a pay-as-you-go customer, configure the minimum and maximum node value
+    in the edit connection page. </li>
+  <li>If you are a subscription based
+    customer, <a href="/integration-connectors/docs/getting-support">contact support</a>.</li>
+  </ul>
+
+  <p>The maximum transactions that a node can handle depends on various factors. So, before adjusting the minimum nodes for better throughput,
+    it is recommended you check if your backend systems are set up optimally to handle the required traffic.</p>
+
+
+
+  </aside>
+
+{% endsetvar %}
+
+{% setvar connector_ssl_supported_cipher %}
+
+
+<h3 id="cipher-suite">Supported cipher suites</h3>
+<table>
+<thead>
+      <tr>
+        <th>TLS version</th>
+        <th>Supported cipher suites</th>
+      </tr>
+    </thead>
+    <tbody class="list">
+<tr>
+<td>1.2</td>
+<td>
+  <ul>
+<li>TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256</li>
+<li>TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384</li>
+<li>TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256</li>
+<li>TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384</li>
+<li>TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</li>
+<li>TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384</li>
+<li>TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256</li>
+<li>TLS_DHE_RSA_WITH_AES_128_GCM_SHA256</li>
+<li>TLS_DHE_RSA_WITH_AES_256_GCM_SHA384</li>
+<li>TLS_DHE_RSA_WITH_AES_128_CBC_SHA</li>
+<li>TLS_DHE_RSA_WITH_AES_256_CBC_SHA</li>
+<li>TLS_DHE_RSA_WITH_AES_128_CBC_SHA256</li>
+<li>TLS_DHE_RSA_WITH_AES_256_CBC_SHA256</li>
+  </ul>
+  </td>
+</tr>
+<tr>
+<td>1.3</td>
+<td>
+<ul>
+  <li>TLS_AES_256_GCM_SHA384</li>
+  <li>TLS_CHACHA20_POLY1305_SHA256</li>
+  <li>TLS_AES_128_GCM_SHA256</li>
+  </ul>
+  </td>
+</tr>
+
+  </tbody>
+</table>
+{% endsetvar%}
+
+{% setvar connector_ssl_config_steps %}
+<li>Optionally, if you want to use SSL, select <b>Enable SSL</b>. This displays the SSL configuration details.
+          <ol>
+            <li>Select a trust store type. It can be either <b>Public</b>, <b>Private</b>, or <b>Insecure Connection</b>. </li>
+            <li>Select the certificates as displayed based on your trust store selection.</li>
+            <li>If you are using mTLS, select the key store certificates in the <b>Key Store</b> section.</li>
+          </ol>
+          <aside class="note"><b>Note:</b>
+            <ul>
+              <li>All your certificates must be X.509 certificates and must be in PEM (Privacy Enhanced Mail) format.</li>
+              <li>You can't directly select a certificate when configuring SSL. You must store all
+                your certificates and private keys as a Secret Manager Secret, and then
+                select the required secret during SSL configuration.</li>
+            </ul>
+             </aside>
+        </li>
+{% endsetvar %}
+
+
+{% setvar connector_enable_eventing %}
+  <li>To use the connection for event subscriptions, select <b>Enable event subscription</b>. Selecting
+    this, displays the following options:
+    <ul>
+      <li><b>Enable event subscription with entity and actions</b>: Select this option to
+      use the connection for both event subscription and connector operations (entities and actions).</li>
+      <li><b>Enable only event subscription</b>: Select this option to use the connection
+      only for event subscription. If you select this option, click <b>Next</b>, and then
+      <a href="#configure-event">configure event subscription</a>.</li>
+    </ul>
+  </li>
+{% endsetvar %}
+
+{% setvar connector_name_eventing %}
+  <li>For connectors that <a href="/integration-connectors/docs/eventsubscription#enable-event-subscriptions-in-connections">support event subscription</a>, the connection names cannot begin with the "goog" prefix.
+  </li>
+{% endsetvar %}
+
+
+{% setvar connectors_ga_pricing_note %}
+
+<aside class="note"><b>Note:</b> You will be billed for usage of a
+  generally available connector version as per the prices
+  mentioned in the <a href="/integration-connectors/docs/pricing">pricing page</a>. You aren't
+  charged for using connectors in preview. To know when
+  a connector version has moved from preview to general availability, you can use of the
+  following approaches:
+  <ul>
+    <li>Subscribe to the <a href="/integration-connectors/docs/release-notes">Integration Connector release notifications</a>.</li>
+    <li>Regularly check for the presence of the <code>Preview</code> label next to the connector name in the <a href="https://console.cloud.google.com/connectors/connections">List connections page</a>.
+      If a connector doesn't have the <code>Preview</code> label, it means that the connector is generally available.</li>
+  </ul>
+</aside>
+
+
+{% endsetvar %}
+
+{% setvar connectors_in_ga %}
+<devsite-expandable id="ga-connectors">
+<h3 class="showalways">The following connectors are available in GA:</h3>
+  <ol>
+    <li><h3><a href="/integration-connectors/docs/connectors/activedirectory/configure">Active Directory</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/acumatica/configure">Acumatica</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/airtable/configure">Airtable</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/alloydb/configure">AlloyDB</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/amazons3/configure">Amazon S3</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/apachecassandra/configure">Apache Cassandra</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/apachecouchdb/configure">Apache CouchDB</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/apachekafka/configure">Apache Kafka</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/asana/configure">Asana</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/azuread/configure">Azure AD (Entra ID)</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/azuredatalakestorage/configure">Azure Data Lake Storage</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/azuredevops/configure">Azure DevOps</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/azuresynapse/configure">Azure Synapse</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/bigcommerce/configure">BigCommerce</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/bigquery/configure">BigQuery</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/bigtable/configure">Bigtable</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/box/configure">Box</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/cloudsqlformysql/configure">Cloud SQL for MySQL</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/cloudsqlforpostgresql/configure">Cloud SQL for PostgreSQL</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/cloudsqlforsqlserver/configure">Cloud SQL for SQL Server</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/cloudstorage/configure">Cloud Storage</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/cockroachdb/configure">CockroachDB</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/confluence/configure">Confluence</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/couchbase/configure">Couchbase</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/dataverse/configure">Dataverse</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/docusign/configure">DocuSign</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/dropbox/configure">Dropbox</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/dynamics365/configure">Dynamics 365</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/dynamics365bc/configure">Dynamics 365 Business Central</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/elasticsearch/configure">Elasticsearch</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/email/configure">Email</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/excelonline/configure">Excel Online</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/freshbooks/configure">Freshbooks</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/ftp/configure">FTP</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/github/configure">GitHub</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/greenplum/configure">Greenplum</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/hdfs/configure">HDFS</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/hl7/configure">HL7</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/http/configure">HTTP</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/hubspot/configure">HubSpot</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/db2/configure">IBM Db2</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/ibmmq/configure">IBM MQ</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/instagram/configure">Instagram</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/jiracloud/configure">Jira Cloud</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/jiraserverdc/configure">Jira Server (Data Center)</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/jiraservicemanagement/configure">Jira Service Management</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/kintone/configure">Kintone</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/ldap/configure">LDAP</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/linkedin/configure">LinkedIn</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/mailchimp/configure">MailChimp</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/mariadb/configure">MariaDB</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/marketo/configure">Marketo</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/magento/configure">Magento</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/metaads/configure">MetaAds</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/monday/configure">Monday</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/mongodb/v2/configure">MongoDB v2</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/exchange/configure">Microsoft Exchange</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/msteams/configure">Microsoft Teams</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/mysql/configure">MySQL</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/neo4j/configure">Neo4j</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/netsuite/configure">NetSuite</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/office365/configure">Office365</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/okta/configure">Okta</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/onedrive/configure">OneDrive</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/oracledb/v2/configure">Oracle DB v2</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/oracleeloqua/configure">Oracle Eloqua</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/oraclesalescloud/configure">Oracle Sales Cloud</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/paypal/configure">PayPal</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/postgresql/configure">PostgreSQL</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/pubsub/configure">Pub/Sub</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/quickbooksonline/configure">QuickBooks Online</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/rabbitmq/configure">Rabbit MQ</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/redis/configure">Redis</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/redshift/configure">Redshift</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sageintacct/configure">Sage Intacct</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/salesforce/configure">Salesforce</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sapbusinessone/configure">SAP Business One</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/saperp/configure">SAP ERP</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sapgateway/configure">SAP Gateway</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/saphana/configure">SAP HANA</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/saphanaxsa /configure">SAP HANA XS Advanced</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/saphybrisc4c/configure">SAP Hybris C4C</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sapsuccessfactors/configure">SAP SuccessFactors</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sybase/configure">SAP Sybase</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/salesforcemarketingcloud/configure">Salesforce Marketing Cloud</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sendgrid/configure">SendGrid</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/servicenow/configure">ServiceNow</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sftp/configure">SFTP</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sharepoint/configure">SharePoint</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/shopify/configure">Shopify</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/singlestore/configure">SingleStore</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/slack/configure">Slack</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/snowflake/configure">Snowflake</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/splunk/configure">Splunk</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/sqlserver/configure">SQL Server</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/stripe/configure">Stripe</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/teradata/configure">Teradata</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/tibcoems/configure">TIBCO EMS</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/trello/configure">Trello</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/twilio/configure">Twilio</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/ukg/configure">UKG</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/wordpress/configure">WordPress</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/woocommerce/configure">WooCommerce</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/workday/configure">Workday</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/xero/configure">Xero</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/zendesk/configure">Zendesk</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/zohobooks/configure">Zoho Books</a></h3></li>
+    <li><h3><a href="/integration-connectors/docs/connectors/zuora/configure">Zuora</a></h3></li>
+    </ol>
+
+{{connectors_ga_pricing_note}}
+  </devsite-expandable>
+
+{% endsetvar %}
+
+
+{% setvar connectors_entity_examples %}
+
+<devsite-expandable expanded id="entityexamples-exp">
+  <h2 class="showalways" id="entityexamp">Entity operation examples</h2>
+
+<h3>Example - List records of an entity</h3>
+<p>This example lists the records of the <code>Users</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Users</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>List</code> operation, and then click
+<b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, you can set the
+<b>filterClause</b> as per your requirement.</p>
+<p>For example, setting the filter clause to
+  <code>employeeCode='5100' and startDate='2010-01-01 00:00:00'</code>, lists only those records
+whose employeeCode is 5100 and startDate is 2010-01-01 00:00:00.</p>
+</li>
+</ol>
+
+<h3>Example - Get a single record from an entity</h3>
+<p>This example fetches a record from the <code>Users</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>User</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Get</code> operation, and then click
+<b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>entityId</b> and
+then enter <code>103032</code> in the <b>Default Value</b> field.
+
+<p>Here, <code>103032</code> is the primary key value of the <code>Users</code> entity.</p>
+</li>
+</ol>
+
+<h3>Example - Delete a record from an entity</h3>
+<p>This example deletes a record from the <code>Users</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Users</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Delete</code> operation, and then click
+<b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>entityId</b> and
+then enter <code>113132</code> in the <b>Default Value</b> field.
+<p>Alternately, if the entity has composite primary keys instead of specifying the <b>entityId</b>, you can
+   set the <b>filterClause</b>. For example, <code>employeeCode='5100' and startDate='2010-01-01 00:00:00'</code>.</p></li>
+</ol>
+
+
+<h3>Example - Create a record in an entity</h3>
+<p>This example creates a record in the <code>Users</code> entity.</p>
+
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Users</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+"employeeCode": "5100",
+"startDate": "2010-01-01 00:00:00.0",
+"country": "US"
+}
+</pre>
+</li>
+
+<p>If the integration is successful, the connector task's <code>connectorOutputPayload</code> field will
+  have the response of the create operation.</p>
+
+</ol>
+
+<h3>Example - Update a record in an entity</h3>
+<p>This example updates a record in the <code>Users</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Users</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+"country": "IN"
+}</pre>
+</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>entityId</b> and
+then enter <code>113132</code> in the <b>Default Value</b> field.
+<p>Alternately, if the entity has composite primary keys instead of specifying the <b>entityId</b>, you can
+  set the <b>filterClause</b>. For example, <code>employeeCode='5100' and startDate='2010-01-01 00:00:00'</code>.</p>
+</li>
+
+<p>If the integration is successful, the connector task's <code>connectorOutputPayload</code> field will
+   have the response of the update operation.</p>
+
+</ol>
+
+</devsite-expandable>
+
+{% endsetvar %}
+
+
+{% setvar connectors_action_custom_query %}
+
+<devsite-expandable expanded id="actions-exp">
+ <h2 class="showalways">Actions</h2>
+<p>This connector supports execution of the following actions:
+  <ul>
+    <li><b>User-defined stored procedures and functions.</b> If you have any stored procedures and functions in your backend, those are listed
+      in the <code>Actions</code> column of the <code>Configure connector task</code> dialog.</li>
+    <li><b>Custom SQL queries.</b> To execute custom SQL queries, the connector provides the <b>Execute custom query</b> action.</p>
+{% include "/_shared/integration-connectors/_create-custom-query.html" %}
+</li>
+</ul>
+</devsite-expandable>
+{% endsetvar %}
+{% setvar connectors_actions %}
+
+<devsite-expandable id="actions-exp">
+  <h2 class="showalways">Actions</h2>
+  <p>This connector supports execution of user-defined stored procedures and functions. Therefore,
+    if you have any stored procedures and functions in your backend, those are listed
+    in the <code>Actions</code> column of the <code>Configure connector task</code> dialog.
+  </p>
+  {% endsetvar %}
+{% setvar connectors_action_def_examples %}
+
+  <devsite-expandable expanded id="actionexamples-exp">
+    <h2 class="showalways" id="examp">Action examples</h2>
+
+  <h3>Example - Find the greater value</h3>
+  <p>This example shows how to execute a user-defined function. The <code>find_greater</code>
+     function in this example, compares two integers and returns the integer which is greater.</p>
+  <ol>
+  <li>In the <code>Configure connector task</code> dialog, click <code>Actions</code>.</li>
+  <li>Select the <code>find_greater</code> action, and then click <b>Done</b>.</li>
+  <li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+  <code>connectorInputPayload</code> and then enter a value similar to the following in the
+  <code>Default Value</code> field:
+  <pre class="prettyprint lang-json">{
+"$1": 1.0,
+"$2": 5.0
+}</pre>
+  </li>
+  <p>If the action execution is successful, the connector task's <code>connectorOutputPayload</code>
+    field will have a value similar to the following:</p>
+  <pre class="prettyprint lang-json">[{
+"bignum": 5.0
+}]</pre>
+  </ol>
+  </devsite-expandable>
+
+{% endsetvar %}
+
+{% setvar connectors_default_node_message %}
+By default, {{product_name}} allocates 2 nodes (for better availability) for a connection.
+{% endsetvar %}
+
+{% setvar connector_create_mysql %}
+<ol>
+  {{connectors_integration_steps}} {{connectors_apigee_steps}}
+
+   <li>Click <b>+Create new</b> to open the <b>Create Connection</b> page.</li>
+
+     <li>In the <b>Location</b> section, choose the location for the connection.
+       <ol>
+         <li>From the <b>Region</b> list, select the region where you want to create the connection.
+           {{connector_regions}}
+         </li>
+         <li>Click <b>Next</b>.</li>
+       </ol>
+     </li>
+
+     <li>In the <b>Connection Details</b> section, enter the following details:
+       <ol>
+        <li>From the <b>Connector</b> list, select <b>{{nativemysql_name}}</b>.</li>
+        <li>From the <b>Connector version</b> list, select the connector version.
+        </li>
+        <li>In the <b>Connection Name</b> field, enter a name for the connection instance.
+          <p>Connection names must meet the following criteria:
+            <ul>
+              <li>Use letters, numbers, or hyphens.</li>
+              <li>Letters must be lower-case.</li>
+              <li>Names must begin with a letter and end with a letter or number.</li>
+              <li>Names cannot exceed 49 characters.</li>
+            </ul>
+         </li>
+         <li>Optional: In the <b>Description</b> field, add a description of the connection instance.</li>
+         <li>Optional: Enable <b>{{logging_name}}</b>.</li>
+         <li>From the <b>Service Account</b> list, select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+          <li>In the <b>Database name</b> field, enter the name of the {{nativemysql_name}} database.</li>
+         {{connector_node_config}}
+         {{connector_proxy_config}}
+
+         <li>Optional: To add a label to the connection, click <b>+Add Label</b>.</li>
+         <li>Click <b>Next</b>.</li>
+       </ul>
+     </li>
+       <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) to
+        which you want to connect.
+         <ul>
+           <li>From the <b>Destination Type</b> list, select a host address.
+             {{connector_dest_type_config}}
+
+             <p>To enter additional destinations, click <b>+Add Destination</b>.</p>
+           </li>
+           <li>Click <b>Next</b>.</li>
+         </ul>
+       </li>
+
+       <li>In the <b>Authentication</b> section, you can provide credentials:
+        <ul>
+          <li>In the <b>Username</b> field, enter the {{nativemysql_name}} username for the connection.</li>
+          <li>In the <b>Password</b> field, enter the <a href="https://console.cloud.google.com/security/secret-manager">Secret Manager</a>
+            secret containing the password associated with the {{nativemysql_name}} username.
+            <ul>
+              <li>If you have previously created a secret, and it is not available in the list,
+              select <b>Enter Secret Manually</b>. In the <b>Add a secret by resource
+              ID</b> dialog, copy and paste the resource ID from
+              the <a href="https://console.cloud.google.com/security/secret-manager">{{secret_manager_name}}</a>.
+                <ul>
+                  <li>To use the latest version, copy and paste the resource ID from the parent secret, in the format:
+                  <code>"projects/project-number/secrets/secret-name"</code></li>
+                  <li>To select a specific version, copy and paste the resource ID for that specific version, in the
+                  format <code>"projects/project-number/secrets/secret-name/versions/1"</code></li>
+                </ul>
+              <p>To add the secret, click <b>Add Secret</b>.</p>
+              </li>
+              <li>If you have not created a secret for use with {{nativemysql_name}}, click <b>Create
+                New Secret</b>. In the <b>Create Secret</b> dialog enter the following details:
+                <ul>
+                  <li>In the <b>Name</b> field, enter the secret name.</li>
+                  <li>In the <b>Secret value</b> field, enter the contents of the secret or upload
+                    a file that contains the secret.</li>
+                  <li>Click <b>Create Secret</b>.</li>
+                </ul>
+              </li></ul>
+          </li>
+          <li>From the <b>Secret version</b> list, select the version of the <b>Password</b> secret from the list of available versions in the drop-down.
+          </li>
+          <li>Click <b>Next</b>.
+          </li> </ul>
+        </ol>
+     <li>In the <b>Review</b> section, review your connection and authentication details.</li>
+   <li>Click <b>Create</b>.</li>
+  </ol>
+{% endsetvar %}
+
+{% setvar configure_byosa %}
+
+<li>Ensure that you have <a href="/application-integration/docs/access-control#add-service-account">attached a user-managed service account</a> to your integration. If your integration does not have user-managed service account configured, then by default the <a href="/application-integration/docs/access-control#default-service-account">default service account</a>  (<code>{{shared_p4sa}}</code>) is used for authentication.</li>
+
+    <li>Ensure that your service account has the <b>Application Integration Invoker</b> {{iam_name_short}} role. For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</li>
+{% endsetvar %}
+
+{% setvar configure_byosa %}
+
+<li>Ensure that you have <a href="/application-integration/docs/access-control#add-service-account">attached a user-managed service account</a> to your integration. If your integration does not have user-managed service account configured, then by default the <a href="/application-integration/docs/access-control#default-service-account">default service account</a>  (<code>{{shared_p4sa}}</code>) is used for authentication.</li>
+
+    <li>Ensure that your service account has the <b>Application Integration Invoker</b> {{iam_name_short}} role. For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</li>
+{% endsetvar %}
+
+{% setvar configure_byosa %}
+
+<li>Ensure that you have <a href="/application-integration/docs/access-control#add-service-account">attached a user-managed service account</a> to your integration. If your integration does not have user-managed service account configured, then by default the <a href="/application-integration/docs/access-control#default-service-account">default service account</a>  (<code>{{shared_p4sa}}</code>) is used for authentication.</li>
+
+    <li>Ensure that your service account has the <b>Application Integration Invoker</b> {{iam_name_short}} role. For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</li>
+{% endsetvar %}
+
+{% setvar connectors_ssl_config_ibm_rabbit %}
+<li>Optionally, if you want to use SSL, select <b>Enable SSL</b>. This displays the SSL configuration details.
+  <ol>
+    <li>Select a trust store type. It can be either <b>Public</b>, <b>Private</b>, or <b>Insecure Connection</b>. </li>
+    <li>Select the certificates as displayed based on your trust store selection.</li>
+    <li>If you are using mTLS, select the key store certificates in the <b>Key Store</b> section.</li>
+   <li>Optionally, select the TLS version.</li>
+    <li>Enter the supported cipher suite. Enter multiple cipher suites, as
+      comma separated values. For more information, see <a href="#cipher-suite">Supported cipher suites</a>. </li>
+
+  </ol>
+  <aside class="note"><b>Note:</b>
+    <ul>
+      <li>All your certificates must be X.509 certificates and must be in PEM (Privacy Enhanced Mail) format.</li>
+      <li>You can't directly select a certificate when configuring SSL. You must store all
+        your certificates and private keys as a Secret Manager Secret, and then
+        select the required secret during SSL configuration.</li>
+    </ul>
+     </aside>
+</li>
+
+{% endsetvar %}
+
+{% setvar connectors_ssl_config_tibcoems %}
+<li>Optionally, if you want to use SSL, select <b>Enable SSL</b>. This displays the SSL configuration details.
+  <ol>
+    <li>Select a trust store type. It can be either <b>Public</b>, <b>Private</b>, or <b>Insecure Connection</b>. </li>
+    <li>Select the certificates as displayed based on your trust store selection.</li>
+    <li>If you are using mTLS, select the key store certificates in the <b>Key Store</b> section.
+      Also select the Client Root Certificate in the <b>Additional Configuration</b> section. </li>
+    <li>Optionally, select the TLS version.</li>
+    <li>Enter the supported cipher suite. Enter multiple cipher suites, as
+      comma separated values. For more information, see <a href="#cipher-suite">Supported cipher suites</a>. </li>
+
+  </ol>
+  <aside class="note"><b>Note:</b>
+    <ul>
+      <li>All your certificates must be X.509 certificates and must be in PEM (Privacy Enhanced Mail) format.</li>
+      <li>Your Client Private Key must be in PKCS#8 format.</li>
+      <li>You can't directly select a certificate when configuring SSL. You must store all
+        your certificates and private keys as a Secret Manager Secret, and then
+        select the required secret during SSL configuration.</li>
+    </ul>
+     </aside>
+</li>
+
+{% endsetvar %}
+
+
+
+{% dynamic setvar gsc_connector_name %}{% dynamic endsetvar %}
+{% dynamic setvar gsc_required_iam_roles %}{% dynamic endsetvar %}
+{% dynamic setvar google_cloud_service %}{% dynamic endsetvar %}
+
+
+{% setvar authcode_reauth_steps %}
+
+<ol>
+  <li>Click on the required connection in the <a href="https://console.cloud.google.com/connectors/connections">Connections page</a>.
+    <p>This opens the connection details page.</p></li>
+  <li>Click <b>Edit</b> to edit the connection details.
+  <li>Verify the <b>OAuth 2.0 - Authorization code</b> details in the <b>Authentication</b> section.
+  <p>If required, make the necessary changes.</p>
+  </li>
+  <li>Click <b>Save</b>. This takes you to the connection details page.</li>
+  <li>Click <b>Edit authorization</b> in the <b>Authentication</b> section. This shows the <b>Authorize</b> pane.</li>
+  <li>Click <b>Authorize</b>.
+    <p>If the authorization is successful, the connection status will be set to <b>Active</b> in the <a href="https://console.cloud.google.com/connectors/connections">Connections page</a>.</p>
+  </li>
+</ol>
+
+{% endsetvar %}
+
+{% setvar authcode_additional_setps %}
+
+<h3 id="add-steps">Additional steps after connection creation</h3>
+<p>If you selected <code>OAuth 2.0 - Authorization code</code> for
+  authentication, you must do the following additional steps after creating the connection:</p>
+<ol>
+  <li>In the <a href="https://console.cloud.google.com/connectors/connections">Connections page</a>,
+    locate the newly created connection.
+    <p>Notice that the <b>Status</b> for the new connector will be <b>Authorization required</b>.</p>
+  </li>
+  <li>Click <b>Authorization required</b>.
+  <p>This shows the <b>Edit authorization</b> pane.</p>
+  </li>
+  <li>Copy the <b>Redirect URI</b> value to your external application.</li>
+  <li>Verify the authorization details.</li>
+  <li>Click <b>Authorize</b>.
+    <p>If the authorization is successful, the connection status will be set to <b>Active</b> in the
+    <a href="https://console.cloud.google.com/connectors/connections">Connections page</a>.</p>
+  </li>
+</ol>
+
+{% endsetvar %}
+
+
+{% setvar connector_psc_eventing_step %}
+<li>Select <b>Enable private connectivity</b> for secured connectivity between your backend application
+  and your connection. If you select this option, you must perform additional configuration steps
+after creating the connection. For more information, see <a href="/integration-connectors/docs/eventsubscription#psc-eventing">Private connectivity for event subscription</a>. </li>
+{% endsetvar %}
+
+{% setvar connector_dead_letter_config_step %}
+<li>Enter the dead-letter configuration. If you configure dead-letter, the connection writes
+  the unprocessed events to the specified <a href="/pubsub/docs/pubsub-basics">Pub/Sub topic</a>. Enter the following details:
+<ol>
+  <li><b>Dead-letter project ID: </b>The Google Cloud project ID where you have configured the dead-letter Pub/Sub topic.</li>
+  <li><b>Dead-letter topic: </b>The Pub/Sub topic where you want to write the details of the unprocessed event.</li>
+</ol>
+</li>
+{% endsetvar %}
+
+{% setvar connector_eventing_proxy_step %}
+<li>If you want to use a proxy to connect to your backend (for event subscription), enter the following details:
+</li>
+<ol>
+  <li><b>Proxy SSL Type</b>: The SSL type to use when connecting to the proxy server. Select any
+    of the following authentication types:
+    <ul>
+      <li><b>Always</b>: The connection is always SSL enabled for event subscription.</li>
+      <li><b>Never</b>: The connection is not SSL enabled for event subscription.</li>
+    </ul>
+
+  </li>
+  <li><b>Proxy Auth Scheme</b>: Select the authentication type to authenticate with the proxy server.
+     The following authentication types are supported:
+    <ul><li><b>Basic</b>: Basic HTTP authentication.</li></ul>
+  </li>
+  <li><b>Proxy User</b>: Enter the user name to be used to authenticate with the proxy server.</li>
+  <li><b>Proxy Password</b>: Select the Secret Manager secret of the user's password.</li>
+  <li><b>Secret version</b>: Select the secret version.
+
+    <li> In the <b>Proxy Server</b> section, enter details of the proxy server.
+      <ol><li>Click <b>+ Add destination</b>, and then select the <b>Destination Type</b>
+      as <b>Host address</b>.</li>
+      <li>Enter the proxy server's hostname or IP address, and the proxy server's port number.</li>
+      </ol>
+    </li>
+
+</ol>
+
+{% endsetvar %}
+
+
+{% setvar connector_enable_eventing_ibm_rabbit %}
+  <li>To use the connection for event subscriptions, select <b>Enable event subscription</b>. Selecting
+    this option, enables the event subscription with actions.
+
+    <aside class="note"><b>Note: </b>The <code>Enable only event subscription</code> option isn't
+    supported for this connection.</aside>
+  </li>
+
+{% endsetvar %}
+
+{% setvar webhook_configure_new_connection %}
+<li>In the <b>Connection Details</b> section, complete the following:
+  <ol>
+    <li><b>Connector</b>: Select <b>Webhook</b> from the drop down list of available Connectors.</li>
+    <li><b>Connector version</b>: Select the Connector version from the drop down list of available versions.
+    </li>
+    <li><b>Connection Name</b>: Enter a name for the Connection instance.
+      <p>Connection names must meet the following criteria:
+      <ul>
+        <li>Connection names can use letters, numbers, or hyphens.</li>
+        <li>Letters must be lower-case.</li>
+        <li>Connection names must begin with a letter and end with a letter or number.</li>
+        <li>Connection names cannot exceed 49 characters.</li>
+        {{connector_name_eventing}}
+      </ul>
+
+    </li>
+    <li><b>Description</b>: Optionally, enter a description for the connection instance.</li>
+    <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+    <li><b>Event Subscription</b>: Event subscription will be enabled by default and is mandatory for webhook connector.
+      <aside class="note"><b>Note: </b>The <code>Enable event subscription, entity and actions</code> option isn't
+      supported for this connection.</aside>
+    </li>
+    <li>Optionally, click <b>+ Add label</b> to add a label to the Connection in the form of a key/value pair.</li>
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+<li>
+  In the <b>Event Subscription Details</b> section, complete the following:
+  <ol>
+    <li><b>Listener Authentication</b>: Select an authentication type for event listener and enter the relevant details.
+      <p>The following authentication types are supported by the webhook listener:</p>
+          <ul>
+            <li>No Authentication</li>
+            <li><a href="/iam/docs/workload-identities" class="external">Google Authentication</a>: Ensure that the service account has <a href="https://cloud.google.com/iam/docs/roles-permissions/connectors" class="external">roles/connectors.listener</a> role whose access token is used for authentication.</li>
+            <li>API Key Authentication</li>
+            <li><a href="https://www.rfc-editor.org/rfc/rfc7617" class="external">Basic Authentication</a></li>
+          </ul>
+    </li>
+    <li><b>Event Type Field Location</b>: Mandatory field which denotes the location (Header, Query Param or Request Body) where event type associated with the incoming event request will be present.</li>
+    <li><b>Event Type Field Name</b>: Mandatory field in the configured location identifies
+       the type of event associated with the incoming event request.</li>
+    <pre class="prettyprint lang-json">{
+"event_type": "user.created",
+...
+// other request fields
+...
+}</pre>
+      In the example above, the <b>event_type</b> field in <b>request body</b> signifies that the request pertains to a "user.created" event.
+      {{connector_psc_eventing_step}}
+      {{connector_dead_letter_config_step}}
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+<li><b>Review</b>: Review your connection and listener authentication details.</li>
+<li>Click <b>Create</b>.</li>
+{% endsetvar %}
+
+{% setvar hubspot_configure_new_connection %}
+<li>In the <b>Connection Details</b> section, complete the following:
+  <ol>
+    <li><b>Connector</b>: Select <b>HubSpot</b> from the drop down list of available Connectors.</li>
+    <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+    </li>
+    <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+      <p>Connection names must meet the following criteria:
+      <ul>
+        <li>Connection names can use letters, numbers, or hyphens.</li>
+        <li>Letters must be lower-case.</li>
+        <li>Connection names must begin with a letter and end with a letter or number.</li>
+        <li>Connection names cannot exceed 49 characters.</li>
+        {{connector_name_eventing}}
+      </ul>
+
+    </li>
+    <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+    <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+    {{connector_enable_eventing}}
+      <li>
+        <b>Schema</b>: Specify the HubSpot API version to use. HubSpotV4 is the new API.
+      </li>
+      <li>
+        <b>BrowsableSchemas</b>: This property restricts the schemas reported to a subset of the available schemas. For example, BrowsableSchemas=SchemaA,SchemaB,SchemaC.
+      </li>
+      <li>
+        <b>Contacts Properties</b>: Enter the comma separated field names of the <code>Contacts</code>
+        entity that you want to select from the <code>List</code> entity operation. For example, <code>fieldA, fieldB, fieldC</code>
+      </li>
+
+        <li>
+          <b>Companies Properties</b>: Enter the comma separated field names of the <code>Companies</code>
+          entity that you want to select from the <code>List</code> entity operation. For example, <code>fieldA, fieldB, fieldC</code>
+        </li>
+
+          <li>
+            <b>Deals Properties</b>: Enter the comma separated field names of the <code>Deals</code>
+            entity that you want to select from the <code>List</code> entity operation. For example, <code>fieldA, fieldB, fieldC</code>
+          </li>
+      <li>
+        <b>Use proxy</b>: Select this checkbox to configure a proxy server for the connection.
+      </li>
+      <li>
+        <b>Proxy Auth Scheme</b>: The authentication type to use to authenticate to the ProxyServer proxy.
+      </li>
+      <li>
+        <b>Proxy User</b>: A user name to be used to authenticate to the ProxyServer proxy.
+      </li>
+      <li>
+        <b>Proxy Password</b>: A password to be used to authenticate to the ProxyServer proxy.
+      </li>
+      <li>
+        <b>Proxy SSL Type</b>: The SSL type to use when connecting to the ProxyServer proxy.
+      </li>
+      {{connector_node_config}}
+    <li>Optionally, click <b>+ Add label</b> to add a label to the Connection in the form of a key/value pair.</li>
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+
+  <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to.
+    <ol>
+      <li><b>Destination Type</b>: You can specify the destination details either as a host address or a service attachment. Select any of the following destination types:
+        <ul>
+          <li><b>Host address</b>: If you want to specify the hostname or IP address of the destination.</li>
+          <li><b>Service attachment</b>:  If you want to specify the private endpoint for your internal IP addresses. The service attachment, lets you hide your internal IP addresses from the external network. You can create a service attachment in Google Cloud, by using the Private Service Connect feature. For information on configuring a Private Service Connect, see <a href="/vpc/docs/configure-private-service-connect-producer">Publish managed services</a>.</li>
+        </ul>
+        <p> Based on your selection of destination type, enter the host address or the service attachment name.</p>
+        <p>To enter additional destinations, click <b>+Add destination</b>.</p>
+      </li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li>
+
+<li>
+  In the <b>Authentication</b> section, enter the authentication details.
+  <ol>
+      <li>Select an <b>Authentication type</b> and enter the relevant details.
+        <p>The following authentication types are supported by the HubSpot connection:</p>
+            <ul>
+              <li><b>Private App Access Token: </b> Select the Secret Manager Secret containing the private app access token.
+
+                <p>
+                  Private apps allow you to use HubSpot's APIs to access specific data from your HubSpot account.
+                  You can authorize what each private app can request or change in your account,
+                  which will generate an access token that's unique to your private app. In your
+                  private app, ensure you have provided the read permission at least to the following scopes:</p>
+                  <ul>
+                    <li>crm.schemas.line_items.read</li>
+                    <li>crm.schemas.quotes.read</li>
+                    <li>crm.schemas.deals.read</li>
+                    <li>crm.schemas.companies.read</li>
+                    <li>crm.schemas.custom.read</li>
+                    <li>crm.schemas.contacts.read</li>
+                  </ul>
+                 <p>For more information, see <a href="https://developers.hubspot.com/docs/api/private-apps">Private apps</a>.</p>
+             </li>
+            </ul>
+      </li>
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+
+<li>
+  If you have enabled event subscription, the <b>Event Subscription Details</b> section appears on the connection creation page. In the <b>Event subscription details</b> step, provide the authentication details that will be used to validate the HubSpot token payload:
+  <ol>
+    <li><b>Client Secret:</b>  (Optional) Select the Secret Manager secret of your private app's client secret, and the corresponding secret version from the <b>Secret Version</b> drop-down.</li>
+    <p>For more information, see <a href="https://developers.hubspot.com/docs/api/private-apps">Private apps</a>.</p>
+    {{connector_psc_eventing_step}}
+    {{connector_dead_letter_config_step}}
+
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+
+<li><b>Review</b>: Review your connection and authentication details.</li>
+<li>Click <b>Create</b>.</li>
+{% endsetvar %}
+
+{% dynamic setvar gsc_connector_name %}{% dynamic endsetvar %}
+{% dynamic setvar gsc_required_iam_roles %}{% dynamic endsetvar %}
+{% dynamic setvar google_cloud_service %}{% dynamic endsetvar %}
+{% dynamic setvar gsc_public_doc_link %}{% dynamic endsetvar %}
+
+{% setvar supported_operators %}
+
+  <table>
+    <tr>
+     <td width="15%"><b>Operator</b>
+     </td>
+     <td  width="55%"><b>Description</b>
+     </td>
+      <td  width="30%"><b>Example</b>
+     </td>
+    </tr>
+    <tr>
+     <td><b>=</b>
+     </td>
+     <td>Checks for equality between two values
+     </td>
+      <td><code>$var$ = "value"</code></td>
+    </tr>
+    <tr>
+     <td><b>!=</b>
+     </td>
+     <td>Checks for inequality between two values
+     </td>
+      <td><code>$var$ != "value"</code></td>
+    </tr>
+    <tr>
+     <td><b>&lt;</b>
+     </td>
+     <td>Checks if a value is less than another value
+     </td>
+      <td><code>5 &lt; 10</code></td>
+    </tr>
+    <tr>
+     <td><b>&lt;=</b>
+     </td>
+     <td>Checks if a value is less than or equal to another value
+     </td>
+      <td><code>$var$ &lt;= 5</code></td>
+    </tr>
+    <tr>
+     <td><b>&gt;</b>
+     </td>
+     <td>Checks if a value is greater than another value
+     </td>
+      <td><code>1 > 0</code></td>
+    </tr>
+    <tr>
+     <td><b>&gt;=</b>
+     </td>
+     <td>Checks if a value is greater than or equal to another value
+     </td>
+      <td><code>$var$ >= 0</code></td>
+    </tr>
+    <tr>
+     <td><b>:</b>
+     </td>
+     <td>Checks if a string contains a substring within it, or checks if a list contains a
+       specific primitive value.
+     </td>
+      <td><p><code>$longString$ : "substring"</code></p>
+      <p><code>$list of values$ : "value"</code></p></td>
+    </tr>
+    <tr>
+     <td><b>AND</b>
+     </td>
+     <td>Checks two expressions and returns true if both the expressions evaluate to true.
+     </td>
+      <td><code>$a$ > $b$ AND $b$ &lt; $c$</code></td>
+    </tr>
+    <tr>
+     <td><b>OR</b>
+     </td>
+     <td>Checks two expressions and returns true if any one of the expressions evaluates to true.
+     </td>
+      <td><code>$a$ > $b$ OR $b$ &lt; $c$</code></td>
+    </tr>
+    <tr>
+     <td><b>NOT</b>
+     </td>
+     <td>Negation operator. Flips the result of an expression.
+     </td>
+      <td><code>NOT($var$ = "value")</code></td>
+    </tr>
+  </table>
+  {% endsetvar %}
+
+  {% setvar supported_functions %}
+
+
+    <table>
+      <tr>
+       <td><b>Function</b>
+       </td>
+       <td><b>Description</b>
+       </td>
+      </tr>
+      <tr>
+       <td><code>exists(<var>VARIABLE</var>)</code>
+       </td>
+       <td>Checks if a given variable exists
+       </td>
+      </tr>
+      <tr>
+       <td><code>does_not_exist(<var>VARIABLE</var>)</code>
+       </td>
+       <td>Checks if a given variable does not exist
+       </td>
+      </tr>
+      <tr>
+       <td><code>is_empty(<var>VARIABLE</var>)</code>
+       </td>
+       <td>Checks if a given variable is a list AND is empty. Supports array variable type except JSON array.
+       </td>
+      </tr>
+      <tr>
+       <td><code>is_not_empty(<var>VARIABLE</var>)</code>
+       </td>
+       <td>Checks if a given variable is a list AND is not empty. Supports array variable type except JSON array.
+       </td>
+      </tr>
+    </table>
+
+  {% endsetvar %}
+{% setvar connector_execute_custom_query_action %}
+<h3>ExecuteCustomQuery action</h3>
+<p>This action lets you execute a custom query.</p>
+{% include "_shared/integration-connectors/_create-custom-query.html"  %}
+
+<p>On successful execution, this action returns the status 200 (OK) with a response body that has the query results.</p>
+{% endsetvar %}
+
+{% setvar connector_service_account_auth_type %}
+<li><b>Service account</b>
+  <p>Select this option to authenticate using the service account that you provided in
+    the preceding steps when configuring this connection. Ensure that you have
+    provided the service account that has the relevant IAM roles and permissions required for authentication.
+  </p>
+
+  <ul>
+    <li><b>Scopes</b>: Select the required OAuth 2.0 scopes from the drop-down. For more information, see
+      <a href="/compute/docs/access/service-accounts#accesscopesiam">Access scopes</a>.</li>
+  </ul>
+</li>
+{% endsetvar %}
+
+
+{% setvar connector_service_account_id_token_auth_type %}
+<li><b>Service account ID token authentication</b>
+  <p>Select this option to authenticate using the ID token generated from the service account that
+    you provided in the preceding steps. This authentication uses
+    JSON Web Tokens (JWT) for authentication. The ID token provider, signs and issues the
+    JWTs for authentication using a service account.</p>
+  <ul>
+    <li><b>Audience</b>: Enter the recipients to whom the JWT is intended for.</li>
+    <li><b>Header Name</b>: Enter the header name for generated ID token to be used in the HTTP header. If you don't
+    specify any value for this field, by default the key value is set to <code>Authorization</code>.</li>
+  </ul>
+</li>
+{% endsetvar %}
+
+
+{% setvar connector_api_key_auth_type %}
+<li><b>API key authentication</b>
+  <p>Select this option to authenticate using a API key.</p>
+  <ul>
+    <li><b>API key</b>: Select the Secret Manager secret of the API key.</li>
+    <li><b>Secret version</b>: Select the secret version.</li>
+    <li><b>API key parameter name</b>: Enter a parameter name for the API key. An API key is sent to your
+       backend server as a key-value pair. The value you enter here will be used as the key name for
+    the API key that you have previously selected.</li>
+    <li><b>API key location</b>: Select where you want to add API key in the request.</li>
+  </ul>
+</li>
+{% endsetvar %}
+
+{% setvar connector_allowlist_project_in_service_attachment %}
+<p>You can create the PSC service attachment such that it accepts requests only from the specified Google Cloud projects. However, to do this,
+  you need the project ID of the service directory associated with your Google Cloud project. To get the project ID of the service directory, you can use
+  the <a href="/integration-connectors/docs/reference/rest/v1/projects.locations.connections/list">List Connections API</a> as shown in the following
+  example.</p>
+
+<aside class="note"><b>Note:</b> Before getting the project ID, ensure that at least one connection is present
+  in your project.</aside>
+
+<devsite-selector>
+  <section>
+    <h3>Syntax</h3>
+<pre class="prettyprint devsite-terminal lang-json">
+curl -X GET \
+    -H "authorization: Bearer $(gcloud auth print-access-token)" \
+    -H "Content-Type: application/json" \
+    "https://connectors.googleapis.com/v1/projects/<var>CONNECTORS_PROJECT_ID</var>/locations/-/connections"</pre>
+ <p>
+      Replace the following:
+    </p>
+    <ul>
+      <li><var>CONNECTORS_PROJECT_ID</var>: The ID of your Google Cloud project where you created your connection.</li>
+    </ul>
+  </section>
+  <section>
+    <h3>Example</h3>
+    <p>This example gets the project ID of the service directory for the <code>connectors-test</code> Google Cloud project.</p>
+
+<pre class="prettyprint devsite-terminal lang-json">
+curl -X GET \
+    -H "authorization: Bearer $(gcloud auth print-access-token)" \
+    -H "Content-Type: application/json" \
+    "https://connectors.googleapis.com/v1/projects/connectors-test/locations/-/connections"</pre>
+<p>Running this command on the terminal displays an output similar to the following:</p>
+
+<pre class="pretty-print lang-json">
+.....
+{
+  "connections": [
+    {
+      "name": "projects/connectors-test/locations/asia-northeast1/connections/big-query-iam-invalid-sa",
+      "createTime": "2022-10-07T09:02:31.905048520Z",
+      "updateTime": "2022-10-07T09:22:39.993778690Z",
+      "connectorVersion": "projects/connectors-test/locations/global/providers/gcp/connectors/bigquery/versions/1",
+      "status": {
+        "state": "ACTIVE"
+      },
+      "configVariables": [
+        {
+          "key": "project_id",
+          "stringValue": "<b>connectors-test</b>"
+        },
+        {
+          "key": "dataset_id",
+          "stringValue": "testDataset"
+        }
+      ],
+      "authConfig": {},
+      "serviceAccount": "564332356444-compute@{% dynamic print variables.domains.sa_developer_domain %}",
+      "serviceDirectory": "projects/<b>abcdefghijk-tp</b>/locations/asia-northeast1/namespaces/connectors/services/runtime",
+      "nodeConfig": {
+        "minNodeCount": 2,
+        "maxNodeCount": 50
+      }
+    },
+....
+</pre>
+
+<p>In the sample output, for the <code>connectors-test</code> Google Cloud project, the project ID
+  of the service directory is <code>abcdefghijk-tp</code>.</p>
+
+  </section>
+</devsite-selector>
+{% endsetvar %}
+
+{% setvar connectors_create_endpoint_attachment %}
+<b>Endpoint attachment as an IP address</b>
+
+<p>For instructions on how to create an endpoint attachment as an IP address,
+see <a href="/integration-connectors/docs/create-endpoint-attachment#create-ep-ipaddr">Create an endpoint attachment as an IP address</a>.</p>
+
+<b>Endpoint attachment as a hostname</b>
+
+<p>In certain cases such as TLS enabled backends, the destination requires you to use
+  hostnames instead of private IPs to perform TLS validation. In those cases where a private
+  DNS is used instead of an IP address for the host destination, in addition to creating an endpoint
+  attachment as an IP address, you must also configure managed zones. For instructions on how to
+  create an endpoint attachment as a hostname,
+see <a href="/integration-connectors/docs/create-endpoint-attachment#create-ep-hostname">Create an endpoint attachment as a hostname</a>.
+</p>
+
+{%endsetvar%}
+
+
+{% setvar connector_private_connectivity_pre_reqs %}
+
+<ul>
+  <li><a href="/integration-connectors/docs/network-connectivity-private#endpoint-attachments">Endpoint attachments</a></li>
+  <li><a href="/dns/docs/zones">Managed zones</a></li>
+  <li><a href="/vpc/docs/private-service-connect">Private Service Connect (PSC)</a></li>
+  <li><a href="/load-balancing">Google Cloud load balancer</a></li>
+</ul>
+{% endsetvar %}
+
+{% setvar connector_psc_loadbalancer_note %}
+
+<aside class="note"><b>Note:</b> In order to establish private connectivity from {{product_name}},
+   your service must be exposed to Integration Connectors using a PSC service attachment. A
+  service attachment always uses a load balancer. Therefore, if your service isn't behind a
+  load balancer, a load balancer needs to be configured.
+</aside>
+
+{% endsetvar %}
+
+
+{% setvar connector_create_service_attachment_step %}
+    <li>Create the service attachment
+    <ol>
+      <li>Create a subnet for PSC NAT. The following command creates a subnet with the name <code>psc-nat-subnet1</code>
+        and the purpose is <code>PRIVATE_SERVICE_CONNECT</code>.
+        <pre class='prettyprint devsite-terminal'>gcloud compute networks subnets create psc-nat-subnet1 \
+          --network=<var>VPC_NETWORK</var> --range=<var>SUBNET_RANGE_1</var> \
+          --purpose=PRIVATE_SERVICE_CONNECT</pre>
+        </li>
+        <li>Create a firewall rule to allow traffic from the PSC NAT to the load balancer.
+          <pre class='prettyprint devsite-terminal'>gcloud compute network-firewall-policies rules create <var>PRIORITY</var> --firewall-policy <var>FIREWALL_POLICY_NAME_SA</var> \
+    --direction=INGRESS  --network=<var>VPC_NETWORK</var> \
+    --action=allow --allow=tcp:<var>BACKEND_SERVER_PORT</var> --src-ip-ranges=<var>SUBNET_RANGE_1</var></pre>
+    </li>
+
+      <li>Create service attachment with <a href="/vpc/docs/configure-private-service-connect-producer#publish-service-explicit" class="external">explicit approval</a>.
+          <pre class='prettyprint devsite-terminal'>gcloud compute service-attachments create <var>SERVICE_ATTACHMENT_NAME</var> --producer-forwarding-rule=<var>FORWARDING_RULE_NAME</var>  --connection-preference=ACCEPT_MANUAL --consumer-accept-list=<var>SERVICE_DIRECTORY_PROJECT_ID</var>=<var>LIMIT</var> --nat-subnets=psc-nat-subnet1</pre>
+          <p>In this command, <var>LIMIT</var> is the connection limit for the project. The connection limit is the number of consumer
+            PSC endpoints that can connect to this service. To get the <var>SERVICE_DIRECTORY_PROJECT_ID</var>, do the following step:</p>
+            <ul>
+              <li>{{connector_allowlist_project_in_service_attachment}}</li>
+            </ul>
+        </li>
+      </ol>
+    </li>
+{% endsetvar %}
+
+
+
+
+{% setvar connector_psc_troubleshooting_tips %}
+
+<h2>Troubleshooting tips</h2>
+<p>If you are having issues with private connectivity, follow the guidelines listed in this section to avoid common issues.</p>
+<ul>
+  <li>Ensure connector's tenant project is allowlisted in the service attachment.</li>
+  <li>Ensure the following configuration for the firewall rules:
+    <ul>
+      <li>Traffic from the PSC service attachment's subnet must be allowed to reach your backend service.</li>
+
+        {%  if connectivity_type == "gcvpc" %}
+        <li>The load balancer must be able to send traffic to your backend service.
+        <ul>
+          <li><b>Pass-through load balancers (L4 TCP/UDP ILB)</b>
+            Requests from the PSC service attachment's NAT IPs must be able to
+            reach your backend. These NAT IPs are auto-allocated from the PSC NAT
+            subnet range therefore, you must allow the entire NAT subnet's IP
+            range in which your service attachment resides. To find the PSC NAT subnet,
+            use the following command:
+            <pre class='prettyprint devsite-terminal'>gcloud compute networks subnets list --project=<var>PROJECT_ID</var> --region=<var>REGION</var> --filter="purpose=PRIVATE_SERVICE_CONNECT"</pre>
+          </li>
+          <li><b>Proxy-based/HTTP(s) load balancers (L4 proxy ILB, L7 ILB)</b>
+            Requests from a proxy load balancer originate from the proxy only subnet of the
+            region. Therefore, your firewall rules need to be configured to allow requests
+            from proxy only subnet ranges to reach your backend backend. To find the proxy
+            only subnet, use the following command:
+            <pre class='prettyprint devsite-terminal'>gcloud compute networks subnets list --project=<var>PROJECT_ID</var> --region=<var>REGION</var> --filter="purpose=REGIONAL_MANAGED_PROXY"</pre>
+          </li>
+          {% elif connectivity_type == "onprem" %}
+            <li>The load balancer must be able to send traffic to your backend system. Hybrid NEGs are
+              supported on proxy load balancers only. Requests from a proxy load balancer originate
+              from the proxy only subnet of the region. Therefore, your firewall rules need to be configured
+              to allow requests from proxy only subnet ranges to reach your backend.
+            </li>
+          {% endif %}
+      </li>
+      <li>The health check probe must be able to access your backend system. The Google Cloud
+        health check probes have a fixed IP range (35.191.0.0/16, 130.211.0.0/22). So
+         these IP addresses must be allowed to send traffic to your backend server.</li>
+    </ul>
+  </li>
+ <li><a href="/network-intelligence-center/docs/connectivity-tests/concepts/overview">Google Cloud Connectivity test</a>
+   can be used to identify any gaps in your network configuration. For more information, see
+   <a href="/network-intelligence-center/docs/connectivity-tests/how-to/running-connectivity-tests" class="external">Create and run Connectivity Tests</a>.
+</li>
+{% if connectivity_type == "onprem" %}
+<li>Ensure that firewall rules are updated in on-premises or other cloud environments to allow traffic
+  from the Google Cloud region's <a href="/load-balancing/docs/proxy-only-subnets">proxy-only subnet</a>.</li>
+{% endif %}
+
+</ul>
+
+{% endsetvar %}
+
+
+
+
+{% setvar sap_gateway_configure_connector %}
+<li>In the <b>Connection Details</b> section, complete the following:
+  <ol>
+    <li><b>Connector</b>: Select <b>SAP Gateway</b> from the drop down list of available Connectors.</li>
+    <li><b>Connector version</b>: Select the Connector version from the drop down list of available versions.
+    </li>
+    <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+      <p>Connection names must meet the following criteria:
+      <ul>
+        <li>Connection names can use letters, numbers, or hyphens.</li>
+        <li>Letters must be lower-case.</li>
+        <li>Connection names must begin with a letter and end with a letter or number.</li>
+        <li>Connection names cannot exceed 49 characters.</li>
+        {{connector_name_eventing}}
+      </ul>
+
+    </li>
+    <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+    <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+    {{connector_enable_eventing}}
+      <li>
+        <b>Namespace</b>: Specify the service namespace you want to retrieve data from. This is required if the service is not specified in the URL.
+      </li>
+      <li>
+        <b>Service</b>: Specify the service you want to retrieve data from. This is required if the service is not specified in the URL.
+      </li>
+      <li><b>CustomUrlParams:</b> Specify custom query string parameters that are included with the HTTP request. The parameters must be encoded as a query string in the following format: <code>field1=value1&field2=value2</code>. The values in the query string must be URL encoded.
+      <li>
+        <b>Data Format</b>: The data format to retrieve data in. Select either XML or JSON.
+      </li>
+      <li>
+        <b>Use Display Names</b>: Boolean determining whether or not to use SAP labels.
+      </li>
+      {{connector_node_config}}
+      <li>Optionally, click <b>+ ADD LABEL</b> to add a label to the Connection in the form of a key/value pair.</li>
+    <li>Click <b>NEXT</b>.</li>
+  </ol>
+</li>
+
+  <li> In the <b>Destinations</b> section, set the URL of your SAP Gateway environment or to the full URL of the OData service. For example format; <code>${ENVIRONMENT_URL}/sap/opu/odata/${NAMESPACE}/${SERVICE}/</code> and sample URL is <code>https://sapes5.sapdevcenter.com/sap/opu/odata/IWBEP/GWSAMPLE_BASIC/</code>. Add any additional properties using the <b>CustomUrlParams</b> property.
+    <ol>
+      <li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+        {{connector_dest_type_config}}
+
+        <p>To enter additional destinations, click <b>+ADD DESTINATION</b>.</p>
+      </li>
+      <li>Click <b>NEXT</b>.</li>
+    </ol>
+  </li>
+
+<li>
+  In the <b>Authentication</b> section, enter the authentication details.
+  <ol>
+      <li>Select an <b>Authentication type</b> and enter the relevant details.
+        <p>The following authentication types are supported by the SAP Gateway connection:</p>
+            <ul>
+              <li>    Username and password
+</li>
+            </ul>
+            <ul>
+              <li>    Anonymous
+</li>
+            </ul>
+      </li>
+      <p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+    <li>Click <b>NEXT</b>.</li>
+  </ol>
+</li>
+
+<li><b>Review</b>: Review your connection and authentication details.</li>
+<li>Click <b>Create</b>.</li>
+{% endsetvar %}
+
+{% setvar sap_gateway_auth_eventing_step %}
+<h3 id="configure-auth">Configure authentication</h3>
+<p>Enter the details based on the authentication you want to use.</p>
+    <ul>
+      <li>
+        <b>    Username and password
+</b>
+            <ul>
+              <li><b>Username</b>: Username for connector</li>
+              <li><b>Password</b>: Secret Manager Secret containing the password associated with the connector.</li>
+            </ul>
+      </li>
+    </ul>
+    <ul>
+      <li>
+        <b>    Anonymous
+</b>
+            <p>If you want to use anonymous login, select <b>Not Available</b>.</p>
+            <ul>
+              <li><b>API Key</b>: The API key of the currently authenticated user.</li>
+            </ul>
+      </li>
+    </ul>
+<devsite-expandable expanded id="exp2">
+  <h3 class="showalways" id="configure-event">Configure event subscription</h3>
+  <p>If you have enabled the event subscription, enter the following values in the <b>Event Subscription Details</b> section:</p>
+  <ol>
+<li>Select any one of the following authentication types for the event listener.
+<aside class="note"><b>Note: </b>Before you configure authentication, ensure that
+you have the event listener endpoint, which is available to you after you create the connection. To
+view the endpoint, go to the <a href="{{console_url}}connectors/connections">All connections</a> page,
+and then click the connection that you wan to view. The endpoint is displayed in
+the <b>Connection Details</b> section.</aside>
+<ul>
+<li><a href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-jwt" class="external">Google Authentication</a>.
+ If you enable this option, follow the steps in <a href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-jwt#configure-google-auth">Authenticate by using JSON Web Tokens</a> to configure
+  the authentication for ABAP SDK. Also, ensure that the
+ service account has <a href="https://cloud.google.com/iam/docs/roles-permissions/connectors" class="external">roles/connectors.listener</a> role whose access token is used for authentication.</li>
+<li><a href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-api-keys">API Key Authentication</a>. If you select this option, you must have created
+ an API key, and then saved the key as a Secret Manager secret. For more information, see <a href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-api-keys#ssf-create-api-key">Create an API key</a>.</li>
+
+</ul>
+</li>
+
+<li>Enter the event type field name. This field identifies the type of event
+associated with the incoming event request.
+<pre class="prettyprint lang-json">{
+"event_type": "user.created",
+...
+// other request fields
+...
+}</pre>
+</li>
+{{connector_psc_eventing_step}}
+{{connector_dead_letter_config_step}}
+</ol>
+<aside class="tip"><b>Tip:</b> To understand how you can use event subscription in your
+integrations, see <a href="/application-integration/docs/configure_sap_gateway_trigger">SAP Gateway trigger</a>. </aside>
+</devsite-expandable>
+{% endsetvar %}
+
+{% setvar saperp_configure_new_connection %}
+<li>In the <b>Connection Details</b> section, complete the following:
+  <ol>
+<li><b>Connector</b>: Select <b>SAP ERP</b> from the drop down list of available Connectors.</li>
+<li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+</li>
+<li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+<p>Connection names must meet the following criteria:
+<ul>
+<li>Connection names can use letters, numbers, or hyphens.</li>
+<li>Letters must be lower-case.</li>
+<li>Connection names must begin with a letter and end with a letter or number.</li>
+<li>Connection names cannot exceed 49 characters.</li>
+{{connector_name_eventing}}
+</ul>
+
+</li>
+<li>Optionally, enter a <b>Description</b> for the connection.</li>
+<li>Optionally, enable <a href="/integration-connectors/docs/view-connector-logs">Cloud logging</a>,
+  and then select a log level. By default, the log level is set to <code>Error</code>.
+ </li>
+<li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+{{connector_enable_eventing}}
+
+<li>
+<b>Client</b>: The client authenticating to the SAP system.
+</li>
+<li>
+<b>System Id</b>: The System Id or R3Name of the SAP System is a string with a maximum of three characters. It is often used in load balancing connections.
+</li>
+<li>
+<b>System Number</b>: The number by which the target system is defined. Used when setting the Host connection property.
+</li>
+<li>
+<b>Project ID</b>: The ID of the Google Cloud project where the GCS bucket containing the SAP JCo jar resides.
+</li>
+<li>
+<b>Bucket</b>: The name of the bucket containing sapjco3.jar and libsapjco3.so files.
+</li>
+<li>
+<b>JCo jar {{storage_name}} path</b>: {{storage_name}} path of the JCo jar.
+</li>
+<li>
+<b>libsapjco3 {{storage_name}} path</b>: {{storage_name}} path of the libsapjco3 jar.
+</li>
+<li>
+<b>Table mode</b>: Select the SAP table to be displayed as a view.
+</li>
+<li>
+<b>Read table function</b>: Name of the function to be used for reading tables. For more
+information, see <a href="#cust-read-func">Use a custom read table function</a>.
+</li>
+<li>
+  <b>System ID</b>: The system ID or the R3Name of the SAP system. You can enter a maximum of 3 characters.
+</li>
+<li>
+  <b>Query mode</b>: Select which SAP tables must be displayed as views.
+</li>
+<li>
+  <b>Browsable views</b>: Enter a comma separated list of views to be displayed.
+  For example, <code>ViewA,ViewB,ViewC</code>.
+</li>
+<li>
+  <b>Language</b>: Set this property to the language you specify when you log into SAP. This property is a ISO 639-1 code for the language the SAP system uses. By default, EN will be used.
+</li>
+<li>
+  <b>Service entries</b>: The service entries to be used for the connection.
+</li>
+<li>
+  <b>SNC mode</b>: Select this option to enable SNC for authentication between {{product_name}} and your SAP system. If you select this option, specify the following details:
+  <ul>
+  <li>
+    <b>SNC_LIB object ID</b>: Object ID of the SNC library.
+  </li>
+  <li>
+    <b>PSE name</b>: Name of the Personal Security Environment (PSE) file that is applicable for the bucket. A PSE file stores the public and private key pair as well as X.509 certificates in a ASN.1 structure.
+  </li>
+  <li>
+    <b>SNC passcode</b>: Select the Secret Manager secret of the SNC library passcode.
+  </li>
+  <li>
+    <b>Secret version</b>: Select the secret version.
+  </li>
+  <li>
+  <b>SNC name</b>: Enter a name for SNC connection.
+  </li>
+  <li>
+  <b>SNC qop</b>: Select a protection level. The following are the supported levels:
+  <ul>
+     <li><b>1</b> - Apply authentication only.</li>
+     <li><b>2</b> - Apply integrity protection. This also includes authentication protection.</li>
+     <li><b>3</b> - Apply privacy protection. This also includes integrity and authentication protection. </li>
+     <li><b>8</b> - Apply the default protection.</li>
+     <li><b>9</b> - Apply the maximum protection.</li>
+  </ul>
+  </li>
+  <li>
+  <b>SNC partner name</b>: Enter the Application Server's SNC name.
+  </li>
+  </ul>
+</li>
+<li>
+<b>Connection scheme</b>: Specify whether you are connecting to an SAP system with a Message Server (Group Server) or Application Server. For information about the prerequisites that you must meet to connect to an SAP system with a Message Server, see <a href="#group-server">Message Server (Group Server) connection type</a>.
+<aside class="special">
+  <b>Note:</b> You can connect to an SAP system with a Message Server (Group Server) only if the Message Server returns the fully qualified domain name (FDQN) address of the Application Server. You can't connect to an SAP system with a Message Server (Group Server) if the Message Server returns the IP address.
+</aside>
+<p>If you select <b>GroupServer</b>, then you must specify the following details:</p>
+<ul>
+<li><b>Message Server</b>: Specify the Message Server when connecting to an SAP system that uses load balancing.</li>
+<li><b>Message Server Service</b>: The Message Server service that you want to connect to.</li>
+<li><b>Group</b>: The logon group that is used. You must specify this only when connecting to an SAP system that uses load balancing.</li>
+</ul>
+<p>If you are connecting to an SAP system with a Message Server (Group Server), you don't need to specify the host address in the <b>Destinations</b> section.</p>
+</li>
+
+{{connector_node_config}}
+<li>Optionally, click <b>+ ADD LABEL</b> to add a label to the Connection in the form of a key/value pair.</li>
+<li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+
+  <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to. If you are connecting to an SAP system with Message Server, then you don't need to specify the host address.
+<ol>
+<li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+  <ul>
+    <li>Select <b>Host address</b> from the list to specify the hostname or IP address of the destination.</li>
+ <li>If you want to establish a private connection to your backend systems,
+   select <b>Endpoint attachment</b> from the list, and then select the required endpoint attachment
+   from the <b>Endpoint Attachment</b> list.
+   <aside class="note"><b>Note:</b> When a DNS zone is used, you must specify the host address in the following format: <code>/H/dexyz06s99.altostrat.com/S/3300</code>. Where <code>dexyz06s99.altostrat.com</code> is the target DNS name under managed zone. For more information, see <a href="/dns/docs/zones">Create managed zones</a>.
+  <p>To understand how to create an endpoint attachment, see
+  <a href="/integration-connectors/docs/configure-psc">PSC service attachment</a>
+  and <a href="/integration-connectors/docs/create-ep-attachment">endpoint attachment</a>. After you
+have created the endpoint attachment, it will be visible in the <b>Endpoint Attachment</b> list.</p>
+</aside>
+   </li>
+  </ul>
+  <p>If you want to establish a public connection to your backend systems with additional security, you can
+    consider <a href="/integration-connectors/docs/configure-static-ip">configuring static outbound
+       IP addresses for your connections</a>, and then configure
+   your firewall rules to allowlist only the specific static IP addresses. </p>
+<p>To enter additional destinations, click <b>+Add destination</b>.</p>
+</li>
+<li>Click <b>Next</b>.</li>
+</ol>
+  </li>
+
+<li>
+  In the <b>Authentication</b> section, enter the authentication details.
+  <ol>
+<li>Select an <b>Authentication type</b> and enter the relevant details.
+<p>The following authentication types are supported by the SAP ERP connection:</p>
+<ul>
+<li>      X509 certificate based authentication
+</li>
+<li>      Username and password
+</li>
+</ul>
+</li>
+<p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+<li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+<li>If you have enabled the event subscription, the <b>Event Subscription Details</b> section appears on the connection creation page. To understand
+  how to configure event subscription details, see <a href="#configure-event">Configure event subscription</a>.</li>
+
+<li><b>Review</b>: Review your connection and authentication details.</li>
+<li>Click <b>Create</b>.</li>
+{% endsetvar %}
+
+{% setvar saperp_configure_auth_event_subscription %}
+<h3 id="configure-auth">Configure authentication</h3>
+<p>Enter the details based on the authentication you want to use.</p>
+<ul>
+  <li>
+    <b>X509Certificate Based Authentication
+    </b>
+    <ul>
+      <li><b>X509Certificate</b>: The X509 certificate that is used to login.
+      </li>
+      <li>
+        <b>Secret version</b>: Select the secret version.
+      </li>
+    </ul>
+  </li>
+  <li>
+    <b> Username and password </b>
+    <ul>
+      <li><b>Username</b>: Username for connector</li>
+      <li>
+        <b>Password</b>: Secret Manager Secret containing the password associated with the connector.
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<devsite-expandable expanded id="exp2">
+  <h3 class="showalways" id="configure-event">Configure for event subscription</h3>
+
+  <p>If you enable event subscription, you must configure ABAP SDK. For information about configuring ABAP SDK, see <a href="https://cloud.google.com/sap/docs/abap-sdk/overview">Overview of the ABAP SDK for Google Cloud</a>.</p>
+  <p>Enter the following values in the <b>Event Subscription Details</b> section:</p>
+  <ol>
+    <li>
+      Select any one of the following authentication types for the event listener.
+      <aside class="note">
+        <b>Note: </b>Before you configure authentication, ensure that you have the event listener
+        endpoint, which is available to you after you create the connection. To view the endpoint,
+        go to the
+        <a href="https://console.cloud.google.com/connectors/connections">All connections</a> page,
+        and then click the connection that you wan to view. The endpoint is displayed in the
+        <b>Connection Details</b> section.
+      </aside>
+      <ul>
+        <li>
+          <a
+            href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-jwt"
+            class="external"
+            >Google Authentication</a
+          >. If you enable this option, follow the steps in
+          <a
+            href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-jwt#configure-google-auth"
+            >Authenticate by using JSON Web Tokens</a
+          >
+          to configure the authentication for ABAP SDK. Also, ensure that the service account has
+          <a
+            href="https://cloud.google.com/iam/docs/roles-permissions/connectors"
+            class="external"
+            >roles/connectors.listener</a
+          >
+          role whose access token is used for authentication.
+        </li>
+        <li>
+          <a
+            href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-api-keys"
+            >API Key Authentication</a
+          >. If you select this option, you must have created an API key, and then saved the key
+          as a Secret Manager secret. For more information, see
+          <a
+            href="/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-api-keys#ssf-create-api-key"
+            >Create an API key</a
+          >.
+        </li>
+      </ul>
+    </li>
+
+    <li>
+      Enter the event type field name. This field identifies the type of event associated with the
+      incoming event request.
+      <pre class="prettyprint lang-json">
+{
+"event_type": "user.created",
+...
+// other request fields
+...
+}</pre
+      >
+    </li>
+    {{connector_psc_eventing_step}} {{connector_dead_letter_config_step}}
+  </ol>
+  <aside class="special">
+    <b>Important:</b> To understand how you can use event subscription in your integrations, see <a href="/application-integration/docs/configure-sap-erp-trigger">SAP ERP trigger</a>.
+  </aside>
+
+</devsite-expandable>
+{% endsetvar %}
+
+{% setvar configure_solace_connector %}
+<li>In the <b>Connection Details</b> section, complete the following:
+  <ol>
+    <li><b>Connector</b>: Select <b>Solace</b> from the drop down list of available Connectors.</li>
+    <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+    </li>
+    <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+      <p>Connection names must meet the following criteria:
+      <ul>
+        <li>Connection names can use letters, numbers, or hyphens.</li>
+        <li>Letters must be lower-case.</li>
+        <li>Connection names must begin with a letter and end with a letter or number.</li>
+        <li>Connection names cannot exceed 49 characters.</li>
+        {{connector_name_eventing}}
+      </ul>
+
+    </li>
+    <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+    <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+    {{connector_enable_eventing_ibm_rabbit}}
+    <li><b>Message VPN</b>: The Solace {{pubsub_name}}+ message router Message VPN that you want to connect to. A connection is specific to a Message VPN. If you have many message VPN, you must create a separate
+      connection for each message VPN.</li>
+      <li>
+        <b>Default Queue Name</b>: The name of the default queue, may be overridden when executing action.
+      </li>
+      <li>
+        <b>Default Topic Name</b>: The name of the topic to connect to.
+      </li>
+      <devsite-expandable>
+        <li class="showalways">(Optional) To use SSL, select <b>Enable SSL</b> and specify the SSL configuration details.</li>
+        <ol>
+          <li>Select a trust store type. You can specify <b>Public</b>, <b>Private</b>, or <b>Insecure Connection</b>. </li>
+          <li>Select the certificates based on your trust store selection. For example, if you select <b>Private</b>, specify a custom trust store.</li>
+          <li>If you are using mTLS, select the key store certificates in the <b>Key Store</b> section.</li>
+         <li>Optionally, select the TLS version.</li>
+          <li>Enter the supported cipher suite. Enter multiple cipher suites, as
+            comma separated values. For more information, see <a href="#cipher-suite">Supported cipher suites</a>. </li>
+            <aside class="note"><b>Note:</b>
+              <ul>
+                <li>All your certificates must be X.509 certificates and must be in PEM (Privacy Enhanced Mail) format.</li>
+                <li>You can't directly select a certificate when configuring SSL. You must store all
+                  your certificates and private keys as a Secret Manager Secret, and then
+                  select the required secret during SSL configuration.</li>
+              </ul>
+               </aside>
+          </ol>
+        </devsite-expandable>
+        <devsite-expandable>
+          <li class="showalways">(Optional) Configure the <b>Connection node settings</b>.</li>
+            <ul>
+              <li> <b>Minimum number of nodes</b>:  Enter the minimum number of connection nodes.</li>
+              <li> <b>Maximum number of nodes</b>: Enter the maximum number of connection nodes.</li>
+            </ul>
+            <p>A node is a unit (or replica) of a connection that processes transactions.
+             More nodes are required to process more transactions for a connection and conversely,
+             fewer nodes are required to process fewer transactions.
+             To understand how the nodes affect your connector pricing, see
+             <a href="/integration-connectors/docs/pricing#pricing-for-connection-nodes">
+             Pricing for connection nodes</a>. If you don't enter any values, by default
+             the minimum nodes are set to 2 (for better availability) and the maximum nodes are set to 50.</p>
+          </devsite-expandable>
+      <aside class="note"><b>Note:</b> You can customize the connection node values only if you are a Pay-as-you-go customer.</aside>
+
+    <li>Optionally, click <b>+ Add label</b> to add a label to the Connection in the form of a key/value pair.</li>
+
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+
+  <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to.
+    <ol>
+      <li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+        {{connector_dest_type_config}}
+
+        <aside class="note"><b>Note: </b>This connector supports only one destination.</aside>
+      </li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li>
+
+<li>
+  In the <b>Authentication</b> section, enter the authentication details.
+  <ol>
+      <li>Select an <b>Authentication type</b> and enter the relevant details.
+        <p>The following authentication types are supported by the Solace connection:</p>
+            <ul>
+              <li>    Anonymous
+</li>
+            </ul>
+            <ul>
+              <li>    Username and password
+</li>
+            </ul>
+      </li>
+      <p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+    <li>Click <b>Next</b>.</li>
+  </ol>
+</li>
+<li>In the <b>Event Subscription Details</b> section, configure the event related details.
+  <ul>{{connector_dead_letter_config_step}}</ul>
+</li>
+<li><b>Review</b>: Review your connection and authentication details.</li>
+<li>Click <b>Create</b>.</li>
+{% endsetvar %}
+
+{% setvar connector_cloud_logging %}
+<li>Optionally, enable <a href="/integration-connectors/docs/view-connector-logs">Cloud logging</a>,
+  and then select a log level. By default, the log level is set to <code>Error</code>.
+</li>
+
+{% endsetvar %}

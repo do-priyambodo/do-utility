@@ -1,0 +1,77 @@
+
+
+<h2><code>GET</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>GET</code></td>
+       <td>Returns the value in an array at a specified index. In an array,
+         the first value is available at index 0 and the last value is available at
+         index n-1 where n is the size of the array.</td>
+       <td><code>GET(value)</code></td>
+       <td>Index value of type Integer.</td>
+       <td>Value at a given index of an array. The return type depends on the
+         data type of the array. For example, for an integer array, this function
+         returns an integer value.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>GET</code> function supports the following data types:
+</p>
+<ul>
+  <li>Boolean array</li>
+  <li>Double array</li>
+  <li>Integer array</li>
+  <li>String array</li>
+</ul>
+
+<h2>Example 1: Get the value at an index of an integer array</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = {11,6,7,2,15,8}</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.GET(3)</code>
+</p>Return the value in var1 at index 3.
+
+<p>
+  <strong>Output</strong>: <code>2</code>
+</p>
+
+<h2>Example 2: Get the value at an index of a string array</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ =
+  {"Hello", "Test", "Apigee", "Integrations", "API Trigger", "Cloud"}</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.GET(5)</code>
+</p>Return the value at index 5.
+
+<p>
+  <strong>Output</strong>:  <code>Cloud</code>
+</p>
+
+
+

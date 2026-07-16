@@ -1,0 +1,93 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Configure alerts{% endblock %}
+{% block body %}
+
+<p>You can configure alerts to notify you when an event occurs. For example, you can create an alert
+  to notify you when there is an authentication failure by an integration.</p>
+
+<p>You can set alerts in the following two ways:</p>
+<ul>
+  <li><a href="#alert-cloud-monitoring">Alerts in {{monitoring_name}}</a></li>
+  <li><a href="#alert-cloud-logging">Alerts in {{logging_name}}</a></li>
+</ul>
+
+<h2 id="alert-cloud-monitoring">Alerts in {{monitoring_name}}</h2>
+
+<p>You can create and configure {{monitoring_name}} alerts to notify you when an {{integration}} resource exceeds a specified threshold. For example, you can create an alert to notify you when the total data processed for an integration exceeds a specified threshold value or if integration execution count reaches beyond a certain limit.</p>
+
+<p>For more information about alerting in {{monitoring_name}}, see <a href="/monitoring/alerts">Alerting overview</a>.</p>
+
+<h3>Before you begin</h3>
+
+<ul>
+  <li>Make sure that you have the <b>Monitoring Editor (<code>roles/monitoring.editor</code>)</b> IAM role granted on your Google Cloud project. For information about granting roles, see <a href="/iam/docs/granting-changing-revoking-access">Manage access</a>.</li>
+<li>Learn about the general concepts of alerting policies, see <a href="/monitoring/alerts">Alerting overview</a>.</li>
+<li>Configure notification channels to receive alerts, see <a href="/monitoring/support/notification-options">Create and manage notification channels</a>. 
+</li></ul>
+
+<h3>Create an alert</h3>
+<ol>
+  <li>In the {{console_name}}, go to the <b>Monitoring > Alerting</b> page.
+    <p><a class="button button-primary" href="https://console.cloud.google.com/monitoring/alerting" target="console" track-type="inline link">Go to Alerting</a></p>
+  </li>
+  <li>Click <b>+ Create Policy</b>.</li>
+  <li>To select the resource, metric, and filters for {{integration}}, follow these steps:
+    <ol>
+      <li>Click <b>Select a metric</b>.</li>
+      <li>In the <b>Filter by resource or metric name</b> input field, enter <code>Integration Version</code> and select it.</li>
+      <li>In the <strong>Active metric categories</strong> menu, select a metric type, and then <b>Active Metrics</b>. For a list of metric types, see <a href="/monitoring/api/metrics_gcp_i_o#gcp-integrations">integrations metric type</a>.</li>
+<li>Click <b>Apply</b>.</li>
+    </ol>
+  </li>
+  <li>Click <b>Next</b> to open the <b>Configure alert trigger</b> section.
+  </li>
+  <li>Set a threshold value to trigger the alert.</li>
+ <li>Click <b>Next</b> to open the <b>Configure notifications and finalize alert </b> section.</li>
+ <li>(Optional) To add notifications to your alerting policy, click
+    <b>Notification channels</b> and select one or more notification
+    channels from the drop-down list. Click <b>OK</b>.
+    <p>To be notified when incidents are opened and closed, check
+    <b>Notify on incident closure</b>. By default, notifications are sent only when
+    incidents are opened.</p>
+  </li>
+  <li>(Optional) Use the <b>Documentation</b> text field to enter any information that you
+    want included in a notification message.</li>
+  <li>Click <b>Alert policy name</b> and enter a name for the alerting policy.</li>
+  <li>Click <b>Create Policy</b>.</li>
+</ol>
+
+<p>For more sample alerts, see <a href="https://github.com/GoogleCloudPlatform/monitoring-dashboard-samples/tree/master/alerts/google-application-integration">Alert policy templates for {{integration}}</a>.</p>
+<p>The alerts are sent to the essential contacts configured in your Google Cloud Project. For
+  more information on adding essential contacts, see
+  <a href="/resource-manager/docs/managing-notification-contacts">Managing contacts for notifications</a>.</p>
+  
+
+<h2 id="alert-cloud-logging">Alerts in {{logging_name}}</h2>
+
+<p>You can create and configure log-based alerts to notify you whenever a specific message
+  appears in your included logs. For example, the following lists some use cases for which you can create a log-based alert: messages that match a specific pattern, failed integration execution status, specific severity log, and integrations with an execution time time higher than certain value.</p>
+
+<h3>Create an alert</h3>
+
+<p>You can create log-based alerts from the <b>{{logs_explorer}}</b> page in the
+{{console_name}} or by using the {{monitoring_api_short}}. For detailed instructions, see
+the following sections:</p>
+
+<ul>
+  <li><a href="/logging/docs/alerting/log-based-alerts#lba-definition" class="external">Create a log-based alert by
+  using the {{logs_explorer}}</a></li>
+  <li><a href="/logging/docs/alerting/log-based-alerts#lba-by-api" class="external">Create a
+    log-based alert by using the {{monitoring_api_short}}</a></li>
+</ul>
+
+<aside class="note"><b>Note:</b> You may incur additional charges for using
+  {{monitoring_name}} API directly. For more information, see <a href="/monitoring#section-7">{{monitoring_name}} pricing</a>.</aside>
+
+
+  <h2>What's next</h2>
+  <ul>
+    <li>Learn more about <a href="/logging/docs/alerting/log-based-alerts">configuring log-based alerts</a>.</li>
+  </ul>
+
+
+{% endblock %}

@@ -1,0 +1,80 @@
+
+<h2><code>SET_PROPERTY</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>SET_PROPERTY</code></td>
+       <td>Adds or updates a property in a JSON object.</td>
+       <td><code>SET_PROPERTY(value)</code></td>
+       <td>Property name and value.</td>
+       <td>A JSON object with the newly added or updated property.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>SET_PROPERTY</code> function supports the following data type:
+</p>
+<ul>
+  <li>JSON</li>
+</ul>
+
+<h2>Example: Add a property to a JSON object</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = {"productId":23}</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.SET_PROPERTY("radio","productName")</code>
+</p>Add a property to var1.
+
+<p>
+  <strong>Output</strong>: <code>{"productId":23,"productName":"radio"}</code>.
+</p>
+
+<h2>Example: Add a nested property to a JSON object</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = {"productId":23}</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.SET_PROPERTY({"productName","radio"},"productDetails")</code>
+</p>Add a nested property to var1.
+
+<p>
+  <strong>Output</strong>: <code>{"productId":23,"productDetails":{"productName":"radio"}}</code>.
+</p>
+
+<h2>Example: Update a property in a JSON object</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = {"productId":23}</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.SET_PROPERTY("34","productId")</code>
+</p>Update the <code>productId</code> property in var1.
+
+<p>
+  <strong>Output</strong>: <code>{"productId":34}</code>.
+</p>
+

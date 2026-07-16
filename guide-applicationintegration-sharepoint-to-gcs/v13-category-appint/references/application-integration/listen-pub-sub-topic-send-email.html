@@ -1,0 +1,276 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Listen to Cloud Pub/Sub topic and send an email{% endblock %}
+{% block body %}
+
+
+<p>
+Learn how to create a sample integration using {{integration}} and the <b>{{apip_trigger_pubsub}}</b>.
+  The following steps describe how to configure the trigger, tasks, variables, and data mappings required
+  to run a complete integration.
+</p>
+<h2>Overview</h2>
+<p>
+  In this quickstart, you will create an integration with a <b>{{apip_trigger_pubsub}}</b> to listen to an existing {{pubsub_name}} topic that receives temperature readings in degrees Kelvin from a IOT device. You can then use the <b>{{apip_task_datamapping}}</b> task to transform the {{pubsub_name}} message to celsius and send the value in an email.
+</p>
+
+<h2 id="prereq">Before you begin</h2>
+   <p>Assign the following {{iam_name_first_mention}} roles to the <b>{{integration}} Service Agent</b> (<code>{{shared_p4sa}}</code>) in your {{gcp_name}} project:</p>
+     <ul>
+        <li><b>Pub/Sub Editor</b></li>
+        <li><b>{{integration}} Invoker</b>
+  <p>
+    For more information about assigning IAM roles, see
+      <a href="{{basehrefpath}}/integrations-access-permissions"
+        >IAM roles and permissions</a>.
+      </p></li>
+     </ul>
+
+<h2>Set up environment</h2>
+<h3>Create a new Cloud Pub/Sub topic</h3>
+  <p>
+This quickstart assumes that you have a Pub/Sub topic that
+receives temperature readings in degrees Kelvin from a IOT device. It is not necessary to actually have
+the topic connected to a device. This quickstart tests the integration's ability to listen to the topic and perform
+  tasks when triggered.
+  </p>
+<p>To create a sample topic for the purposes of this quickstart:
+  <ol>
+    <li>Go to the Pub/Sub topics page in the <a href="https://console.cloud.google.com">Cloud console</a>.
+    <p><a href="https://console.cloud.google.com/cloudpubsub/topicList" target="console" class="button button-primary">
+      Go to the Pub/Sub topics page</a></p></li>
+    <li> Click <b>Create a topic</b>.</li>
+    <li>In the <b>Topic ID</b> field, provide a unique topic name.  For example, <code>temperaturesensor</code></li>
+    <li>Click <b>Save</b>.
+    </li>
+  </ol>
+  <aside id="pubsubt-billing" class="note"><b>Note:</b>  You don't have to create a subscription for the trigger to work.
+    {{product_name}} automatically creates a subscription for a topic when you publish your integration, and you can view all your
+   subscriptions in the <a href="https://console.cloud.google.com/cloudpubsub/subscription">{{pubsub_name}} subscription page</a>.
+   
+   <p>Starting with the {{product_name}}
+     <a href="/application-integration/docs/release-notes#December_01_2023">December 01 2023 release</a>, you will be
+      billed for your subscriptions as per the <a href="/pubsub/pricing">{{pubsub_name}} billing rates</a>. Subscriptions 
+     for your existing {{apip_trigger_pubsub}} will continue to work as before, and they aren't billed. However, if you
+   update the topic of an existing {{apip_trigger_pubsub}}, {{pubsub_name}} billing will be applied to the updated {{apip_trigger_pubsub}}.</p> 
+   </aside>
+
+
+<h2>Create a new integration</h2>
+
+<p>
+To create a new integration, perform the following steps:
+</p>
+<ol>
+{{apip_common_steps}}
+  <li>Click <b>Create integration</b>.</li>
+  <li>Enter a name and description in the <b>Create Integration</b> dialog. For example,
+    <code>my-test-integration</code>.
+    <aside class="note"><b>Note:</b> Integration names must meet the following requirements:
+    <ul>
+      <li>Names must start and end with letters or numbers.</li>
+      <li>Names cannot contain spaces or more than one dash or underscore in a row.</li>
+  </ul></aside>
+  </li>
+         <li>Select a region for the integration.        <aside class="note"><b>Note:</b> The <b>Regions</b> dropdown only lists the regions provisioned in your Google Cloud project. To provision a new region, Click <b>Enable Region</b>. See <a href="/application-integration/docs/enable-new-region">Enable new region</a> for more information. </aside>      </li>
+  <li>Click <b>Create</b> to open the integration editor.</li>
+</ol>
+
+<h2>Add a {{apip_trigger_pubsub}}</h2>
+
+To add a <b>{{apip_trigger_pubsub}}</b> to the integration, follow the steps below:
+<ol>
+  <li>In the integration editor, select <b>Triggers</b> to display a list of available triggers.
+ </li>
+  <li>Click and place the <b>{{apip_trigger_pubsub}}</b> element to the designer.</li>
+</ol>
+
+<h2>Configure a {{apip_trigger_pubsub}}</h2>
+
+<p>Click the <b>{{apip_trigger_pubsub}}</b> element in the integration editor to view the trigger configuration
+  pane.</p>
+
+<p>Specify the topic the trigger should listen to in the <b>Pub/Sub topic</b> field in the following format:
+
+<pre class="prettyprint" suppresswarning=true>projects/<var>PROJECT_ID</var>/topics/<var>TOPIC_ID</var></pre>
+  where:
+  <ul>
+    <li><var>PROJECT_ID</var> is the Google Cloud project where your topic is created.</li>
+    <li><var>TOPIC_ID</var> is the ID of the Cloud Pub/Sub topic you created in <a href="#prereq">Before you begin</a>.</li>
+</ul>
+<p>For example, if your project is named <code>my-project</code> and you named your topic <code>temperaturesensor</code>, enter:
+  <p><code>projects/<b>my-project</b>/topics/<b>temperaturesensor</b></code>.
+</p>
+<p>To view all the available topics in your Google Cloud project, see the <b>Topic name</b> column in
+  <a href="https://console.cloud.google.com/cloudpubsub/topic/list)">Topics</a>.
+</p>
+
+<p>The <b>{{apip_trigger_pubsub}}</b> configuration pane will automatically populate the <b>Trigger Output</b> field with a variable to hold
+  the Pub/Sub message.</p>
+
+
+<h3>Add and configure the {{ apip_task_datamapping }} task</h3>
+
+<p>To configure the <b>{{ apip_task_datamapping }}</b> task:
+<ol>
+  <li>Select <b>Tasks</b> to display a list of available tasks.
+  </li>
+  <li>Click and place the <b>{{ apip_task_datamapping }}</b> element in the integration editor.</li>
+  <li>Click on the <b>{{ apip_task_datamapping }}</b> task on the designer to open the configuration pane for
+    the task.
+  <li>Click <b>Open {{ apip_task_datamapping }} Editor</b>.
+    <p>The <b>{{ apip_task_datamapping }} Editor</b> lets you map input variables to the desired output variables,
+      using the available transform functions. The output is then
+      available as a variable to any other integration task or trigger.  For more details on
+      passing data as variables, see <a href="{{basehrefpath}}/variables-overview.html">
+      Using variables in {{integration}}</a>.</p>
+  <p>For this quickstart, follow these steps to create a mapping using the <code>CloudPubSubMessage</code> as
+    input:
+    <ol>
+      <li>Expand the <code>CloudPubSubMessage</code> JSON variable in the <b>Variables</b> list and drag the <code>CloudPubSubMessage.<b>data</b></code> variable 
+      to the first <b>Input</b> row.</li>
+      <li>Click <b>+ (Add a function)</b> next to the <code>CloudPubSubMessage.<b>data</b></code> variable to view the drop-down list of available
+        functions.</li>
+      <li>Select <b><code>TO_DOUBLE()</code></b> to convert the <code>CloudPubSubMessage.<b>data</b></code> value
+        to a data type of <code>double</code>.</li>
+      <li>Click <b>+ (Add a function)</b> again to select and chain the <b><code>SUBTRACT</code></b> function. </li>
+      <li> Enter <code>273.15</code> as the <b><code>SUBTRACT</code></b> function value. This is to convert the Kelvin
+      temperature to degrees Celsius.</li>
+      <li>Click the first row in the <b>Output</b> column to create a new output variable to hold the value of the transformed
+       data. Complete the following fields:
+      <ul>
+        <li><b>Name:</b> Enter <code>TempInCelsius</code>.
+        </li>
+        <li>Check <b>Use as an output of integration</b>.</li>
+        <li>Click <b>Create</b> to create the variable and close the pane.  The new <b>TempInCelsius</b> variable will appear in the
+        <b>Variables</b> list.</li>
+        </ul>
+      </li>
+     <li>Drag the <b>TempInCelsius</b> variable from the <b>Variables</b> list to the second
+      row in the <b>Input</b> column.</li>
+      <li>Click <b>+ (Add a function)</b> in the <b>TempInCelsius</b> variable to view the drop-down list of available
+        functions.</li>
+      <li>Click <b><code>TO_STRING()</code></b> to transform the data type of the variable from <code>double</code> to
+        <code>string</code>.</li>
+      <li>Click the second row in the <b>Output</b> column to create a new variable to hold the value of the transformed
+       data.  Complete the following fields:
+      <ul>
+        <li><b>Name:</b> Enter <code>TempInCelsiusString</code>.
+        </li>
+        <li><b>Blank default value means:</b> Select <b>Empty String</b>.</li>
+        <li>Select the <b>Use as an output of integration</b> checkbox.</li>
+        <li>Click <b>Create</b> to create the variable and close the pane.  The new variable will appear in the
+        <b>Variables</b> list on the left side of the data mapping editor.</li>
+        </ul>
+      </li>
+      <li>Close the {{apip_task_datamapping}} Editor once your mapping is complete. Any changes will be autosaved.</li>
+    </ol>
+</ol>
+
+
+<h3>Add and configure the {{apip_task_sendemail}} task</h3>
+
+<p>To configure the <b>{{apip_task_sendemail}}</b> task:
+<ol>
+  <li>Select <b>Tasks</b> in the integration editor to display the list of available tasks.</li>
+  <li>Click and place the <b>{{apip_task_sendemail}}</b> element in the integration editor.</li>
+  <li>Click the <b>{{apip_task_sendemail}}</b> element on the designer to open the configuration pane
+    of the task.  Set the following properties:
+    <ul>
+      <li><b>To Recipient(s):</b> Enter your email address. You will use this email to confirm
+         the successful completion of the integration.
+      <li><b>Subject:</b> Enter <code>Temperature in Celsius</code>.
+      <li><b>Body in Plain Text:</b> Select the <code>TempInCelsiusString</code> variable created earlier
+        in the <b>{{apip_task_datamapping}}</b> task.
+      <li>The remaining options can be left in the default configuration.</li>
+    </ul>
+    Your changes to the properties are saved automatically.
+</li>
+</ol>
+<h3>
+  Add the required edge connections
+</h3>
+<p>
+  An edge is a connection between any two elements in an integration. The connection denotes the direction of the control flow from one element(task or trigger) to another. For more information on edges, see <a href="{{basehrefpath}}/edge-overview">Edges</a>.
+</p>
+<ol>
+<li>Add an edge connection from the <b>{{apip_trigger_pubsub}}</b> element to the
+<b>{{ apip_task_datamapping }}</b> element by hovering over a control point on the <b>{{apip_trigger_pubsub}}</b> element, then
+  clicking and dragging a line to a control point on the <b>{{apip_task_datamapping}}</b> task element. This edge denotes the flow
+  of control from the <b>{{apip_trigger_pubsub}}</b> task to the <b>{{apip_task_datamapping}}</b> task.</li>
+
+<li>Add an edge connection from the <b>{{apip_task_datamapping}}</b> element to the
+<b>{{apip_task_sendemail}}</b> element by hovering over a control point on the <b>{{apip_task_datamapping}}</b> element, then
+  clicking and dragging a line to a control point on the <b>{{apip_task_sendemail}}</b> task element. This edge denotes the flow of control from the <b>{{apip_task_datamapping}}</b>
+   task to the <b>{{apip_task_sendemail}}</b> task.
+  </li>
+</ol>
+<p>The completed connection should appear as shown in the figure below:
+</p>
+<p>
+  <img src="{{baseimagepath}}/images/pub-sub-int.png" alt="image showing quickstart flow"
+  data-modal-dialog-id="edge_ui" class="screenshot">
+
+<devsite-lightbox id="edge_ui">
+<img src="{{baseimagepath}}/images/pub-sub-int.png" alt="image showing quickstart flow">
+</devsite-lightbox>
+</p>
+<h2>
+  Publish the integration
+</h2>
+
+<p>To publish the integration, click <b>Publish</b> in the integration editor toolbar.</p>
+<p>Upon successfully publishing your integration, you can view and inspect the <a href="/application-integration/docs/integration-execution-logs">execution logs</a> of the published integration. To view logs, click <b><img src="{{baseimagepath}}/images/logs-icon.png" alt="image showing the icon for execution logs">View execution logs for this integration</b>. The <b>Execution Logs</b> page appears.</p>
+
+
+<h2>Test the integration using Cloud Pub/Sub</h2>
+
+<p>To test the new integration from the Pub/Sub topics page, do the following steps:
+
+  <ol>
+    <li>Go to the Pub/Sub topics page in the <a href="https://console.cloud.google.com">Cloud console</a>.
+        <p><a href="https://console.cloud.google.com/cloudpubsub/topicList" target="console" class="button button-primary">
+          Go to the Pub/Sub topics page</a></p></li>
+    <li>Search for and then select the <b>temperaturesensor</b> topic that you created.</li>
+    <li>From the topic details page, click <b>+ Publish Message</b> to open the <b>Publish Message</b> configuration pane.</li>
+    <li>In the <b>Message body</b> field, enter <code>307.15</code>.  
+    <p>
+      Creating this message simulates the publication of a temperature reading
+    in Kelvin received by Pub/Sub from an IOT device.</p>
+    </li>
+    <li>Click <b>Publish</b> to publish the message to the topic and trigger your integration.</li>
+</ol>
+
+<p>Upon successful completion, the integration sends an email with the Kelvin temperature converted to degrees Celsius to the email address
+specified in the <b>{{apip_task_sendemail}}</b> task. Confirm receipt of the email in your email client.</p>
+<p>The email sent by the integration should have a message body containing the value <code>34</code>.
+
+<p>In addition to verifying the contents of the email, you can inspect the logs to view the status
+  and payload of a given integration.  To view logs:
+  <ol>
+  <li>In the integration editor, click <b><img src="{{baseimagepath}}/images/logs-icon.png" alt="image showing the icon for execution logs">View execution logs for this integration</b>. The <b>Execution Logs</b> page appears.
+    For more information about execution logs, see <a href="/application-integration/docs/integration-execution-logs#view-integration-execution-logs">View integration execution logs</a>.</li>
+  <li>On the <b>Execution Logs</b> page, you can view details about each attempt to run an integration.
+    Each entry includes details for the execution attempt, including:
+    <ul>
+      <li>Integration name</li>
+      <li>Execution ID</li>
+      <li>Status</li>
+      <li>Start time</li>
+      <li>Duration</li>
+      <li>Integration Version</li>
+      <li>Trigger ID</li>
+    </ul>
+    </li>
+ <li>Click the expander arrow (<b>></b>) next to the executed integration to view an expanded list of
+   tasks and variables in the integration, along with task status and variable payloads.
+    </li>
+</ol>
+
+
+
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+
+{% endblock %}

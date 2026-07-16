@@ -1,0 +1,148 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Subscription entitlements{% endblock %}
+{% block body %}
+
+  <p>
+    This page describes the subscription entitlement model for {{integration}}, which is available as a stand-alone subscription.
+  </p>
+
+  <h2>Subscription entitlements 2024 (current plan)</h2>
+
+  <p>The following table outlines the {{integration}} subscription and add-on entitlements for the 2024 plan.
+    For information on entitlements for the older plan, see the <a href="#app-int-sub-entitlements-2023">Subscription entitlements 2023</a> section.
+  </p>
+
+  <table class="green">
+    <tbody>
+      <tr>
+        <th width="30%">Subscription</th>
+        <th width="70%">Entitlements</th>
+      </tr>
+      <tr>
+        <td class="alt" colspan="2" style="text-align:center;"><b>Base Subscription</b></td>
+      </tr>
+      <tr>
+        <td>{{integration}} (Base)</td>
+        <td>
+          <ul>
+            <li>24 million Integration calls annually <sup>(1), (4)</sup></li>
+            <li>50 Application Connector units <sup>(3), (6)</sup></li>
+            <li>Up to 3,600 GiB of data processing <sup>(2)</sup></li>
+            <li>Up to 3,600 GiB of Connector data processing <sup>(2)</sup></li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td class="alt" colspan="2" style="text-align:center;"><b>Add-on Packs</b></td>
+      </tr>
+      <tr>
+        <td>{{integration}} 50M Call Pack</td>
+        <td>
+          <ul>
+            <li>Additional 50 million Integration calls annually <sup>(1)</sup></li>
+            <li>Additional 2,000 GiB of data processing <sup>(2)</sup></li>
+            <li>Additional 2,000 GiB of Connector data processing <sup>(2)</sup></li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Application Connector 50 Unit Pack</td>
+        <td>
+          <ul>
+            <li>Additional 50 Application Connector units <sup>(3), (6)</sup></li>
+              <ul>
+                <li>Application Connector units are an abstraction used to purchase connections. {{company_name}} and technical connections use 5 units per connection, while application connections use 10 units per connection.</li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+<hr>
+<p>
+    All offerings and add-ons are subject to <a href="https://cloud.google.com/application-integration/docs/quotas">{{integration}} product limits</a>. You can add entitlements for Application Integration into multiple {{gcp_name}} projects as you want without buying <i>Org Packs</i>. However, each project needs to have its own connection units, as a connection from one project cannot be used in another project.
+  </p>
+
+
+  <h2 id="app-int-sub-entitlements-2023">Subscription entitlements 2023 (older plan)</h2>
+
+  <p>The following table outlines the {{integration}} subscription and add-on entitlements for the 2023 plan.</p>
+
+  <table class="green">
+    <tbody>
+      <tr>
+        <th width="30%">Subscription</th>
+        <th width="70%">Entitlements</th>
+      </tr>
+      <tr>
+        <td class="alt" colspan="2" style="text-align:center;"><b>Base Subscription</b></td>
+      </tr>
+      <tr>
+        <td>{{integration}} (Base)</td>
+        <td>
+          <ul>
+            <li>24 million Integration calls per year <sup>(1)</sup></li>
+            <li>20 Class G and 10 Class 1 connections included <sup>(6)</sup></li>
+            <li>Entitles the subscription to be used in 2 organizations, which can be increased with an Org Pack.</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td class="alt" colspan="2" style="text-align:center;"><b>Add-on Packs</b></td>
+      </tr>
+      <tr>
+        <td>{{integration}} Call Pack</td>
+        <td>
+          <ul>
+            <li>Additional 50 million Integration calls per year <sup>(1)</sup></li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Connector Unit Pack</td>
+        <td>
+          <ul>
+            <li>Additional 50 Application Connector units <sup>(6)</sup>
+              <ul>
+                <li>Application Connector units are an abstraction used to purchase connections. In this pricing mode, the number of connection units necessary to use a connection depends on its class <sup>(6)</sup>.</li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Concurrency Pack</td>
+        <td>
+          <ul>
+            <li>10 concurrent Integrations. Increases the limit on concurrent Integrations <sup>(5)</sup>.</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>Org Pack</td>
+        <td>
+          <ul>
+            <li>Access to Integration in one additional organization.</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <hr>
+
+  <div class="footnote">
+    <p>
+      <sup>
+        (1) Integration call: A runtime execution of an Integration flow. Similar to Integration execution in the Pay-As-You-Go (PAYG) model. Every 100 task executions counts as another Integration call. The default quota is 50 concurrent Integrations <sup>(5)</sup>.<br/>
+        (2) Data processing: The amount of data (in GiB) ingress or egress from an Integration execution or to and from a connection. This measures the data processed by {{integration}} or by a connection and does not include any network egress charges from {{gcp_name}} networking SKUs, which are billed separately. Additional call packs must be purchased for more data processing, even if the Integration calls are not fully consumed.<br/>
+        (3) Connector or Application Connection units: An abstraction of connection purchase units. Connectors are regional resources, and configuration deployed to 2 regions counts as 2 connections. There are two classes of connections: {{company_name}} and technical connections (5 units per connection, including service targets like BigQuery and technical Connectors like HTTP/FTP) and Application/3p Application connections (10 units per connection, including all other connections). All connections in the subscription model include 2 nodes for a high-availability (HA) setup with autoscaling.<br/>
+        (4) Successful Integration call: The completion of an Integration workflow without errors due to the incorrect functioning of the {{integration}} platform. Call failures not attributable to the platform (e.g., failures to connect to targets due to customer configuration errors) do not count against the SLA.<br/>
+        (5) Concurrent Integrations: The number of integrations that are executing concurrently. This is limited to 50 concurrent Integrations by default and can be increased upon request. Please contact sales for higher limits.<br/>
+        (6) Class: A class is a classification of Connectors based on the business value of the data used by the application or technology the Connector works with and/or the complexity of integrating with the Application. For example, SAP data is generally more valuable than MySQL data and is much more complex to integrate with. Please contact your Google representative for the full Connector class details.<br/>
+        Incidentals: The customer is charged for incidentals like Gemini Code Assist, Secret Manager, Cloud Key Management Service, Google Cloud networking (including ILBs, PSC, and other networking products), which are billed directly from those services.<br/>
+      </sup>
+    </p>
+  </div>
+
+{% endblock %}

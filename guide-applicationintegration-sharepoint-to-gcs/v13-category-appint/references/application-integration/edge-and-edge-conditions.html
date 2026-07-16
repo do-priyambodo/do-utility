@@ -1,0 +1,105 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Edge and edge conditions{% endblock %}
+{% block body %}
+
+<h2>Edge</h2>
+<p>
+An edge is a connection between any two elements in an integration.
+  The connection denotes the direction of the control flow from one element(task or trigger) to another.
+  The connection can be between a <a href="{{basehrefpath}}/trigger-overview.html">trigger</a> and a <a href="{{basehrefpath}}/task-overview.html">task</a> or between a task and another task.
+    By using an edge along with fork and join, you can implement
+  complex branching and conditions in your integration. For more information, see
+  <a href="{{basehrefpath}}/forks-joins.html">Forks and joins</a>.
+</p>
+<p>
+  For example, if there is an edge from a <b>Send Email</b> task to a
+  <b>Call Integration</b> task, it means that after the <b>Send Email</b> task is run,
+  the next task to run is the <b>Call Integration</b> task.  An edge also supports
+  conditional checks. Before the control passes to the next task, you can check for a
+  condition in the edge and based on the result, decide to run the task or not.
+  For more information about the supported conditional checks, see <a href="#edge_condition">Edge conditions</a>.
+
+</p>
+<img src="{{baseimagepath}}/images/integrations_edge.png" alt="image showing highlighted edge"
+     data-modal-dialog-id="edge_ui" class="screenshot">
+
+<devsite-lightbox id="edge_ui">
+  <img src="{{baseimagepath}}/images/integrations_edge.png" alt="image showing highlighted edge">
+</devsite-lightbox>
+
+<h2 id=edge_condition>
+  Edge conditions
+</h2>
+<p>
+  Edge conditions let you specify the conditions that must be met
+  for control of an integration to pass to the task connected by the edge. The task is run <i>only if</i>
+  the specified conditions are met. Edge conditions are useful in cases where there are multiple incoming edges
+  to a task, where each edge checks for specific conditions before the task.</p>
+
+<p>Specify edge conditions using the following steps:
+  <ol>
+{{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Select an existing integration or create a new one.
+  <li>In the integration editor, click on the edge to open the Edge configuration pane.
+    </li>
+    <li>Configure the edge:
+      <ul>
+        <li><b>Label</b> (optional):  Add a custom name for the edge.</li>
+        <li><b>Condition</b>: Set an edge condition using the <a href="#operators">supported operators</a>
+          and <a href="#functions">functions</a>.
+               </li>
+      </ul>
+    </li>
+</ol>
+
+<aside class="tip"> Important tips for specifying conditions:
+<ul>
+  <li>To reference a variable value, use dollar sign notation (<code>$</code>) before and after the variable name.
+  For example, if you want to check if a variable <code>productId</code> is greater than 10,
+    the syntax is <code>$productId$ > 10</code>.
+<li>Text without dollar sign notation is interpreted as a literal value. For example the text <code>customerId</code> is interpreted as
+  a literal value.
+<li>To check multiple conditions, split the conditions into individual
+  checks and combine them using <b>AND</b> or <b>OR</b>. For example, instead of using
+  <code>$productId$ &gt; 5 AND &lt; 9 </code>,
+  use <code> $productId$ &gt; 5 AND $productId$ &lt; 9</code>.</li>
+  </ul>
+</aside>
+
+<img src="{{baseimagepath}}/images/integrations_edge_condition.png" alt="image showing highlighted edge condition"
+     data-modal-dialog-id="edge_ui2" class="screenshot">
+
+<devsite-lightbox id="edge_ui2">
+  <img src="{{baseimagepath}}/images/integrations_edge_condition.png" alt="image showing highlighted edge condition">
+</devsite-lightbox>
+
+<h2 id="operators">Supported operators</h2>
+
+<p>
+  The following table describes the supported operators available for use in edge conditions.
+  </p>
+
+{{supported_operators}}
+
+<h2 id="functions">Supported functions</h2>
+
+<p>
+  The following table describes supported functions available for use in edge conditions.
+  </p>
+
+{{supported_functions}}
+
+<h2>Quotas and limits</h2>
+
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+
+{% endblock %}

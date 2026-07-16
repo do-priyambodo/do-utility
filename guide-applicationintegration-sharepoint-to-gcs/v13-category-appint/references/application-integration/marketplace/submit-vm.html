@@ -1,0 +1,11 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Submit the VM image for approval{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+{% include "_shared/integration-connectors/_submit-vm.html" %}
+
+
+{% endblock %}

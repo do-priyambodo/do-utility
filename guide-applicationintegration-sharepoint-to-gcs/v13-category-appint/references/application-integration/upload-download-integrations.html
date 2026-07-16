@@ -1,0 +1,142 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Upload and download integrations{% endblock %}
+{% block body %}
+
+
+<p>You can download your integrations as a JSON file and save it in your
+  local system. As a result, your entire integration is available in a file, which you can directly
+  upload in another integration project without any modifications. <a href="/application-integration/docs/create-integrations#upload-an-integration">Uploading an integration</a> creates
+  a new version of the integration in the project where the file is uploaded. </p>
+Having an entire integration
+  in a file format provides you with the following advantages:
+
+<ul>
+  <li>You can copy your integration from one project to another without much effort.</li>
+  <li>You can programmatically update the integration file for repetitive changes, such as renaming
+    of tasks or dynamically modifying variable names.</li>
+</ul>
+<aside><b>Note:</b> Details of authentication profiles configured for an integration is not available in the
+  downloaded file. After <a href="#upload-an-integration">uploading the integration file</a>, you must re-configure the authentication profiles in
+    the uploaded integration.</aside>
+
+<h2>Download an integration</h2>
+<p>To download an integration, select one of the following optionss:</p>
+
+<devsite-selector>
+<section>
+<h3>Console</h3>
+<ol>
+  {{apip_common_steps}}
+   <li>Select an existing integration. This opens the integration in the <i>integration editor</i>.
+  <li>Click the <b>Versions</b> dropdown and select the version you want to download.</li>
+  <li>In the designer toolbar, click <span class="material-icons">
+    more_vert
+    </span> (Actions menu) and select <b>Download</b>.
+    <p>The <var>INTEGRATION_NAME</var>.json file is automatically saved in your web browser's default download folder.</p>
+  </li>
+</ol>
+
+  <aside class="note"><b>Note:</b> The downloaded JSON file will have the structure of
+  <a href="/application-integration/docs/reference/rest/v1/DownloadIntegrationVersionResponse"><code>DownloadIntegrationVersionResponse</code></a>
+type. If you modify the JSON file, ensure that the modified file adheres to the <code>DownloadIntegrationVersionResponse</code>
+  structure.</aside>
+  </section>
+  <section>
+  <h3>API</h3>
+    To download an integration, issue a <code>GET</code> request to the following API:
+
+GET https://integrations.googleapis.com/v1/projects/*/locations/*/integrations/*/versions/*:download
+<pre>
+https://integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/integrations/<var>INTEGRATION_NAME</var>/versions/<var>INTEGRATION_VERSION</var>:download
+</pre>
+
+<p>The following example shows you how to download a specific version of an integration:</p>
+
+<pre class="devsite-terminal">
+curl -v -s \
+-H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+-H "X-GFE-SSL: yes" \
+-X GET "https://integrations.googleapis.com/v1/projects/demo-project/locations/us-east1/integrations/test-integration/versions/0e90d453-5fcf-4aae-b164-2e8344d1ac11:download"
+</pre>
+
+<aside class="note"><b>Note:</b> In the previous example, the integration version number is
+  <code>0e90d453-5fcf-4aae-b164-2e8344d1ac11</code>. To get the integration version, open the required
+  version of the integration in the UI and copy the auto-generated unique ID string after
+  <code>../integrations/integration/<var>INTEGRATION_NAME</var>/</code> from the URL.</aside>
+
+<p>For more information, see <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions/download"><code>projects.locations.integrations.versions.download</code></a>.</p>
+
+</section>
+</devsite-selector>
+
+<h2>Upload an integration</h2>
+<p>Uploading an integration creates a new version of the integration in the project where the file
+  is uploaded. For example, if you have an integration by name <code>IP-Test</code> at version 5, and you upload an integration file in <code>IP-Test</code>, a new version 6 is created for the integration.
+  <p>If you don't have an existing integration in which you can upload a file, you must first create a new integration and then upload. In this case, the new integration you create will be at version 1 and the uploaded integration will be at version 2.<p>
+
+  <p>If you have an existing integration that you want to upload, then select one of the following options:</p>
+
+<devsite-selector>
+<section>
+<h3>Console</h3>
+
+<ol>
+  {{apip_common_steps}}
+   <li>Select an existing integration or create a new integration by clicking <b>Create integration</b>.<p>
+     If you are creating a new integration:
+     <ol>
+       <li>Enter a name and description in the <b>Create Integration</b> dialog.</li>
+              <li>Select a region for the integration.        
+                <aside class="note"><b>Note:</b> The <b>Regions</b> dropdown only lists the regions provisioned in your Google Cloud project. To provision a new region, Click <b>Enable Region</b>. See <a href="/application-integration/docs/enable-new-region">Enable new region</a> for more information. </aside>      </li>
+       <li>Click <b>Create</b>.</li>
+     </ol>
+     <p>
+       This opens the integration in the <i>integration editor</i>.</p></li>
+  <li>In the designer toolbar, click <span class="material-icons">
+    more_vert
+    </span> (Actions menu) and select <b>Upload</b>.</li>
+  <li>In the file browser dialog, select the file that you want to upload, and then click <b>Open</b>.
+    <p>A new version of the integration is created using the uploaded file.</p>
+  </li>
+</ol>
+
+</section>
+<section>
+  <h3>API</h3>
+  To upload an integration, issue a <code>POST</code> request to the following API:
+
+  <pre>
+  https://integrations.googleapis.com/v1/projects/<var>$YOUR_GOOGLE_PROJECT_ID</var>/locations/<var>$PROJECT_LOCATION</var>/integrations <var>$INTEGRATION_NAME</var>/versions/<var>$INTEGRATION_VERSION</var>}:upload
+  </pre>
+  
+    <p>The following example shows you how to upload an integration:</p>
+  
+  <pre class="devsite-terminal">
+  curl -v -s -H "Content-Type: application/json"  -H "Authorization: Bearer $TOKEN"  \
+  -X POST -d '{"content": 
+    "{\"name\":\"projects/450954726404/locations/us-east1/integrations/test-workflow/versions/0e90d453-5fcf-4aae-b164-2e8344d1ac11\",
+    \"origin\":\"UI\",
+    \"snapshotNumber\":\"3\",
+    \"updateTime\":\"2022-01-06T04:26:58.137Z\",
+    \"lockHolder\":\"abc@test.com\",
+    \"createTime\":\"2022-01-06T04:26:42.734Z\",
+    \"lastModifierEmail\":\"abc@test.com\",
+    \"state\":\"DRAFT\",
+    \"triggerConfigs\":[{\"label\":\"API Trigger\",\"startTasks\":[{\"taskId\":\"1\"}],
+    \"properties\":{\"Trigger name\":\"rj-test-workflow_API_1\"},\"triggerType\":\"API\",\"triggerNumber\":\"1\",\"triggerId\":\"api_trigger/rj-test-workflow_API_1\"}],\"taskConfigs\":[{\"task\":\"EmailTask\",\"taskId\":\"1\",\"taskExecutionStrategy\":\"WHEN_ALL_SUCCEED\",\"displayName\":\"Send Email\"}]}"}' 
+    \https://integrations.googleapis.com/v1/projects/demo-project/locations/us-east1/integrations/test-integration/versions:upload
+  </pre>
+
+  <p>For more information, see <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions/upload"><code>projects.locations.integrations.versions.upload</code></a>.</p>
+  </section>
+</devsite-selector>
+
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn how to <a href="/application-integration/docs/view-integration-details">manage integrations</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish integrations</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+</ul>
+
+{% endblock %}

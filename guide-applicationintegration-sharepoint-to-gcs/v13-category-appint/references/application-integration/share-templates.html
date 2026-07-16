@@ -1,0 +1,68 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Share templates{% endblock %}
+{% block custom_heading %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Symbols" />
+{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}templates{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>You can share templates that you create with other projects or organizations in the {{console_name}}. These templates are categorized as <i>shared templates</i> and can be viewed in the <b>Shared templates</b> tab in the <a class="external" href="{{console_url}}integrations/templates" target="console">Templates</a> page. The following page describes how to share templates in {{integration}}.</p>
+
+<h2>Required role</h2>
+    {% setvar action %}share templates{% endsetvar %}
+    {% setvar resource %}the project{% endsetvar %}
+    {% setvar role_list %}
+    * All: Application Integration Editor (<code>roles/integrations.integrationEditor</code>)
+    {% endsetvar %}
+    {% setvar permission_list %}
+    * All: integrations.templates.share | integrations.templates.unshare
+    {% endsetvar %}
+    {% include "_shared/_required_roles.html" %}
+
+<h2>Share templates</h2>
+<p>To share an existing template, do the following:</p>
+    <ol>
+      <li>In the {{console_name}}, go to the <b>{{integration}}</b> page.
+        <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to {{integration}}</a></p>
+        </li>
+        <li>In the navigation menu, click <b>Templates</b>.
+        <p>The <b>Templates</b> page appears listing all the templates (global, shared, and project) available in your Google Cloud project.</p>
+      </li>
+        <li>To share a shared template, click the <b>Shared templates</b> tab. To share a project template, click the <b>Project templates</b> tab.
+        </li>
+        <li>Click the template that you want to share from the respective tab selected.</li>
+        <li>In the template details page, click <span class="google-symbols">group</span> <b>Share</b>.
+          <p>The <b>Share template</b> pane appears displaying any existing projects or organizations that the template is shared with.</p>
+        <p>
+          <img src="{{baseimagepath}}/images/share-template-screen.png" alt="share template pane"
+            data-modal-dialog-id="dialog" class="screenshot">
+            <devsite-lightbox id="dialog">
+            <img src="{{baseimagepath}}/images/share-template-screen.png" alt="share template pane">
+            </devsite-lightbox>
+        </p>
+        </li>
+        <li>Under <b>Add projects or organizations</b>, perform one of the following actions:
+        <ul>
+          <li>Click <b>Browse</b> and select the projects or organizations that you want to share the template with.</li>
+          <li>Alternatively, you can enter the organization ID (organizations/{<var>org-id</var>}) or the project ID (projects/{<var>project-id</var>}) in the text box.
+        </ul></li>
+        User can also alternatively add the organization or project. The format for adding organization is organizations/{org-id} & for project projects/{project-id}
+        <li>Under <b>Add projects or organizations</b>, click <b>Browse</b>.</li>
+        <li>Select the projects or organizations that you want to share the template with, and click <b>Select</b>.</li>
+        <li>Click <b>Share</b>.
+          <p>The template is shared with the selected projects or organizations, and is automatically added to the <b>Shared templates</b> tab.</p>
+        </p></li>
+    </ol>
+
+    <h2>What's next</h2>
+    <ul>
+      <li>Learn how to use templates to create an integration, see <a href="/application-integration/docs/create-integration-from-templates">Create integrations from templates</a>.</li>
+      <li>Learn how to import and download templates, see <a href="/application-integration/docs/import-download-templates">import and download templates</a>.</li>
+      <li>Learn how to create templates, see <a href="/application-integration/docs/create-templates">create templates</a>.</li>
+      <li>Learn how to manage templates, see <a href="/application-integration/docs/manage-templates">manage templates</a>.</li>
+    </ul>
+    {% endblock %}

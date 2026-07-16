@@ -1,0 +1,56 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Clone integrations{% endblock %}
+{% block body %}
+
+<p>
+  Cloning an integration creates a full copy of its original integration version. You can use cloning to create a new integration version within the same integration, or to create a completely new independent integration that is a full copy of the original integration version.
+</p>
+<h2>Clone within the same integration</h2>
+<p>To clone of an integration version within the same integration, perform the following steps:</p>
+<ol>
+  {{apip_common_steps}}
+   <li>Select the existing integration that you want to clone.
+     </p></li>
+     <li>Click the <b>Versions</b> dropdown and select the version you want to clone.</li>
+     <li>In the designer toolbar, click <span class="material-icons">
+       more_vert
+       </span> (Actions menu) and select <b>Clone integration</b>.</li>
+       <li>Select <b>Create new version</b>.
+      <p>The <b>Create new version</b> pane appears.</p></li>
+      <li>(Optional) Enter a name for the new clone version.</li>
+      <li>Click <b>OK</b>.</li>
+    <p>A new clone of the integration version is created in the same integration.</p>
+  </li>
+</ol>
+
+<h2>Clone as a new integration</h2>
+<p>To create a new independent integration that is a full copy of the original integration version, perform the following steps:</p>
+<ol>
+  {{apip_common_steps}}
+   <li>Select an existing integration that you want to clone.
+     </p></li>
+     <li>Click the <b>Versions</b> dropdown and select the version you want to clone.</li>
+     <li>In the designer toolbar, click <span class="material-icons">
+       more_vert
+       </span> (Actions menu) and select <b>Clone integration</b>.</li>
+       <li>Select <b>Create new integration from current version</b>.
+       <p>The <b>Create new integration</b> pane appears.</p></li>
+   <li>Enter a name and a description for the clone integration.</li>
+  <li>Select a <b>Region</b> for the clone integration from the list of <a href="{{supported_regions_link}}">supported regions</a>.</li>
+  <li>Click <b>Create</b>.
+    <p>A new cloned integration is created in the selected region.</p>
+  </li>
+</ol>
+
+<h2>Considerations</h2>
+
+<ul>
+  <li>
+    Cloning an integration doesn't clone the authentication profiles associated with that integration. You must manually create a copy of the associated authentication profiles in the same region as the cloned integration. For information about creating authentication profiles, see <a href="{{basehrefpath}}/configuring-auth-profile">Create authentication profiles in {{integration}}</a>
+  </li>
+  <li>You can't have two integrations with the same name in the same region.
+  </li>
+</ul>
+
+
+{% endblock %}

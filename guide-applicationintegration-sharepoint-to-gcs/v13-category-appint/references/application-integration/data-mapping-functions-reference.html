@@ -1,0 +1,311 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Data Mapping functions{% endblock %}
+
+{% dynamic setvar launch_stage %}experimental{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}Data Transformer Script task{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+{% block body %}
+
+<p>
+  The <a href="/application-integration/docs/configure-data-mapping-task"><b>{{ apip_task_datamapping }}</b> task</a> provides various predefined mapping functions to transform and standardize the mapping data in your integration. A mapping function can have one or more input parameters, wherein each parameter can further hold a literal value, a variable, or a base function with mapping functions applied. You can use multiple mapping functions for a single input source, forming a mapping <a href="/application-integration/docs/data-mapping-overview#transform">transform expression</a>.</p>
+
+<p>
+  The following table lists the predefined mapping functions available in the <b>{{ apip_task_datamapping }}</b> task.
+</p>
+
+<table class="fixed">
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/add-function-reference"><code>ADD</code></a></td>
+      <td>Adds the specified number to an existing number.</td>
+      </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/and-function-reference"><code>AND</code></a></td>
+      <td>Performs the logical AND operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/append-function-reference"><code>APPEND</code></a></td>
+      <td>Appends the specified value to an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/append-all-function-reference"><code>APPEND_ALL</code></a></td>
+      <td>Appends all the specified values to an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/append-element-function-reference"><code>APPEND_ELEMENT</code></a></td>
+      <td>Appends an element to a JSON array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/avg-function-reference"><code>AVG</code></a></td>
+      <td>Calculates the numerical average of all the values in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/ceil-function-reference"><code>CEIL</code></a></td>
+      <td>Computes the smallest integer that is greater than or equal to the given input.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/concat-function-reference"><code>CONCAT</code></a></td>
+      <td>Concatenates the specified characters to an existing string.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/contains-function-reference"><code>CONTAINS</code></a></td>
+      <td>Checks the occurrence of the specified value in a given string or string array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/decode-base64-string-function-reference"><code>DECODE_BASE64_STRING</code></a></td>
+      <td>Decodes a base64 string to UTF-8 charset.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/divide-function-reference"><code>DIVIDE</code></a></td>
+      <td>Divides an existing number by the specified number.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/equals-function-reference"><code>EQUALS</code></a></td>
+      <td>Compares the specified value with the existing value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/equals-ignore-case-function-reference"><code>EQUALS_IGNORE_CASE</code></a></td>
+      <td>Compares the specified value with the existing value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/epoch-to-human-readable-time-function-reference"><code>EPOCH_TO_HUMAN_READABLE_TIME</code></a></td>
+      <td>Converts Unix epoch time (in milliseconds) to human-readable time format.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/exponent-function-reference"><code>EXPONENT</code></a></td>
+      <td>Calculates the value of an existing number raised to the specified power.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/filter-function-reference"><code>FILTER</code></a></td>
+      <td>Filters the array elements that satisfy a given filter condition.
+        Note that a filter condition must evaluate to TRUE or FALSE.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/flatten-function-reference"><code>FLATTEN</code></a></td>
+      <td>Flattens a JSON array recursively to create a new one-dimensional array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/floor-function-reference"><code>FLOOR</code></a></td>
+      <td>Computes the greatest integer that is less than or equal to the provided input.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/for-each-function-reference"><code>FOR_EACH</code></a></td>
+      <td>Applies one or more transformation functions for each element in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-function-reference"><code>GET</code></a></td>
+      <td>Returns the value in an array at a specified index. In an array, the first value is available at index 0 and the last value is available at index n-1 where n is the size of the array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-element-function-reference"><code>GET_ELEMENT</code></a></td>
+      <td>Returns the element at the specified index in a JSON array. In the array, the first value is available at index 0 and the last value is available at index n-1 where n is the size of the array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-property-function-reference"><code>GET_PROPERTY</code></a></td>
+      <td>Returns the value of the specified property in a JSON object.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/greater-than-function-reference"><code>GREATER_THAN</code></a></td>
+      <td>Checks if an existing number is greater than the specified number.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/greater-than-equal-to"><code>GREATER_THAN_EQUAL_TO</code></a></td>
+      <td>Checks if an integer is greater than or equal to the specified value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/length-function-reference"><code>LENGTH</code></a></td>
+      <td>Calculates the length of a string. The length of a string is the number of characters in the string.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/less-than-equal-to-function-reference"><code>LESS_THAN_EQUAL_TO</code></a></td>
+      <td>Checks if an integer is less than or equal to the specified value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/less-than-function-reference"><code>LESS_THAN</code></a></td>
+      <td>Checks if an existing number is less than the specified number.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/max-function-reference"><code>MAX</code></a></td>
+      <td>Finds the highest value in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/merge-function-reference"><code>MERGE</code></a></td>
+      <td>Merges two JSON variables (objects or arrays). If same value is present in both the variables, the function removes the duplicate value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/min-function-reference"><code>MIN</code></a></td>
+      <td>Finds the lowest value in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/mod-function-reference"><code>MOD</code></a></td>
+      <td>Divides two values and returns the remainder of the division operation.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/multiply-function-reference"><code>MULTIPLY</code></a></td>
+      <td>Multiplies an existing number by the specified number.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/nand-function-reference"><code>NAND</code></a></td>
+      <td>Performs the logical NAND operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/nor-function-reference"><code>NOR</code></a></td>
+      <td>Performs the logical NOR operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/not-function-reference"><code>NOT</code></a></td>
+      <td>Returns the opposite value of a boolean.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/or-function-reference"><code>OR</code></a></td>
+      <td>Performs the logical OR operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/remove-function-reference"><code>REMOVE</code></a></td>
+      <td>Removes the specified value from an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/remove-at-function-reference"><code>REMOVE_AT</code></a></td>
+      <td>Removes an element from an array at the specified index.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/remove-property-function-reference"><code>REMOVE_PROPERTY</code></a></td>
+      <td>Removes a property from a JSON object.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/replace-all-function-reference"><code>REPLACE_ALL</code></a></td>
+      <td>Replaces all the occurrences of a substring in a string.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/resolve-template-function-reference"><code>RESOLVE_TEMPLATE</code></a></td>
+      <td>Resolves references in a template string that contains $variable$ references.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/round-function-reference"><code>ROUND</code></a></td>
+      <td>Rounds a number to the nearest integer.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/set-function-reference"><code>SET</code></a></td>
+      <td>Updates the value of a string array at the specified index.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/set-property-function-reference"><code>SET_PROPERTY</code></a></td>
+      <td>Adds or updates a property in a JSON object.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/size-function-reference"><code>SIZE</code></a></td>
+      <td>Counts the number of elements in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/split-function-reference"><code>SPLIT</code></a></td>
+      <td>Splits a string based on the specified delimiter.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/substring-function-reference"><code>SUBSTRING</code></a></td>
+      <td>Returns the substring of the current string from the start index inclusive to the end index exclusive.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/subtract-function-reference"><code>SUBTRACT</code></a></td>
+      <td>Subtracts the specified number from an existing number.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/sum-function-reference"><code>SUM</code></a></td>
+      <td>Adds all the values in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-base-64-function-reference"><code>TO_BASE_64</code></a></td>
+      <td>Encodes a string to base64 format using the UTF-8 charset.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-boolean-array-function-reference"><code>TO_BOOLEAN_ARRAY</code></a></td>
+      <td>Converts a JSON array to a boolean array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-boolean-function-reference"><code>TO_BOOLEAN</code></a></td>
+      <td>Converts a string to a boolean data type.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-double-array-function-reference"><code>TO_DOUBLE_ARRAY</code></a></td>
+      <td>Converts a JSON array to a double array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-double-function-reference"><code>TO_DOUBLE</code></a></td>
+      <td>Converts a string or an integer to a double.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-int-array-function-reference"><code>TO_INT_ARRAY</code></a></td>
+      <td>Converts a JSON array to an integer array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-int-function-reference"><code>TO_INT</code></a></td>
+      <td>Converts a string to an integer.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-json-function-reference"><code>TO_JSON</code></a></td>
+      <td>Converts the current value to a JSON object.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-lowercase-function-reference"><code>TO_LOWERCASE</code></a></td>
+      <td>Converts all the characters in a string to lowercase.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-set-function-reference"><code>TO_SET</code></a></td>
+      <td>Removes duplicate values in an array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-string-array-function-reference"><code>TO_STRING_ARRAY</code></a></td>
+      <td>Converts a JSON array to a string array.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/to-uppercase-function-reference"><code>TO_UPPERCASE</code></a></td>
+      <td>Converts all the characters in a string to uppercase.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/xnor-function-reference"><code>XNOR</code></a></td>
+      <td>Performs the logical XNOR operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/xor-function-reference"><code>XOR</code></a></td>
+      <td>Performs the logical XOR operation on the specified boolean values.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/generate-uuid-function-reference"><code>GENERATE_UUID</code></a></td>
+      <td>Generates a random UUID.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-execution-id-function-reference"><code>GET_EXECUTION_ID</code></a></td>
+      <td>Returns the execution ID of the current integration.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-integration-name-function-reference"><code>GET_INTEGRATION_NAME</code></a></td>
+      <td>Returns the name of the current integration.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-integration-region-function-reference"><code>GET_INTEGRATION_REGION</code></a></td>
+      <td>Returns the region of the current integration.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/get-project-id-function-reference"><code>GET_PROJECT_ID</code></a></td>
+      <td>Returns the Google Cloud project ID of the current integration.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/int-list-function-reference"><code>INT_LIST</code></a></td>
+      <td>Returns an integer list between the specified values. The returned list is inclusive of the starting value and exclusive of the ending value.</td>
+    </tr>
+    <tr>
+      <td><a href="/application-integration/docs/reference/data-mapping-reference/now-in-millis-function-reference"><code>NOW_IN_MILLIS</code></a></td>
+      <td>Returns the current Unix epoch time of the integration in milliseconds.</td>
+    </tr>
+  </tbody>
+</table>
+
+{% endblock %}
+

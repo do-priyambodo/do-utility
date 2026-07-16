@@ -1,0 +1,180 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}Suspend task{% endblock %}
+{% block body %}
+
+<p>The <strong>{{apip_task_suspension}}</strong> task lets you temporarily pause and then resume
+  the execution of an integration.</p>
+<p>During an integration execution, when the control reaches a {{apip_task_suspension}} task, execution is halted, and all tasks after the {{apip_task_suspension}} task are suspended. Integration
+  resumes the execution when any of the following events occur:</p>
+
+<ul>
+  <li>Expiry of the specified suspension time.</li>
+  <li>After receiving a resume execution request from the <code>Suspensions</code> API.</li>
+</ul>
+<p>You can also configure an output variable (<b>Suspension result</b>) for the {{apip_task_suspension}} task
+  and set it to any value and use the value to create branching conditions for executing the downstream tasks.</p>
+
+<aside class="note"><b>Note:</b> When a new version of the integration is published, any suspended executions of the previous version are automatically cancelled.
+  </aside>
+
+{% include "application-integration/docs/_shared/_task_suspend_timer_compare.html" %}
+
+<h2>Configure the {{apip_task_suspension}} task</h2>
+
+<p>To configure the <strong>{{apip_task_suspension}}</strong> task, perform the following steps:
+<ol>
+  {{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Click and place the <strong>{{apip_task_suspension}}</strong> task element in the integration editor.</li>
+   <li>Click the <strong>{{apip_task_suspension}}</strong> task element on the designer to view the <strong>{{apip_task_suspension}}</strong> task
+     configuration pane.</li>
+  <li>Configure the remaining fields using the <a href="#params">Configuration properties</a> for the task
+as detailed in the tables below.
+  <p>
+    All changes to the properties are saved automatically.
+    </p></li>
+</ol>
+
+
+
+<h2 id="params">Configuration properties</h2>
+
+<p>
+The following table describes the configuration properties of the {{apip_task_suspension}} task.
+</p>
+
+
+<table>
+  <tr>
+   <td><strong>Property</strong>
+   </td>
+   <td><strong>Data type</strong>
+   </td>
+   <td><strong>Description</strong>
+   </td>
+  </tr>
+ <tr>
+    <td><code><strong>Suspension Time</strong></code>
+   </td>
+   <td>Integer</td>
+   <td>Time (in minutes) till which the integration execution must be suspended. The maximum
+     time limit is <b>44640</b> minutes (31 days) which is also the default value.
+   <p>If the integration execution doesn't resume within the specified time limit,
+     integration automatically resumes the execution after the expiry of the time limit and
+     sets the value of the <code>Suspension result</code> variable to <code><b>Expired</b></code>.
+     </p>
+   </td>
+  </tr>
+  <tr>
+    <td><code><strong>Suspension result</strong></code>
+   </td>
+   <td>String
+   </td>
+   <td>A variable to store the result of the {{apip_task_suspension}} task. Setting the value
+     to this variable is optional. You can set this variable to any value based on your
+     requirement. This variable is helpful if you want to have more control over your
+     integration's execution flow. For example, you can read the suspension result and configure
+     conditional decisions based on the value in any of your downstream tasks.</td>
+  </tr>
+  <tr>
+    <td><code><strong>Suspension Id</strong></code>
+   </td>
+   <td>String</td>
+   <td>A unique identifier for the {{apip_task_suspension}} task. The value of this
+    variable is set immediately after the integration is suspended. You can get the
+     identifier value from the <a href="{{basehrefpath}}/viewing-logs">execution logs</a> page in the integration UI. You can also get the get the identifier value from the response object of an API if you are using an API to trigger
+    the integration.
+    <p>You can resume the integration execution either by using the suspension ID
+      or by using the integration's execution ID.</p>
+    </td>
+  </tr>
+</table>
+
+<h2>Revoke a suspension with the Suspensions API</h2>
+
+<p>The Suspensions API lets you revoke a suspension via a API call. To revoke a suspension with
+  the <b>Suspensions</b> API, you must have either the execution ID of the integration or
+  the suspension ID of the {{apip_task_suspension}} task. To revoke a suspension, you
+  must issue a <code>POST</code> request to the following API:</p>
+
+  <pre class="devsite-click-to-copy">
+https://<var>REGION</var>-integrations.googleapis.com/v1/{name=projects/<var>PROJECT</var>/locations/<var>LOCATION</var>/integrations/<var>INTEGRATION_ID</var>/executions/<var>EXECUTION_ID</var>/suspensions/<var>SUSPENSION_ID</var>}:lift
+    </pre>
+
+<p>In this API, the <code><var>INTEGRATION_ID</var></code> is optional. However, you must provide
+either the <code><var>EXECUTION_ID</var></code> or the <code><var>SUSPENSION_ID</var></code>. If you don't have any of
+  the ID values, you can substitute the value with <code>-</code>. In this API, <code><var>REGION</var></code>, <code><var>PROJECT</var></code>, and <code><var>LOCATION</var></code> are required fields.</p> 
+
+<aside class="note"><b>Note:</b>
+  <ul>
+    <li>If you don't specify both the execution ID and the suspension ID,
+the API doesn't run and reports an error.</li>
+    <li>If you don't specify the <code>suspension_result</code>, value of the suspension result
+      is set to <code>Resolved</code>.</li>
+  </ul>
+  </aside>
+
+<p>After you revoke the suspension, integration execution resumes and executes
+  the downstream tasks after the {{apip_task_suspension}} task.</p>
+
+
+<p>The following examples show how to revoke a suspension by using the <b>suspensions</b> API.</p>
+
+<devsite-expandable>
+  <h3 class="showalways">Example 1: Revoke a suspension with only the suspension ID</h3>
+  <p>The following <code>curl</code> command shows you how to revoke a suspension when you only have the suspension ID:</p>
+<pre class="devsite-terminal devsite-click-to-copy">
+  curl -H "Authorization: Bearer $TOKEN" \
+  -H "Content-type: application/json" \
+  -H X-GFE-SSL: yes \
+  -X POST \
+  -d '{"suspension_result":"Approved"}' \
+  https://us-east1-integrations.googleapis.com/v1/projects/demo-project/locations/us-east1/integrations/-/executions/-/suspensions/c6a13a79-a918-41e2-82b9-32b5a010755a:lift
+</pre>
+<p>In this example, the <code>Suspension result</code> variable is set to <code>Approved</code>
+  for the supension ID <code>c6a13a79-a918-41e2-82b9-32b5a010755a</code>.</p>
+</devsite-expandable>
+
+<devsite-expandable>
+  <h3 class="showalways">Example 2: Revoke a suspension with only the execution ID</h3>
+  <p>The following <code>curl</code> command shows you how to revoke a suspension when you only have the execution ID:</p>
+<pre class="devsite-terminal devsite-click-to-copy">
+  curl -H "Authorization: Bearer $TOKEN" \
+  -H "Content-type: application/json" \
+  -H X-GFE-SSL: yes \
+  -X POST \
+  -d '{"suspension_result":"true"}' \
+  https://us-east1-integrations.googleapis.com/v1/projects/demo-project/locations/us-east1/integrations/-/executions/76a391e7-c801-45d7-8046-eab20d167ec5/suspensions/-:lift
+</pre>
+<p>In this example, the <code>Suspension result</code> variable is set to <code>true</code>
+  for the execution ID <code>76a391e7-c801-45d7-8046-eab20d167ec5</code>.</p>
+</devsite-expandable>
+
+<devsite-expandable>
+  <h3 class="showalways">Example 3: Revoke a suspension with both the execution ID and the suspension ID</h3>
+  <p>The following <code>curl</code> command shows you how to revoke a suspension when you have both the execution ID and the suspension ID:</p>
+<pre class="devsite-terminal devsite-click-to-copy">
+  curl -H "Authorization: Bearer $TOKEN" \
+  -H "Content-type: application/json" \
+  -H X-GFE-SSL: yes \
+  -X POST \
+  -d '{"suspension_result":"{processname: "Release", owner: "John", status: "approved"};"}' \
+  https://us-east1-integrations.googleapis.com/v1/projects/demo-project/locations/us-east1/integrations/-/executions/9b721baa-0a23-4576-b2b6-d251d163ea6f/suspensions/f01815bf-ed18-4e01-9d41-cc2ce7861e95:lift
+</pre>
+<p>In this example, the <code>Suspension result</code> variable is set to <code>{processname: "Release", owner: "John", status: "approved"};</code>
+  for the suspension ID <code>f01815bf-ed18-4e01-9d41-cc2ce7861e95</code>.</p>
+</devsite-expandable>
+
+{% include "application-integration/docs/_shared/_retry_on_failure.html" %}
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}

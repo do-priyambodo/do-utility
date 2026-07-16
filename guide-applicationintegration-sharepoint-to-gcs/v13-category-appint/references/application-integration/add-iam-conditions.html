@@ -1,0 +1,200 @@
+{% extends "application-integration/_base.html" %}
+
+{% block page_title %}Add {{iam_name_short}} conditions{% endblock %}
+{% block body %}
+
+<p>
+  {{iam_name_first_mention}} Conditions lets you to define and enforce conditional, attribute-based access control for Google Cloud resources, including  {{integration}} resources. For more information about IAM Conditions, see <a href="/iam/docs/conditions-overview">Overview of IAM Conditions</a>.
+</p>
+
+<p>In {{integration}}, you can enforce conditional access based on the following attributes:</p>
+<ul>
+  <li><b>Date/time attributes:</b>
+  Use to set temporary (expiring), scheduled, or limited-duration
+  access to {{integration}} resources. For example, you can
+  allow a user to access an integration until a specified date. For more information, see <a href="/iam/docs/configuring-temporary-access">Configuring temporary access</a>.
+  </li>
+
+  <li><b>Resource attributes</b>:
+  Use to configure conditional access based on a resource name, resource type,
+  or resource service attributes. 
+  For example, you can allow a user to manage integrations that are created in a specific region. For a list of supported values. For more information, see <a href="/iam/docs/configuring-resource-based-access">Configuring resource-based access</a>.
+  </li>
+  </ul>
+
+<h2 id="add">Add {{iam_name_short}} condition</h2>
+<p>To add an {{iam_name_short}} condition to a existing principal (user, group, or service account), perform the following steps:</p>
+
+<ol>
+  <li>In the {{console_name_short}}, go to the <b>IAM</b> page.</p>
+  <p> <a class="button button-primary" href="{{ console_url }}projectselector/iam-admin/iam?supportedpurview=project,folder,organizationId"
+     target="console">Go
+     to IAM</a>
+    </p>
+  </li>
+  <li>Select your project, folder, or organization.
+  </li>
+  <li>From the list of principals, find the principal for which you want to add the IAM condition, and click
+  <span class="material-icons">edit</span> (<b>Edit principal</b>).
+  <p>The <b>Edit access</b> pane appears.</p>
+  </li>
+  <li>Find the role to which you want to add the IAM condition and click <b>+ Add IAM Condition</b>.
+  </li>
+  <li>In the <b>Add condition</b> pane, provide the following information:
+  <ol>
+    <li><b>Title:</b> Enter a name for the condition that you're adding to the role.</li>
+    <li><b>Description:</b> (Optional) Enter a description for the condition.</li>
+    <li>You can add a condition using either the <b>Condition builder</b> or the <b>Condition editor</b>.
+    <p>The <b>Condition builder</b> provides an interactive interface to select your desired condition type, operator, and other applicable details about the expression. The <b>Condition editor</b> provides a text-based interface to manually enter a condition expression using <a href="/iam/docs/conditions-overview#cel">CEL</a> syntax.</p>
+  <p>For detailed instructions about how to use the <b>Condition builder</b> or the <b>Condition editor</b>, see <a href="/iam/docs/configuring-resource-based-access">Configure resource-based access</a>.</p>
+</li>
+<li>Click <b>Save</b> to apply the condition.
+</li>
+  <p>For information about the supported resource attributes for {{integration}}, see <a href="#values">Resource attribute values</a></p>
+  </ol>
+</li>
+<li>Click <b>Save</b> again from the <b>Edit access</b> pane to update the principal.</p></li>
+  </ol>
+  
+
+<h2 id="values">Resource attribute values</h2>
+<p>The following table lists the values that the resource type attribute can contain for {{integration}}:</p>
+<table >
+  <tr>
+    <th>Resource name
+    </th>
+   <th>	Resource type
+   </th>
+   <th>Reference
+   </th>
+  </tr>
+  <tr>
+    <td>Location
+    </td>
+   <td><code>integrations.googleapis.com/Location</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/">API reference</a>
+   </td>
+  </tr>
+
+  <tr>
+    <td>Integration
+    </td>
+   <td><code>integrations.googleapis.com/Integration</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations">API reference</a>
+   </td>
+  </tr>
+
+  <tr>
+    <td>IntegrationVersion
+    </td>
+   <td><code>integrations.googleapis.com/IntegrationVersion</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions">API reference</a>
+   </td>
+  </tr>
+
+  <tr>
+    <td>Execution
+    </td>
+   <td><code>integrations.googleapis.com/Execution</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.executions">API reference</a>
+   </td>
+  </tr>
+
+  <tr>
+    <td>Suspension
+    </td>
+   <td><code>integrations.googleapis.com/Suspension</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.executions.suspensions">API reference</a>
+   </td>
+  </tr>
+
+  <tr>
+    <td>AuthConfig
+    </td>
+   <td><code>integrations.googleapis.com/AuthConfig</code>
+   </td>
+   <td><a href="/application-integration/docs/reference/rest/v1/projects.locations.authConfigs">API reference</a>
+   </td>
+  </tr>
+</table>
+
+<h2 id="usecase">Examples of using {{iam_name_short}} Condtions for {{integration}}</h2>
+
+<devsite-expandable expanded>
+  <h4 class="showalways">Example 1: Limit access to any IntegrationVersion resource in a region</h3>
+
+<p>You can use the following condition expression in the <b>Condition editor</b> to limit access to the <code><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions">IntegrationVersion</a></code> resource. Limiting access includes restricting <code>create</code>, <code>delete</code>, <code>download</code>, <code>get</code>, <code>list</code>, <code>patch</code>, <code>publish</code>, <code>unpublish</code>, and <code>upload</code> operations to the integration versions in the region.</p>
+
+<pre class="prettyprint lang-html wrap-code">
+(resource.name.startsWith("projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/integrations/<var>INTEGRATION_NAME</var>")) ||
+resource.type == "integrations.googleapis.com/Location" ||resource.type == "cloudresourcemanager.googleapis.com/Project"
+</pre>
+<p>
+  Replace the following:
+</p>
+<ul>
+  <li><code><var>PROJECT_ID</var></code>: The ID of your {{gcp_name}} project.</li>
+  <li><code><var>LOCATION</var></code>: The integration location. See <a href="/application-integration/docs/locations">{{integration}} locations</a>.</li>
+  <li><code><var>INTEGRATION_NAME</var></code>: Name of the integration.</li>
+</ul>
+</devsite-expandable>
+
+<devsite-expandable>
+  <h4 class="showalways">Example 2: Allow access to any IntegrationVersion resource in a region</h3>
+
+<p>You can use the following condition expression in the <b>Condition editor</b> to allow access to the <code><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions">IntegrationVersion</a></code> resource:</p>
+
+<pre class="prettyprint lang-html wrap-code">
+resource.name.startsWith("projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/") ||
+resource.type == "integrations.googleapis.com/Location" ||
+resource.type == "cloudresourcemanager.googleapis.com/Project"
+
+</pre>
+<p>
+  Replace the following:
+</p>
+<ul>
+  <li><code><var>PROJECT_ID</var></code>: The ID of your {{gcp_name}} project.</li>
+  <li><code><var>LOCATION</var></code>: The integration location. For supported locations, see <a href="/application-integration/docs/locations">{{integration}} locations</a>.</li>
+</ul>
+</devsite-expandable>
+{%comment%}
+<devsite-expandable>
+  <h4 class="showalways"><b>Example 3:</b> Allow access to a specific <a href="/application-integration/docs/reference/rest/v1/projects.locations.authConfigs">AuthConfig</a> resource</h3>
+
+<p>You can use the following condition expression in the <b>Condition editor</b> to allow access to a specific <i>AuthConfig</i> resource:</p>
+
+<pre class="prettyprint lang-html wrap-code">
+(resource.name.extract("authConfigs/{end}" == "<var>AUTH_CONFIG_NAME</var>") || resource.type == "integrations.googleapis.com/Location" || resource.type == "cloudresourcemanager.googleapis.com/Project")
+</pre>
+<p>
+  Replace the following:
+</p>
+<ul>
+  <li><var>AUTH_CONFIG_NAME</var>: The name of the authentication type. See <a href="/application-integration/docs/configure-authentication-profiles#auth-types">Authentication types</a>.</li>
+</ul>
+</devsite-expandable>
+
+<devsite-expandable>
+  <h4 class="showalways"><b>Example 4:</b> Allow access to any <a href="/application-integration/docs/reference/rest/v1/projects.locations.authConfigs">AuthConfig</a> resources in a region</h3>
+
+<p>You can use the following condition expression in the <b>Condition editor</b> to allow access to any <i>AuthConfig</i> resource:</p>
+
+<pre class="prettyprint lang-html wrap-code">
+(resource.name.startsWith("projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>") && resource.type == "integrations.googleapis.com/AuthConfig" || resource.type == "integrations.googleapis.com/Location" || resource.type == "cloudresourcemanager.googleapis.com/Project")
+</pre>
+<p>
+  Replace the following:
+</p>
+<ul>
+  <li><var>PROJECT_ID</var>: The ID of your Google Cloud project.</li>
+  <li><var>LOCATION</var>: The integration location. See <a href="/application-integration/docs/locations">{{integration}} locations</a>.</li>
+</ul>
+</devsite-expandable>
+{%endcomment%}
+  {% endblock %}

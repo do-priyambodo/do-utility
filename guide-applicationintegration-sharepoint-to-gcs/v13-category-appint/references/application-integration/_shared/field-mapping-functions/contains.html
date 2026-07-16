@@ -1,0 +1,58 @@
+
+<h2><code>CONTAINS</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>CONTAINS</code></td>
+       <td>Checks the occurrence of the specified value in a given string or string array.</td>
+       <td><code>CONTAINS(value)</code></td>
+       <td>Value to search.</td>
+       <td>A boolean. Returns TRUE if a match is found and FALSE otherwise.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>CONTAINS</code> function supports the following data types:
+</p>
+<ul>
+  <li>Boolean array</li>
+  <li>Double array</li>
+  <li>Integer array</li>
+  <li>String array</li>
+  <li>String</li>
+</ul>
+
+<h2>Example: Check the occurrence of a sequence of characters in a string</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = "Hello Apigee Integrations"</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.CONTAINS("xyz")</code>
+</p>Check the occurrence of <code>xyz</code> in var1.
+
+<p>
+  <strong>Output</strong>: <code>FALSE</code>
+</p>
+
+
+

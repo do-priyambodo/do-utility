@@ -1,0 +1,76 @@
+{% import "application-integration/_macros.html" as macros3 %}
+{% set cards =
+  [
+    {
+      'title': 'Data Mapping task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/field_map_48px_blue.svg',
+      'href': '/application-integration/docs/configure-data-mapping-task',
+    },
+    {
+      'title': 'Call Integration task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/sub_workflow_48px_blue.svg',
+      'href': '/application-integration/docs/configure-call-integration-task',
+    },
+    {
+      'title': 'For Each Parallel task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/scatter_48px_blue.svg',
+      'href': '/application-integration/docs/configure-for-each-parallel-task',
+    },
+    {
+      'title': 'For Each Loop task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/loop_48_blue.svg',
+      'href': '/application-integration/docs/configure-for-each-loop-task',
+    },
+    {
+      'title': 'While Loop task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/loop_48_blue.svg',
+      'href': '/application-integration/docs/configure-while-loop-task',
+    },
+    {
+      'title': 'Approval task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/suspend_48px_blue.svg',
+      'href': '/application-integration/docs/configure-approval-task',
+    },
+    {
+      'title': 'Send Email task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/send_email_48px_blue.svg',
+      'href': '/application-integration/docs/configure-send-email-task',
+    },
+    {
+      'title': 'Suspend task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/suspend_48px_blue.svg',
+      'href': '/application-integration/docs/configure-suspend-task',
+    },
+    {
+      'title': 'Timer task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/timer_48px_blue.svg',
+      'href': '/application-integration/docs/configure-timer-task',
+    },
+    {
+      'title': 'JavaScript task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/javascript_24px_blue.svg',
+      'href': '/application-integration/docs/configure-javascript-task',
+    },
+    {
+      'title': 'Return task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/settings_24px_blue.svg',
+      'href': '/application-integration/docs/configure-return-task',
+    },
+    {
+      'title': 'Connectors task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/connectors_48px_blue.png',
+      'href': '/application-integration/docs/configure-connectors-task',
+    },
+    {
+      'title': 'Call REST Endpoint task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/call_rest_48px_blue.svg',
+      'href': '/application-integration/docs/configure-call-rest-endpoint-task',
+    },
+    {
+      'title': 'Data transformer script task',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/jsonnetmapper_24px_blue.svg',
+      'href': '/application-integration/docs/configure-data-transformer-script-task',
+    }
+  ]
+%}
+{{ macros3.cards(cards) }}

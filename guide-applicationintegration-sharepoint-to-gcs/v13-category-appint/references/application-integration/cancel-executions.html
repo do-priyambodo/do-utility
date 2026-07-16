@@ -1,0 +1,54 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Cancel executions{% endblock %}
+{% block body %}
+
+<p>If you have an execution that is suspended due to an approval task or a technical issue, you can choose to cancel the execution. You can cancel an integration execution if the integration is in one of the following <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.executions#state">execution states</a>:</p>
+  <ul>
+    <li><b>Suspended</b></li>
+    <li><b>On hold</b></li>
+    <li><b>Retry on hold</b></li>
+  </ul>
+<h2>Cancel an execution</h2>
+<p>To cancel an execution, select one of the following options:</p>
+<devsite-selector>
+  <section>
+    <h3>Console</h3>
+<ol>
+  <li>In <b>Application Integration</b>, go to the <b>Logs</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations/logs" target="console">Go to Application Integration Logs</a></p>
+    </li>
+    <li>In the navigation menu, click <b>Logs</b>. The <b>Execution Logs</b> page appears.</li>
+   <li>For the execution that you want to cancel, click <b><span class="material-icons">more_vert</span></b> and then <b><span class="material-icons">cancel</span> Cancel</b>. The <b>Cancel execution</b> pane appears.</li>
+    <li>Add the reason to replay the execution.</li>
+    <li>Click <b>Cancel Execution</b>.</li>
+</ol>
+</section>
+  <section>
+    <h3>API</h3>
+<p>Call the <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.executions/cancel"><code>projects.locations.integrations.executions.cancel</code> method</a> and provide the ID of the execution that you want to cancel:</p>
+<pre class="devsite-terminal">curl -X POST https://integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>REGION</var>/integrations/<var>INTEGRATION_NAME</var>/executions/<var>EXECUTION_ID</var>:cancel -H "Authorization: Bearer $TOKEN"</pre>
+</section>
+</devsite-selector>
+
+<h2>Limitations</h2>
+
+<p>Cancel execution is subject to the following limitations:</p>
+<ul>
+  <li>Canceling an execution that is triggered by a <a href="/application-integration/docs/configure-schedule-trigger">Schedule trigger</a> isn't supported.</li>
+<li>You can't cancel an integration execution if the integration is in one of the following states:
+  <ul>
+    <li><b>In process</b></li>
+    <li><b>Succeeded</b></li>
+    <li><b>Failed</b></li>
+    <li><b>Canceled</b></li>
+  </ul>
+</li>
+</ul>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">logs in {{integration}}</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish integrations</a>.</li>
+</ul>
+
+{% endblock %}

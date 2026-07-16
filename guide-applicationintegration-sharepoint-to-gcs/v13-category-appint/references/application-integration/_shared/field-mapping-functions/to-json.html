@@ -1,0 +1,62 @@
+<h2><code>TO_JSON</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>TO_JSON</code></td>
+       <td>Converts the current value to a JSON object.</td>
+       <td><code>TO_JSON()</code></td>
+       <td>N/A</td>
+        <td>A JSON object.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h1>Supported data type</h1>
+<p>
+  The <code>TO_JSON</code> function supports the following data types:
+</p>
+<ul>
+  <li>Boolean</li>
+  <li>Boolean array</li>
+  <li>Double</li>
+  <li>Double array</li>
+  <li>Integer</li>
+  <li>Integer array</li>
+  <li>String</li>
+  <li>String array</li>
+</ul>
+
+<h2>Example: Convert a string to a JSON</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = "{product: "cake", id: 21, price: 5}"</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.TO_JSON()</code>
+</p>Convert var1 to JSON.
+
+<p>
+  <strong>Output</strong>: <code>{product: "cake", id: 21, price: 5}</code>
+</p>
+
+<aside class="note"><b>Note:</b> If your JSON schema has an array with both <b>integer</b>
+  and <b>number</b> elements, using JSON schema version 4 might lead to unexpected errors at
+  runtime. To prevent the error, set the schema to version 7 or greater. For example,
+  <code>"$schema": "http://json-schema.org/draft-07/schema#"</code>.</aside>

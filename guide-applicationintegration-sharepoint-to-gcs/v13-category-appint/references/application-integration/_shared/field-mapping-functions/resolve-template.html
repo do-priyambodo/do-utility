@@ -1,0 +1,105 @@
+
+<h2><code>RESOLVE_TEMPLATE</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>RESOLVE_TEMPLATE</code></td>
+       <td>Resolves references in a template string that contains $variable$ references.</td>
+       <td><code>RESOLVE_TEMPLATE()</code></td>
+       <td>NA</td>
+       <td>Resolved template with the reference variable value.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>RESOLVE_TEMPLATE</code> function supports the following data types:
+</p>
+<ul>
+  <li>JSON</li>
+  <li>String</li>
+</ul>
+
+<h2>Example: Resolve a JSON reference in a template JSON that contains a $variable$ reference.</h2>
+
+<p>
+<strong>Sample data</strong>:
+  <pre >$var1$ =
+{
+  "name": "Alex",
+  "address": "$var2$",
+  "age": "25"
+}</pre>
+<pre>$var2$ =
+{
+  "street": "1800 Amphibious Blvd",
+  "city": "Mountain View",
+  "state": "CA",
+  "pincode": "94045"
+}</pre>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.RESOLVE_TEMPLATE()</code>
+
+</p>
+<p>
+  Resolve var2 variable reference in var1.
+</p>
+
+<p>
+  <strong>Output</strong>: <pre>
+{
+  "name": "Alex",
+  "address": {
+    "street": "1800 Amphibious Blvd",
+    "city": "Mountain View",
+    "state": "CA",
+    "pincode": "94045"
+  },
+  "age": "25"
+}</pre>
+</p>
+
+<h2>Example: Resolve a string reference in a template string that contains a $variable$ reference.</h2>
+
+<p>
+<strong>Sample data</strong>:
+  <ul>
+    <li><code>$var1$ = Hello $var2$</code></li>
+    <li><code>$var2$ = World</code></li>
+</ul>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.RESOLVE_TEMPLATE()</code>
+
+</p>
+<p>
+  Resolve var2 variable reference in var1.
+</p>
+
+<p>
+  <strong>Output</strong>: <code>Hello World</code>
+</p>
+
+
+
+

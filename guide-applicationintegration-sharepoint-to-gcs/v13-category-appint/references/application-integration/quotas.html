@@ -1,0 +1,379 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Quotas and limits{% endblock %}
+{% block custom_heading %}
+<meta name="description" content="Review quotas and limits for {{product_name}}.">
+{% endblock %}
+{% block body %}
+{% include "_shared/quotas/_introduction.html" %}
+
+{% include "_shared/quotas/_definition.html" %}
+
+{% include "_shared/quotas/_limits.html" %}
+<p>
+  By default, {{application_integration_name}} quotas and limits apply on a <a href="/resource-manager/docs/creating-managing-projects">per-project</a> basis. Quotas and limits that apply on a different
+  basis are indicated as such; for example, the default concurrent executions for each project, or the maximum numbers of integrations per project.
+  </p>
+
+<h2>
+  Resource quotas
+</h2>
+
+<p>The following quotas apply to {{product_name_short}} resources for each {{gcp_name}} project. You can increase or decrease the quota by <a href="#increase_quota">requesting for a quota change</a>.</p>
+
+<devsite-filter>
+  <input type="text" placeholder="Type a keyword here to find the quota">
+<table>
+<thead>
+<tr>
+<th width="40%">Resource</th>
+<th width="50%">Quota</th>
+<th width="10%">Value</th>
+
+</tr>
+</thead>
+<tbody class="list">
+
+<tr>
+<td rowspan="3">Integration execution</td>
+<td>Default concurrent executions per project</td>
+<td>50</td>
+
+</tr>
+
+<tr>
+<td>Number of integration execution requests per minute</td>
+<td>24000</td>
+
+</tr>
+
+<tr>
+<td><a href="/application-integration/docs/using-integration-connectors">Integration Connectors</a></td>
+  <td>See <a href="/integration-connectors/docs/quotas">Integration Connectors limits</a></td>
+  <td></td>
+</tr>
+
+<tr>
+<td>Integration <a href="/application-integration/docs/integration-execution-logs">execution logs</a> and <a href="/application-integration/docs/monitoring-overview">monitoring</a></td>
+<td>Number of read executions requests per minute</td>
+<td>18000</td>
+
+</tr>
+<tr>
+<td>Integrations page
+  <p>
+  (This page lists all the available integrations in your project)
+    </p></td>
+<td>Number of read integration requests per minute</td>
+<td>12000</td>
+
+</tr>
+  <tr>
+  <td rowspan="3"><a href="/application-integration/docs/integration-designer-layout">Integration editor</a> page
+<p>
+  (This page loads a whole integration including all the integration versions and configured task entities)
+    </p></td>
+<td>Number of read task entity requests per minute</td>
+<td>12000</td>
+
+</tr>
+  <tr>
+<td>Number of read integration version requests per minute</td>
+<td>12000</td>
+
+</tr>
+    <tr>
+<td>Number of write integration version requests per minute</td>
+<td>12000</td>
+
+</tr>
+
+    <tr>
+  <td rowspan="2"><a href="/application-integration/docs/configure-authentication-profiles">Authentication profiles</a> page
+<p>
+  (This page lists all the available authentication profiles in your project)
+    </p></td>
+<td>Number of read requests per minute</td>
+<td>12000</td>
+
+</tr>
+ <tr>
+<td>Number of write requests per minute</td>
+<td>12000</td>
+
+</tr>
+
+<tr>
+  <td rowspan="4"><a href="/application-integration/docs/configure-salesforce-trigger">Salesforce trigger</a></td>
+<td>Number of read Salesforce channel requests per minute</td>
+<td>12000</td>
+
+</tr>
+<tr>
+<td>Number of write Salesforce channel requests per minute</td>
+<td>12000</td>
+
+</tr>
+<tr>
+<td>Number of read Salesforce instance requests per minute</td>
+<td>12000</td>
+
+</tr>
+<tr>
+<td>Number of write Salesforce instance requests per minute</td>
+<td>12000</td>
+
+</tr>
+</tbody>
+</table>
+</devsite-filter>
+
+<h3 id="increase_quota">
+  Request a quota increase
+  </h3>
+
+  {% include "_shared/quotas/_increase.html" %}
+
+<h2>
+  Usage limits
+</h2>
+
+{{product_name_short}} enforces the following usage limits. Your are responsible for tracking and ensuring that the values stay within the prescribed limits. Exceeding the limits might lead to reduced throughput, task failures, and increased latencies when running the integration.
+
+<devsite-filter>
+  <input type="text" placeholder="Type a keyword here to find the limit value">
+  <table>
+    <thead>
+      <tr>
+        <th>Resource</th>
+        <th>Limit</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody class="list">
+<tr>
+  <td rowspan="10">Applicable to the entire {{application_integration_name}}</td>
+  <td>Maximum characters in the integration name</td>
+  <td>64 characters</td>
+</tr>
+<tr><td>Maximum cumulative size of all the integration
+          data (including input and output variables)
+          <aside class="note"><b>Note:</b>Similar to integrations, each sub-integration also has a limit of 30 MB. However, when a private trigger is triggered from an integration, the size of both the integration and the private trigger is counted towards the limit, since they are in the same execution.</aside>
+        </td>
+        <td>30 MB
+          <aside class="caution"><b>Caution:</b> If the data size exceeds <b>10 MB</b>, {{integration}} runs the integration,
+            but disables <a href="{{basehrefpath}}/local-logging">local logging</a>. As a result, you
+            can't view the full execution logs, apply retry strategy, or monitor integrations in the
+            <a href="{{basehrefpath}}/monitoring-dashboard">monitoring dashboard</a>.</aside>
+        </td>
+      </tr>
+      <tr>
+      <td>Maximum cumulative size of all the
+        integration data (including input and output variables)
+        sent and received from connections</td>
+        <td>8 MB</td>
+      </tr>
+      <tr>
+        <td><p>Timeout for synchronous (SYNC) integration executions</p>
+<p>The timeout duration includes any external system calls or
+  sub-integration tasks of the integration during its execution. After the timeout duration, the execution status is set to <code>CANCELED</code>.</p>
+  <p>Examples of external system
+  calls include, calling external endpoints,
+  calling Salesforce using connectors, and calling Google Cloud functions</p></td>
+        <td>2 minutes</td>
+      </tr>
+      <tr>
+        <td><p>Timeout for asynchronous (ASYNC) integration executions</p>
+
+          <p>If your sub-integration takes longer than 2 minutes to run, consider executing your
+            integration in ASYNC mode</p></td>
+        <td>10 minutes</td>
+      </tr>
+      <tr>
+        <td><p>Maximum time till which an older version of the integration
+          can run after publishing the new version (system consistency)</p>
+          <p>This is because {{application_integration_name}} is a distributed system that
+            provides <em>eventual consistency</em>. It uses caches throughout
+            the system that may take time to clear and refresh</p></td>
+        <td>10 minutes</td>
+      </tr>
+      <tr>
+        <td>Maximum numbers of integrations per project</td>
+        <td>1000</td>
+      </tr>
+      <tr>
+        <td><p>Maximum number of tasks in an integration</p>
+<p>If there is a need for more tasks, it is recommended that you split your integration
+  into multiple integrations</p>
+</td>
+        <td>100</td>
+      </tr>
+      <tr>
+        <td>Maximum versions allowed for an integration</td>
+        <td>100</td>
+      </tr>
+      <tr>
+        <td>Number of days an integration execution can last, including the pause during the approval task</td>
+        <td>31 days</td>
+      </tr>
+
+      <tr>
+        <td><a href="/application-integration/docs/configure-apps-script-task">API trigger</a></td>
+        <td>Maximum characters for <i>TRIGGER_NAME</i> in Trigger ID
+          <p>Trigger ID format: <code>api_trigger/<var>TRIGGER_NAME</var></code>
+        </td>
+        <td>64 characters</td>
+      </tr>
+
+<tr>
+  <td rowspan="6"><a href="/application-integration/docs/configure-apps-script-task">Apps Script task</a></td>
+  <td>Maximum active deployments for an Apps Script</td>
+  <td>50</td>
+</tr>
+   <tr>
+    <td>Queries per second (QPS) for API executables</td>
+    <td>5000 per minute</td>
+    </tr>
+   <tr>
+    <td>Queries per second (QPS) for Webapp deployments</td>
+    <td>5000 per minute</td>
+    </tr>
+   <tr>
+    <td>Latency for API executables</td>
+    <td>1.5 seconds</td>
+    </tr>
+   <tr>
+    <td>Latency for Webapp</td>
+    <td>2.5 seconds</td>
+    </tr>
+   <tr>
+    <td>Maximum cumulative size of all the integration variables in an Apps Script</td>
+    <td>15 MB</td>
+    </tr>
+
+ <tr>
+  <td rowspan="3"><a href="/application-integration/docs/configure-call-rest-endpoint-task">Call REST Endpoint task</a></td>
+  <td>Maximum number of concurrent REST calls</td>
+  <td>100</td>
+</tr>
+ <tr>
+  <td>Maximum size of the request from the REST endpoint</td>
+  <td>25 MB</td>
+ </tr>
+ <tr>
+  <td>Maximum size of the response from the REST endpoint</td>
+  <td>25 MB</td>
+ </tr>
+
+ <tr>
+  <td><a href="/application-integration/docs/configure-call-integration-task">Call Integration task</a></td>
+  <td>Maximum number of sub-integrations that can run from the main integration</td>
+  <td>10000</td>
+</tr>
+
+<tr>
+  <td rowspan="4"><a href="/application-integration/docs/configure-connectors-task">Connectors task</a></td>
+  <td>Timeout for Connector task execution</td>
+  <td>3 minutes</td>
+</tr>
+
+<tr>
+  <td>Maximum size of the response from the connector</td>
+  <td>20 MB</td>
+</tr>
+
+<tr>
+  <td>Execute Custom Query: Maximum timeout</td>
+  <td>180 seconds</td>
+</tr>
+
+<tr>
+  <td>Execute Custom Query: Maximum number of rows</td>
+  <td>50,000</td>
+</tr>
+
+ <tr>
+  <td rowspan="3"><a href="/application-integration/docs/configure-while-loop-task">While Loop task</a> and <a href="/application-integration/docs/configure-for-each-loop-task">For Each Loop task</a></td>
+  <td>Maximum cumulative size of data processed</td>
+  <td>20 MB</td>
+</tr>
+ <tr>
+  <td>Maximum number of iterations</td>
+  <td>8000</td>
+ </tr>
+ <tr>
+  <td>Maximum cumulative size of data collected from each sub-integration call</td>
+  <td>50 MB</td>
+ </tr>
+ <tr>
+  <td rowspan="3"><a href="/application-integration/docs/configure-for-each-parallel-task">For Each Parallel task</a></td>
+  <td>Maximum cumulative size of data processed</td>
+  <td>20 MB</td>
+</tr>
+ <tr>
+  <td>Maximum number of iterations</td>
+  <td>10000</td>
+ </tr>
+ <tr>
+  <td>Maximum number of parallel executions
+    <p>To increase this limit, you must request an increase for the <a href="#increase_quota">Default concurrent executions per project</a> quota.</p>
+  </td>
+  <td>50</td>
+ </tr>
+
+ <tr>
+  <td rowspan="3"><a href="/application-integration/docs/configure-data-mapping-task">Data Mapping task</a></td>
+  <td>Maximum size of an array data type variable</td>
+  <td>100000 elements</td>
+</tr>
+
+ <tr>
+  <td>Maximum size of a JSON data type variable</td>
+  <td>20 MB</td>
+ </tr>
+ <tr>
+  <td>Maximum size of a string data type variable</td>
+  <td>20 MB</td>
+ </tr>
+ <tr>
+ </tr>
+
+ <tr>
+  <td ><a href="/application-integration/docs/configure-data-transformer-script-task">{{apip_task_datatransformer}} task</a></td>
+  <td>Maximum memory available for script evaluation</td>
+  <td>300 MB</td>
+</tr>
+<tr>
+  <td ><a href="/application-integration/docs/configure-javascript-task">{{ apip_task_javascript }} task</a></td>
+  <td>Maximum request size for the script</td>
+  <td>25 MB</td>
+</tr>
+<tr>
+  <td ><a href="/application-integration/docs/configure-send-email-task">{{ apip_task_sendemail }} task</a></td>
+  <td>Maximum recipient count for the task</td>
+  <td>30</td>
+</tr>
+
+ </tbody>
+</table>
+</devsite-filter>
+
+<h3>Data processing limits</h3>
+<p>We don't recommend using integrations in the following scenarios:</p>
+<ul>
+  <li>Integration requires movement of bulk data or focus on extract, transform, and
+    load (ETL) processes</li>
+  <li>Cumulative size of all the integration data is <b>greater than</b> <code>10 MB</code> during
+    execution
+    <p>
+      When calculating the cumulative data size, add the size of all types of data
+    such as input variables, output variables, and other intermediate task variables
+    </p>
+  <aside class="caution"><b>Caution:</b> If the data size exceeds 10 MB, {{integration}} runs the integration,
+    but disables <a href="{{basehrefpath}}/local-logging">local logging</a>. As a result, you
+    can't view the full execution logs, apply retry strategy, or monitor integrations in the
+    <a href="{{basehrefpath}}/monitoring-dashboard">monitoring dashboard</a>.</aside>
+  </li>
+</ul>
+
+
+{% endblock %}

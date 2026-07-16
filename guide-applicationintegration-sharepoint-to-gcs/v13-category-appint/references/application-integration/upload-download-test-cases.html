@@ -1,0 +1,117 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Upload and download test cases{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}Test cases{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>This document describes how to upload and download test cases for your integrations. For information about test cases, supported test configurations, and its limitations, see <a href="/application-integration/docs/test-cases">Introduction to test cases</a>.</p>
+
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+  <li>
+    {% setvar action %}upload and download test cases{% endsetvar %}
+    {% setvar resource %}your project{% endsetvar %}
+    {% setvar role_list %}
+    * All: Application Integration Editor (<code>roles/integrations.integrationEditor</code>)
+    {% endsetvar %}
+    {% setvar permission_list %}
+    * Upload a test case: integrations.googleapis.com/testCases.create
+    * Download a test case: integrations.googleapis.com/testCases.get
+    {% endsetvar %}
+    {% include "_shared/_required_roles.html" %}
+  </li>
+  <li>To download a test case, ensure that you have a test case in the integration. For information about how to create a test case, see <a href="/application-integration/docs/create-test-cases">Create Test Cases</a>.</li>
+</ul>
+
+<h2>Upload a test case</h2>
+<p>To upload a test case, select one of the following options:</p>
+<devsite-selector>
+  <section>
+<h3>Console</h3>
+<ol>
+  <li>In the {{console_name}}, go to the <b>Application Integration</b> page.
+  <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to Application Integration</a></p>
+  </li>
+  <li>In the navigation menu, click <b>Integrations</b>.
+    <p>The <b>Integrations</b> page appears listing all the integrations available in the {{gcp_name}} project.</p></li>
+  <li>Select an existing integration for which you want to create a test.
+    <p>This opens the integration in the <i>integration editor</i>.</p></li>
+  <li>To upload a test case from your local machine, from the <b>Test Case</b> list, select <b>Upload a test case</b>.</li>
+  </ol>
+</section>
+<section>
+  <h3>API</h3>
+
+  <p>Call the <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions.testCases/upload"><code>projects.locations.integrations.versions.testCases.upload</code> method</a> and provide any relevant parameters. For example:</p>
+
+<pre class="devsite-click-to-copy lang-sh">
+POST https://integrations.googleapis.com/v1/{parent=projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/integrations/<var>INTEGRATION_NAME</var>/versions/<var>INTEGRATION_VERSION</var>}/testCases:upload
+</pre>
+
+<p>Replace the following:</p>
+<ul>
+  <li><code><var>PROJECT_ID</var></code>: the ID of the {{gcp_name}} project</li>
+  <li><code><var>LOCATION</var></code>: the region where the integration is located</li>
+  <li><code><var>INTEGRATION_NAME</var></code>: the name of the integration</li>
+  <li><code><var>INTEGRATION_VERSION</var></code>: the version of the integration</li>
+</ul>
+
+<p>The request body contains the content of the file in a string format and the file format. The valid file formats are <code>.json</code> and <code>.yaml</code>.</p>
+  </section>
+</devsite-selector>
+
+<h2>Download a test case</h2>
+<p>To download a test case for an integration version, select one of the following options:</p>
+
+<devsite-selector>
+  <section>
+<h3>Console</h3>
+<ol>
+  <li>In the {{console_name}}, go to the <b>Application Integration</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to Application Integration</a></p>
+    </li>
+    <li>In the navigation menu, click <b>Integrations</b>.
+      <p>The <b>Integrations</b> page appears listing all the integrations available in the {{gcp_name}} project.</p></li>
+    <li>Select an existing integration that contains test cases.
+      <p>This opens the integration in the <i>integration editor</i>.</p></li>
+    <li>Click <b>Test Case</b> and then click
+      <b>Open test cases</b>. The <b>Test Cases</b> pane appears with a list of test cases for the current integration version.</li>
+      <li>Select the test case that you want to download. <p>In the Integration editor page, the designer canvas displays <b>Test case mode is active</b>.</p></li>
+      <li>Click <span class="material-icons">download</span> <b>Download</b>.</li>
+</ol>
+
+  </section>
+<section>
+  <h3>API</h3>
+    <p>Call the <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions.testCases/download"><code>projects.locations.integrations.versions.testCases.download</code> method</a>. For example:</p>
+
+<pre class="devsite-click-to-copy lang-sh">
+POST https://integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/integrations/<var>INTEGRATION_NAME</var>/versions/<var>INTEGRATION_VERSION</var>/testCases/<var>TEST_CASE_ID</var>
+</pre>
+    
+    <p>Replace the following:</p>
+    <ul>
+      <li><code><var>PROJECT_ID</var></code>: the ID of the {{gcp_name}} project</li>
+      <li><code><var>LOCATION</var></code>: the region where the integration is located</li>
+      <li><code><var>INTEGRATION_NAME</var></code>: the name of the integration</li>
+      <li><code><var>INTEGRATION_VERSION</var></code>: the version of the integration</li>
+      <li><code><var>TEST_CASE_ID</var></code>: the ID of the test case that you want download</li>
+    </ul>
+</section>
+</devsite-selector>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/test-cases">test cases</a>.</li>
+  <li><p>Learn how to do the following:</p>
+    <ul>
+      <li><a href="/application-integration/docs/create-test-cases">Create test cases</a>.</li>
+      <li><a href="/application-integration/docs/configure-test-cases">Configure test cases</a>.</li>
+      <li><a href="/application-integration/docs/run-test-cases">Run a test case</a> and <a href="/application-integration/docs/integration-execution-logs#view-integration-execution-logs">view test case execution logs</a>.</li>
+      <li><a href="/application-integration/docs/manage-test-cases#copy">Copy</a> and <a href="/application-integration/docs/manage-test-cases#delete">delete</a> test cases.</li>
+    </ul>
+
+{% endblock %}

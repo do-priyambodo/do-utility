@@ -1,0 +1,46 @@
+{% extends "application-integration/_base.html" %}
+
+{% block page_title %}Create a new integration{% endblock %}
+{% block body %}
+
+<p>This page describes how to create a new blank integration by using the {{console_name}}. If you are new to creating integrations, you can try the following quickstarts:</p>
+
+<ul>
+  <li><a href="/application-integration/docs/retrieve-api-payload-send-email">Retrieve API payload and send an email</a>.</li>
+  <li><a href="/application-integration/docs/listen-pub-sub-topic-send-email">Listen to {{pubsub_name}} topic and send an email</a>.</li>
+  <li><a href="/application-integration/docs/invoke-sub-int-for-each-loop">Invoke a sub-integration using a For Each Loop task</a>.</li>
+</ul>
+
+<aside class="tip">
+  <b>Tip:</b> You can also build integrations by using Google's generative AI. For more information, see <a href="/application-integration/docs/build-integrations-gemini">Build integrations with {{gemini_name}}</a>.
+</aside>
+
+<h2 id="create-a-new-integration">Create a new integration</h2>
+<p>
+  After you <a ref="/application-integration/docs/setup-application-integration">Set up {{application_integration_name}}</a>, you can create a new integration:
+  </p>
+  <ol>
+  {{apip_common_steps}}
+    <li>Click <span class="material-icons">add_box</span> <b>Create integration</b> and provide the following details in the <b>Create Integration</b> page:
+      <ol>
+        <li><b>Integration name:</b> Enter a name for your integration. For example, <code>example-integration</code>.</li>
+        <li><b>Description:</b> Optionally, enter a description for your integration. For example, <code>Demo integration created for tutorial</code>.</li>
+        <li><b>Region:</b> Select the region <code>us-central1</code> from the list of provisioned
+          regions. If the region that you want to select is not provision, see <a href="/application-integration/docs/enable-new-region#provision-new-region">Provision a new region</a>. To see a list of supported regions, see <a href="{{supported_regions_link}}">{{application_integration_name}} locations</a>.</li>
+        <li><b>Service account</b>: This field appears if you have enabled governance for your region.
+        Select the service account for your integration. To learn how to enable governance for your
+        region, see <a href="/application-integration/docs/enable-new-region#edit-region">Edit region</a>.</li>
+        <li>Click <b>Create</b>. This opens the integration editor page in which you can add the <a href="/application-integration/docs/tasks">tasks</a> and the <a href="/application-integration/docs/triggers">triggers</a> to build your integration. For more information about this page, see <a href="/application-integration/docs/integration-designer-layout#explore-integration-designer-layout">Explore the integration editor layout</a>.</li>
+      </ol>
+  </li>
+  </ol>
+
+<h2>What's next</h2>
+<ul>
+  <li>Explore the <a href="/application-integration/docs/integration-designer-layout">integration editor</a>.</li>
+  </li>
+  <li>Try the <a href="/application-integration/docs/try-sample-integration-ecommerce">sample integration</a></li>
+  <li>Learn about <a href="/application-integration/docs/tasks">tasks</a> and <a href="/application-integration/docs/triggers">triggers</a></li>
+  <li>Learn how to <a href="/application-integration/docs/view-integration-details">view and edit integration details</a></li>
+</ul>
+{% endblock %}

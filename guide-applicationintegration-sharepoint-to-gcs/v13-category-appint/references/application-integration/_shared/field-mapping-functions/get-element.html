@@ -1,0 +1,53 @@
+
+<h2><code>GET_ELEMENT</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+<tr>
+      <td><code>GET_ELEMENT</code></td>
+       <td>Returns the element at the specified index in a JSON array. In the array, the first value is available at index 0 and the last value is available at index n-1 where n is the size of the array.</td>
+       <td><code>GET_ELEMENT(value)</code></td>
+       <td>Index value of the element.</td>
+       <td>Value of the element.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>GET_ELEMENT</code> function supports the following data type:
+</p>
+<ul>
+  <li>JSON</li>
+</ul>
+
+<h2>Example: Get the value of an element in a JSON array</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = ["first", "second", "third", "fourth"]</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.GET_ELEMENT(2)</code>
+</p>Get the element at index <code>2</code>.
+
+<p>
+  <strong>Output</strong>: <code>third</code>
+</p>
+
+

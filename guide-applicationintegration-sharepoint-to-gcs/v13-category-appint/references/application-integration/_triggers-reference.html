@@ -1,0 +1,41 @@
+{% import "application-integration/_macros.html" as macros3 %}
+{% set cards =
+  [
+    {
+      'title': 'API trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/api_48px_blue.svg',
+      'href': '/application-integration/docs/configure-api-trigger',
+    },
+    {
+      'title': 'Private trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/private_24px_blue.svg',
+      'href': '/application-integration/docs/configure-private-trigger',
+    },
+    {
+      'title': 'Cloud Pub/Sub trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/cloud_pubsub_48px_blue.svg',
+      'href': '/application-integration/docs/configure-pubsub-trigger',
+    },
+    {
+      'title': 'Schedule trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/cron_48px_blue.svg',
+      'href': '/application-integration/docs/configure-schedule-trigger',
+    },
+    {
+      'title': 'Salesforce trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/salesforce_48px_blue.svg',
+      'href': '/application-integration/docs/configure-salesforce-trigger',
+    },
+    {
+      'title': 'Cloud Scheduler trigger',
+      'logo': 'https://fonts.gstatic.com/s/i/gcpiconscolors/cloud_scheduler/v1/24px.svg',
+      'href': '/application-integration/docs/configure-cloud-scheduler-trigger',
+    },
+    {
+      'title': 'Error Catcher trigger',
+      'logo': 'https://www.gstatic.com/enterprise/crm/eventbus/images/icons/blue/error_outline_24px_blue.svg',
+      'href': '/application-integration/docs/configure-error-catcher-trigger',
+    }
+  ]
+%}
+{{ macros3.cards(cards) }}

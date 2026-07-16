@@ -1,0 +1,43 @@
+<h2>Compare Approval task, Suspend task, and Timer task</h2>
+
+<p>All the three (<a href="{{basehrefpath}}/approval-task">Approval</a>,
+  <a href="{{basehrefpath}}/run-suspend-task">Suspend</a>,
+  and <a href="{{basehrefpath}}/run-timer-task">Timer</a>) tasks perform a similar
+  function of pausing and resuming an integration. However, there are subtle differences
+  among them. The following table describes the differences amongst the three tasks.</p>
+
+<table>
+  <tr>
+    <th>Approval task</th>
+    <th>Suspend task</th>
+    <th>Timer task</th>
+  </tr>
+  <tr>
+    <td>Doesn't support automatic resumption of an integration and requires
+      manual intervention to resume the integration.</td>
+    <td>Supports both manual and automatic resumption of an integration. If there is no
+    manual intervention to revoke the suspension, the integration will automatically
+      resume execution after the expiry of the suspension time limit.</td>
+    <td>Supports only automatic resumption of an integration. The integration execution
+    automatically resumes after the exipry of the suspension time limit.</td>
+  </tr>
+  <tr>
+    <td>Can't resume an integration via an API call. You must manually resolve the
+      suspension by using the Integrations UI.</td>
+    <td>Can resume an integration by using the <code>Suspensions</code> API for integrations.</td>
+    <td>Supports only automatic resumption of an integration.</td>
+  </tr>
+  <tr>
+    <td>Users receive notification when an integration pauses (suspended).</td>
+    <td>Users don't receive any notification when an integration pauses (suspended).</td>
+    <td>Users don't receive any notification when an integration pauses (suspended).</td>
+  </tr>
+  <tr>
+    <td>Supports a output variable (boolean), which allows you to perform conditional checks
+    before resuming an integration. However, the output variable can only have
+      the value as either <code>true</code> or <code>false</code>.</td>
+    <td>Supports a output variable (string), which allows you to perform conditional checks
+    before resuming an integration. You can set any value to the output variable.</td>
+    <td>Doesn't support any output variables.</td>
+  </tr>
+</table>

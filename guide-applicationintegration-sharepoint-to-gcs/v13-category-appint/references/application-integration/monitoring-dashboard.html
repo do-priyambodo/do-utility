@@ -1,0 +1,168 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Use {{integration}} dashboard{% endblock %}
+{% block body %}
+<p>The <b>Monitoring</b> page in {{integration}} provides a predefined monitoring dashboard to view some of the key performance and usage metrics of your integrations in your Google Cloud project. All the metrics presented in the predefined dashboard are ingested from <a href="/monitoring/docs">{{monitoring_name}}</a>.
+</p>
+<p>
+  Using the <b>Monitoring</b> page, you can:
+</p>
+  <ul>
+    <li>View and monitor key performance and usage metrics, both at an integration level and at a project level.</li>
+    <li>Analyze historical performance.</li>
+    <li><a href="#filter">Filter</a> the metrics based on the available attributes.</li>
+    <li>Display metrics for a <a href="#filter">specific time duration</a>.</li>
+    <li>Create customized metric dashboards.</li>
+</ul>
+
+<h2>
+  Use the predefined dashboard
+</h2>
+<p>The predefined dashboard contains a set of curated widgets and charts to help you get a comprehensive view of your integration performance and data usage. For information about how to customize the predefined dashboard, see <a href="#customize">Customize dashboard.</a>
+</p>
+<p>To view the predefined dashboard, do the following:
+  <ol>
+<li>In the Google Cloud console, go to the <b>{{product_name}}</b> page.
+<p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to {{product_name}}</a></p>
+</li>
+<li>In the navigation menu, click <b>Monitoring</b>.
+</li>
+<li>In the <b>Monitoring</b> page, click the <b>Dashboard</b> drop-down menu and select <b>Predefined</b>.
+  <p>The predefined dashboard apperas displaying the <a href="#charts">predefined charts</a>.</p>
+</li>
+</ol>
+  
+<h3 id="charts">
+  Predefined charts
+</h3>
+<p>You can view the following widgets and charts in the predefined dashboard:</p>
+
+<table>
+  <tr>
+    <th>Charts category
+    </th>
+   <th>Chart Name
+   </th>
+   <th>Description
+   </th>
+  </tr>
+  <tr>
+    <td rowspan="3"><b>Integration Performance</b>
+    </td>
+   <td><b>Successful executions (per hour)</b>
+   </td>
+   <td>Number of successful integration executions per hour.
+   </td>
+  </tr>
+  <tr>
+    <td><b>
+      Execution failures (per minute)
+      </b>
+   </td>
+   <td>Number of integration execution failures per minute.
+   </td>
+  </tr>
+  <tr>
+   <td><b>Average integration execution time (per hour)</b>
+   </td>
+   <td>The average time, in milliseconds (ms), it takes an integration to complete an execution. Execution latencies are calculated by the minute.
+   </td>
+  </tr>
+  <tr>
+    <td rowspan="3"><b>Step (Trigger/Task) Performance</b>
+    </td>
+   <td><b>
+    Successful step executions (per hour)
+    </b>
+   </td>
+   <td>Number of successful step (task/trigger) executions per hour.
+   </td>
+  </tr>
+  <tr>
+   <td><b>
+    Task execution failures (per minute)
+    </b>
+   </td>
+   <td>Number of unsuccessful task executions per minute.
+   </td>
+  </tr>
+  <tr>
+   <td><b>
+    Average task execution time (per hour)
+    </b>
+   </td>
+   <td>The average time, in milliseconds (ms), it takes a task to complete an execution. Task execution latencies are calculated by the minute.
+   </td>
+  </tr>
+  <tr>
+    <td><b>Data Processed</b>
+    </td>
+   <td><b>
+    Data processed by integration executions (per hour)</b>
+   </td>
+   <td>The amount of data processed during integration executions.
+   </td>
+  </tr>
+</table>
+  
+  <p>The following image shows a sample predefined dashboard:</p>
+
+<img src="{{baseimagepath}}/images/monitoring-dashboard-ipsa.png" alt="Monitoring dashboard page"
+      data-modal-dialog-id="monitor_ui" class="screenshot">
+
+<devsite-lightbox id="monitor_ui">
+  <img src="{{baseimagepath}}/images/monitoring-dashboard-ipsa.png" alt="Monitoring dashboard page">
+</devsite-lightbox>
+
+<h2 id="customize">Customized dashboards</h2>
+  <p>To customize the default predefined deashboard in {{integration}}, perform the following steps:</p>
+  <ol>
+    <li>In the Google Cloud console, go to the <b>{{product_name}} > Monitoring</b> page.
+      <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to Monitoring</a></p>
+      </li>
+      <li>Click <b>Customize dashboard</b>.
+        <p>You are redirected to the <b>Cloud Monitoring > Dashboards</b> page that is pre-populated with the predefined widgets and charts from {{integration}}.</p></li>
+        <li>Customized your dashboard using the available charts and widgets in the <b>Chart library</b>.</li>
+        <li>Click <b>Save</b>.</li>
+        <p>Once saved, the customized dashboard is exported to {{integration}}. To view your customized dashboard, go back to the <b>{{integration}} ></b>{{integration}}>Monitoring</b> page, click the <b>Dashboard</b> drop-down menu and select <b>Customized</b>.</p>
+  </ol>
+
+  <h2>View metrics in Metrics Explorer</h2>
+
+  <p>To view any of the metric charts in the {{monitoring_name}} <a href="/monitoring/charts/metrics-explorer">Metric Explorer</a>, go to the desired chart, click <span class="material-icons">
+    more_vert
+    </span> (Actions menu) and select <b>View in Metrics Explorer</b>. </p>
+    <p>
+    Using the Metric Explorer, you can build temporary metric charts to visualize the available resource metrics for your Google Cloud project. Once you have created a metric chart, if desired, you can also save it to a custom monitoring dashboard.
+    </p>
+    <p>You can also select filters, group by metric labels, perform aggregations, and select chart viewing options using the Metric Explorer. For more information, see <a href="/monitoring/charts/metrics-explorer">Create charts with Metrics Explorer</a>. </p>
+  
+<h2 id="filter">Filters and time range</h2>
+
+<p>The <b>Monitoring</b> page let's you to filter the metrics based on one or more of
+  the following attributes:
+<ul>
+  <li><b>Region:</b> Region of the integration.</li>
+  <li><b>Integration Name:</b> Name of the integration.</li>
+  <li><b>Integration Version:</b> Version of the integration.</li>
+</ul>
+
+<p>
+You can configure the dashboard to display metrics for a specific time range.
+For example, you can choose to view the metrics gathered in the past few hours, days, or a custom time period.
+<p>
+  To configure the time range, you can either select the specific time periods such as <b>last 30 minutes</b>, <b>last 1 hour</b> or <b>last 6 hours</b>, or you click the <b>Custom</b> drop-down and select the required time value, and click <b>Apply</b>.
+</p>
+
+
+<h2>Considerations</h2>
+
+  <ul>
+    <li>Monitoring metrics are generated only for published integrations.</li>
+    <li><i>Step execution count</i> metrics won't be computed for tasks that are skipped during the execution of an integration.</li>
+    <li>All the performance metric data that is diaplayed in the Monitoring dashboards are for informational purpose only. The aggregated performance metric data might not be 100% accurate.</li>
+    <li>{{monitoring_name}} metric values must not be used to calculate billing costs.</li>
+    
+</ul>
+
+
+{% endblock %}

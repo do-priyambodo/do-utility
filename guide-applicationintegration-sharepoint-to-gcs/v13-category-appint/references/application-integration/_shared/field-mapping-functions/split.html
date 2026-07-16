@@ -1,0 +1,70 @@
+
+
+<h2><code>SPLIT</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>SPLIT</code></td>
+       <td>Splits a string based on the specified delimiter.</td>
+       <td><code>SPLIT(value)</code></td>
+       <td>A character or a sequence of characters to use to split the string.</td>
+        <td>A string array.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>SPLIT</code> function supports the following data type:
+</p>
+<ul>
+  <li>String</li>
+</ul>
+
+<h2>Example 1: Split a string based on the space character</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = "Hello Apigee Integrations"</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.SPLIT(" ") </code>
+</p>Split var1 based on the space character.
+
+<p>
+  <strong>Output</strong>: <code>{"Hello","Apigee","Integrations"}</code>
+</p>
+
+<h2>Example 2: Split a string based on the comma character</h2>
+
+<p>
+<strong>Sample data</strong>: <code>$var1$ = "Test,Integrations"</code>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.SPLIT(",")</code>
+</p>Split var1 based on the comma character.
+
+<p>
+  <strong>Output</strong>: <code>{"Test","Integrations"}</code>
+</p>
+
+
+
+

@@ -1,0 +1,21 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Manage custom connector version{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+{% include "_shared/integration-connectors/_manage-custom-connector-versions.html" %}
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+
+{% endblock %}

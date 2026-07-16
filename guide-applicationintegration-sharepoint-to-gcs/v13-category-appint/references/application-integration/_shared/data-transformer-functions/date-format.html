@@ -1,0 +1,250 @@
+<h3>
+  <code>Date Format</code> 
+</h3>
+<table>
+  <tbody class="list">
+  <tr>
+    <th width="20%">Syntax</th>
+    <td>
+      <pre class="prettyprint lang-html notranslate" translate="no">
+        
+dateFormat(timestamp, format_string, timezone, current_format)
+      </pre>
+    </td>
+  </tr>
+  <tr>
+    <th width="20%">Description</th>
+    <td>Formats a timestamp according to the specified <code>format_string</code>.
+    </td>
+  </tr>
+  <tr>
+    <th width="20%">Input parameter</th>
+    <td><b>timestamp:</b> The input timestamp.
+      <p><b>format_string:</b> The new timestamp format. See <a href="#elements">Supported timestamp format elements</a>  for a list of format elements that can be used to form the new timestamp format string.</p>
+        <p><b>timezone:</b> The timezone of the provided input timestamp. Default value is <code>UTC</code>.</p>
+          <p><b>current_format:</b> The format which would be used to parse the provided input timestamp. Default value is <code>E</code> (epoch).</p>
+    </td>
+  </tr>
+  <tr>
+    <th width="20%">Return type</th>
+    <td><code>STRING</code>
+    </td>
+  </tr>
+  <tr>
+    <th width="20%">Output</th>
+    <td>Returns a new string after converting the input <code>timestamp</code> based on the specified <code>format_string</code>. 
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<h4 id="elements">Supported timestamp format elements</h4>
+<p>The following table lists the supported format elements for the <b>dateFormat()</b> function:</p>
+
+<table>
+  <tr>
+    <th width="15%">Format element </th>
+    <th width="70%">Description </th>
+    <th width="15%">Example </th>
+  </tr>
+  <tr>
+    <td><code>YYYY </code></td>
+    <td>4-digit year.</td>
+    <td><code>2023 </code></td>
+  </tr>
+  <tr>
+    <td><code>YY </code></td>
+    <td>Last 2 digits of the year.</td>
+    <td><code>23 </code></td>
+  </tr>
+  <tr>
+    <td><code>MMMM </code></td>
+    <td>Name of the month in titlecase.</td>
+    <td><code>March </code></td>
+  </tr>
+  <tr>
+    <td><code>MMM </code></td>
+    <td>Abbreviated name of the month in titlecase.</td>
+    <td><code>Mar </code></td>
+  </tr>
+  <tr>
+    <td><code>MM </code></td>
+    <td>Month from 01 to 12.</td>
+    <td><code>03 </code></td>
+  </tr>
+  <tr>
+    <td><code>M </code></td>
+    <td>Month from 1 to 12.</td>
+    <td><code>3 </code></td>
+  </tr>
+  <tr>
+    <td><code>DDDD </code></td>
+    <td>Name of the day in titlecase.</td>
+    <td><code>Monday </code></td>
+  </tr>
+  <tr>
+    <td><code>DDD </code></td>
+    <td>Abbreviated name of the day.</td>
+    <td><code>Mon </code></td>
+  </tr>
+  <tr>
+    <td><code>DD </code></td>
+    <td>Day from 01 to 31.</td>
+    <td><code>06 </code></td>
+  </tr>
+  <tr>
+    <td><code>D </code></td>
+    <td>Day from 1 to 31.</td>
+    <td><code>6 </code></td>
+  </tr>
+  <tr>
+    <td><code>HH </code></td>
+    <td>Hour in 24 hour format from 00 to 23.</td>
+    <td><code>15 </code></td>
+  </tr>
+  <tr>
+    <td><code>hh </code></td>
+    <td>Hour in 12 hour format from 01 to 12.</td>
+    <td><code>03 </code></td>
+  </tr>
+  <tr>
+    <td><code>h </code></td>
+    <td>Hour in 12 hour format from 1 to 12.</td>
+    <td><code>3 </code></td>
+  </tr>
+  <tr>
+    <td><code>mm </code></td>
+    <td>Minute from 00 to 59.</td>
+    <td><code>04 </code></td>
+  </tr>
+  <tr>
+    <td><code>m </code></td>
+    <td>Minute from 0 to 59.</td>
+    <td><code>4 </code></td>
+  </tr>
+  <tr>
+    <td><code>ss </code></td>
+    <td>Seconds from 00 to 59.</td>
+    <td><code>08 </code></td>
+  </tr>
+  <tr>
+    <td><code>s </code></td>
+    <td>Seconds from 0 to 59.</td>
+    <td><code>8 </code></td>
+  </tr>
+  <tr>
+    <td><code>FFFFFFFFF </code></td>
+    <td>Fractional seconds with 9 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.123456789</code></td>
+  </tr>
+  <tr>
+    <td><code>FFFFFFFF </code></td>
+    <td>Fractional seconds with 8 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.12345678</code></td>
+  </tr>
+  <tr>
+    <td><code>FFFFFFF </code></td>
+    <td>Fractional seconds with 7 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.1234567</code></td>
+  </tr>
+  <tr>
+    <td><code>FFFFFF </code></td>
+    <td>Fractional seconds with 6 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.123456</code></td>
+  </tr>
+  <tr>
+    <td><code>FFFFF </code></td>
+    <td>Fractional seconds with 5 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.12345</code></td>
+  </tr>
+  <tr>
+    <td><code>FFFF </code></td>
+    <td>Fractional seconds with 4 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.1234</code></td>
+  </tr>
+  <tr>
+    <td><code>FFF </code></td>
+    <td>Fractional seconds with 3 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.123</code></td>
+  </tr>
+  <tr>
+    <td><code>FF </code></td>
+    <td>Fractional seconds with 2 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.12</code></td>
+  </tr>
+  <tr>
+    <td><code>F </code></td>
+    <td>Fractional seconds with 1 digits, including zeros, on the right of the specified digits.</td>
+    <td><code>00.1</code></td>
+  </tr>
+  <tr>
+    <td><code>fffffffff </code></td>
+    <td>Fractional seconds with 9 digits.</td>
+    <td><code>987654321 </code></td>
+  </tr>
+  <tr>
+    <td><code>ffffffff </code></td>
+    <td>Fractional seconds with 8 digits.</td>
+    <td><code>98765432 </code></td>
+  </tr>
+  <tr>
+    <td><code>fffffff </code></td>
+    <td>Fractional seconds with 7 digits.</td>
+    <td><code>9876543 </code></td>
+  </tr>
+  <tr>
+    <td><code>ffffff </code></td>
+    <td>Fractional seconds with 6 digits.</td>
+    <td><code>987654 </code></td>
+  </tr>
+  <tr>
+    <td><code>fffff </code></td>
+    <td>Fractional seconds with 5 digits.</td>
+    <td><code>98765 </code></td>
+  </tr>
+  <tr>
+    <td><code>ffff </code></td>
+    <td>Fractional seconds with 4 digits.</td>
+    <td><code>9876 </code></td>
+  </tr>
+  <tr>
+    <td><code>fff </code></td>
+    <td>Fractional seconds with 3 digits.</td>
+    <td><code>987 </code></td>
+  </tr>
+  <tr>
+    <td><code>ff </code></td>
+    <td>Fractional seconds with 2 digits.</td>
+    <td><code>98 </code></td>
+  </tr>
+  <tr>
+    <td><code>f </code></td>
+    <td>Fractional seconds with 1 digits.</td>
+    <td><code>9 </code></td>
+  </tr>
+  <tr>
+    <td><code>tt </code></td>
+    <td>Meridian indicator (morning or evening). When formatting, this is either AM or PM.</td>
+    <td><code>PM </code></td>
+  </tr>
+  <tr>
+    <td><code>t </code></td>
+    <td>Short meridian indicator (morning or evening). Maps to the lowercase <b>am</b> or <b>pm</b>.</td>
+    <td><code>pm </code></td>
+  </tr>
+  <tr>
+    <td><code>K </code></td>
+    <td>Time zone name.</td>
+    <td><code>PST </code></td>
+  </tr>
+  <tr>
+    <td><code>kk </code></td>
+    <td>Time zone in ±kk:kk format.</td>
+    <td><code>-8:00:00 </code></td>
+  </tr>
+  <tr>
+    <td><code>k </code></td>
+    <td>Timezone in ±kkkk format.</td>
+    <td><code>-8000 </code></td>
+  </tr>
+</table>

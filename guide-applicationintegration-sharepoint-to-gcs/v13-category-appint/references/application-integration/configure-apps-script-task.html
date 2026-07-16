@@ -1,0 +1,348 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{ apip_task_appsscript }} task{% endblock %}
+{% block body %}
+
+<p>The <b>{{ apip_task_appsscript }}</b> task lets you run Google Apps Script from your integration.
+  Google Apps Script is a rapid application development platform that makes it fast and
+  easy to create business applications. For more information,
+  see <a href="https://developers.google.com/apps-script/overview">Google Apps Script</a>.
+  This task is useful when you want to run custom scripts or reuse existing scripts in your integration.
+</p>
+
+<aside class="note"><b>Note</b>: The <b>{{ apip_task_appsscript }}</b> task is a non-regional global service.</aside>
+
+<h2>Before you begin</h2>
+
+<p>
+Before using the {{ apip_task_appsscript }} task, make sure you complete the following steps:
+</p>
+<ul>
+  <li><a href="#enableapi">Enable AppsScript API</a></li>
+  <li><a href="#create-oauth">Create OAuth 2.0 Client ID</a></li>
+  <li><a href="#setupauth">Set up an authentication profile</a></li>
+    <li>Ensure that <a href="/application-integration/docs/vpc-service-controls">{{vpcsvcctl_name}}</a> is <b>NOT</b> setup for {{integration}} in your {{gcp_name}} project.
+      <aside class="warning">
+        <b>Warning:</b> <b>{{ apip_task_cloudfunction }}</b> does not function or stops functioning if <a href="/application-integration/docs/vpc-service-controls">{{vpcsvcctl_name}}</a> is set up for {{integration}} in your {{gcp_name}} project.
+      </aside></li>
+</ul>
+
+<h3 id="enableapi">Enable AppsScript API</h3>
+<p>
+You must enable the AppsScript API in your Google Cloud project and your AppsScript user account to
+  use this task. For information about enabling the AppsScript API in your Google Cloud project,
+  see <a href="https://developers.google.com/apps-script/guides/cloud-platform-projects#enabling_an_api_in_a_standard_gcp_project" class="external">Enabling an API in a standard Google Cloud project</a>.
+  To enable the API in your user account, click <a href="https://script.google.com/corp/home/usersettings">Settings</a> and set
+  <code>Google Apps Script API</code> to <code>On</code>.
+
+</p>
+
+<h3 id="create-oauth">Create OAuth 2.0 client ID</h3>
+<p>If you have an OAuth 2.0 client ID available, you can skip this step and proceed to <a href="#setupauth">
+  Set up an authentication profile</a>.
+<p>For information about creating a new OAuth client ID, see <a href="/application-integration/docs/configure-authentication-profiles#create-oauth">Create OAuth client ID</a>.</p>
+
+<h3 id="setupauth">Set up an authentication profile</h3>
+
+<p>
+  {{ integration }} uses the authentication profile to connect to Google Cloud for deploying and
+  running the Apps Script project. To set up an authentication profile, perform the following steps:
+</p>
+<h4>
+  Add the {{ apip_task_appsscript }} task
+</h4>
+<ol>
+  {{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Click and place the <b>{{ apip_task_appsscript }}</b> element in the integration editor.</li>
+</ol>
+
+<h4>
+Create an authentication profile
+</h4>
+<ol>
+  <li>Click the <b>{{ apip_task_appsscript }}</b> element on the designer to view the <b>{{ apip_task_appsscript }}</b>
+     task configuration pane.</li>
+<li>In the task configuration pane of the {{ apip_task_appsscript }} task, click <strong>+New authentication profile</strong>.
+<li>In the <b>Authentication profile</b> dialog, enter a name and description for the profile and set the following properties:
+<ul>
+<li><b>Authentication type</b>: Select <b>OAuth 2.0 authorization code</b>
+  <li><b>Authentication endpoint</b>: Enter <code>https://accounts.google.com/o/oauth2/auth</code>
+  <li><b>Token endpoint</b>: Enter <code>https://oauth2.googleapis.com/token</code>
+<li><b>Client ID</b>: Enter the client ID.
+<p>
+
+The Client ID is available in your Google Cloud project dashboard
+  under <b>Credentials > OAuth 2.0 Client IDs</b>.
+</p>
+
+<li><b>Secret</b>: Enter the client secret
+<p>
+
+The client secret is available in your Google Cloud project dashboard
+  under <b>Credentials > OAuth 2.0 Client IDs</b>.
+</p>
+
+<li><b>Scope(s)</b>: Enter the following:
+  <p><code>https://www.googleapis.com/auth/script.projects
+  https://www.googleapis.com/auth/script.deployments
+  https://www.googleapis.com/auth/script.deployments.readonly
+  https://www.googleapis.com/auth/drive.scripts
+  https://www.googleapis.com/auth/drive
+  https://www.googleapis.com/auth/script.external_request
+    https://www.googleapis.com/auth/userinfo.email</code></p>
+  <p><b>Note</b>: Multiple scopes can be separated by a single space character (" ").</p>
+  </li>
+</ul>
+
+<li>Click <b>Generate Access Token and Save</b>.
+
+<p>You are redirected to an authorization screen. Log in and provide consent to
+  the permissions listed on the screen to generate your access token. If the generation of the
+  access token is successful, your authentication profile is saved, and you
+  can continue to edit your integration.
+</p>
+</li>
+</ol>
+<aside class="note"><b>Note</b>: The same user must create both the authentication profile and deploy
+  the Apps Script. If the users are different, the Apps Script does
+  not run.
+</aside>
+
+<h2>Configure the {{ apip_task_appsscript }} task</h2>
+
+<p>
+To configure an {{ apip_task_appsscript }} project in the <b>{{ apip_task_appsscript }}</b> task,
+  perform the following steps:
+</p>
+<ol>
+  <li>In the task configuration pane,
+    click <b>Configure {{ apip_task_appsscript }} Project.</b>
+    <p>
+      The <b>{{ apip_task_appsscript }} Configuration</b> dialog appears.
+    </p></li>
+<li>You can choose to link to
+  an existing {{ apip_task_appsscript }} project or create a new {{ apip_task_appsscript }} project.
+  <p>
+    Configuring an {{ apip_task_appsscript }} project associates the {{ apip_task_appsscript }} project with your integration in {{integration}}.
+  </p></li>
+  <li>Click Save.</li>
+ <li>Click <b>Open Apps Script Project</b>.
+  <p>In the Apps Script editor, you can see the following files:
+  <ul>
+<li><code>Run.gs</code>: Contains the executable code.
+  Write your script inside the <code>run</code> function.
+  This function is called when the Apps Script task executes.
+  In your script, you can use the variables defined at the integration level.
+  For information on using the integration variables,
+  see <a href="#use-var">Using integration variables</a>.
+<li><code>Main.gs</code>: Contains the initialization code to run
+  Apps Script from your integration. Do not edit or modify this file.
+<li><code>Test.gs</code>: Contains the executable code for test runs.
+  You can write your script inside the <code>testRun</code> function to <a href="#test-script">test the script</a>.
+  </ul>
+
+<p>Make sure to deploy the project in <b>Web apps</b> format. For
+more information on the various deployment modes, see
+  <a href="https://developers.google.com/apps-script/concepts/deployments">
+    Create and manage deployments</a>.
+</p></li></ol>
+
+<h2 id="use-var">Access integration variables</h2>
+
+<p>
+The Apps Script task uses the <b>AppsScriptTask</b> library, which enables you to
+  use integration variables in your script. The <b>AppsScriptTask</b>
+  library is automatically imported and is available for use in the <code>run</code>
+  function.</p>
+
+<p>To access an integration variable in your Apps Script, you must pass the
+  variable in the form of <i>task parameters</i> to the Apps Script task. The task parameters are
+  key-value pairs where <b>Key</b> is the name of the variable
+  in your AppsScript task and the <b>Value</b> is the corresponding integration variable name.
+  You can add one or more task parameters in the <b>Task Parameters</b> section of the task
+  configuration pane.
+</p>
+<p>
+For example, if you have an integration variable named <b>Product</b> that you
+  want to use in your Apps Script, you can define <b>Key</b> as
+  <b>ProductKey</b> and the value as <b>Product</b>. In your
+  Apps Script, you can then use <code>AppsScriptTask.getTaskParameter('<b>ProductKey</b>')</code>
+  to read the <b>Product</b> variable.
+</p>
+
+<aside class="note"><b>Note</b>: To use an integration variable in your AppsScript,
+  the variable must be added as a task parameter to the {{ apip_task_appsscript }} task.
+</aside>
+
+
+<p>
+The <b>AppsScriptTask</b> library provides the following methods to
+  access integration variables:
+</p><ul>
+
+<li><a href="{{basehrefpath}}/run-apps-script-task#set">setIntegrationVariable</a></li>
+<li><a href="{{basehrefpath}}/run-apps-script-task#get">getTaskParameter</a></li></ul>
+
+<table class="full-width fixed">
+  <tr>
+   <th>Function name
+   </th>
+   <th>Description
+   </th>
+   <th colspan="2">Usage
+   </th>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="set">
+    <h3><code>setIntegrationVariable</code></h3>
+   </td>
+   <td>Sets the provided value to the variable.</td>
+   <td colspan="2">
+    <p><b>Syntax: </b><code>setIntegrationVariable(value,value)</code>
+    <p><b>Example:</b>
+    <pre class="prettyprint suppresswarning" >
+// Write to an Integer variable
+AppsScriptTask.setIntegrationVariable('<b>EmployeeIDKey</b>','456');
+      </pre>
+   </td>
+
+   <tr>
+    <td class="role-table-heading" id="get">
+     <h3><code>getTaskParameter</code></h3>
+    </td>
+    <td>Gets the value of a variable.</td>
+    <td colspan="2">
+     <p><b>Syntax: </b><code>getTaskParameter(value)</code>
+     <p><b>Example:</b>
+     <pre class="prettyprint suppresswarning" >
+// Read an integration variable
+AppsScriptTask.getTaskParameter('<b>EmployeeIDKey</b>');
+       </pre>
+    </td>
+  </tr>
+</table>
+
+<p>
+To view all the functions available in the <b>AppsScriptTask</b> library, hover over the
+  <b>AppsScriptTask</b> menu item in your
+  Apps Script editor, click More
+  <span class="material-icons">more_vert</span> <b>> Open in a new tab</b>.
+</p>
+
+<h2 id="test-script">Test your Apps Script</h2>
+
+<p>
+Before publishing your integration, you can test your script using the <b>testRun</b> function
+  available in the <b>Test.gs</b> file.
+  Write your test code in the <b>testRun</b> function, using
+  the <b>AppsScriptTaskTest</b> library. This library lets you run assertion-based
+  test cases and is automatically imported for use in the <b>testRun</b> function.</p>
+<p>To view all the functions available in the <b>AppsScriptTaskTest</b> library, hover over
+  the <b>AppsScriptTaskTest</b> menu item in your
+  Apps Script editor, click More
+  <span class="material-icons">more_vert</span> <b>> Open in a new tab</b>.
+</p>
+<p>
+The following sample shows the usage of <b>AppsScriptTaskTest</b> library functions.
+</p>
+<pre class="prettyprint" suppresswarning=true>
+function testRun(){
+
+  // Create a new request
+  let req = AppsScriptTaskTest.createNewTestRequest('myCustomTest');
+
+  // Add a task parameter that references an integration variable with the value 5
+  AppsScriptTaskTest.setIntegrationVariableAndCreateReference(req, 'input', '$input$', 5);
+
+  // Add a task parameter that references an integration variable
+  AppsScriptTaskTest.createReference(req, 'output', '$output$');
+
+  // Run the task(assuming the task increments the input by 1) and get the response
+  let res = AppsScriptTaskTest.runTest(req, executeScript);
+
+  // Check the response for the expected integration variable and its corresponding values
+  AppsScriptTaskTest.containsIntegrationVariable(res, 'output', true);
+  AppsScriptTaskTest.containsIntegrationVariable(res, 'someOtherIntegrtionVariable', false);
+  AppsScriptTaskTest.containsIntegrationVariableWithValue(res, 'output', 6);
+}
+</pre>
+
+<p>
+The following sample shows you how to access JSON and array variables in the <b>testRun</b> method:
+</p>
+<pre class="prettyprint" suppresswarning=true>
+function testRun(){
+
+  // Create a new request
+  let req = AppsScriptTaskTest.createNewTestRequest('json-test');
+
+  // Add a task parameter that references a JSON integration variable
+  AppsScriptTaskTest.setIntegrationVariableAndCreateReference(req, "emp", "employee", {name:"snape", age:35});
+
+  // Add a task parameter that references an array integration variable
+  AppsScriptTaskTest.setIntegrationVariableAndCreateReference(req, "arr", "array", ["A", "B", "C"]);
+
+
+  // Run the task and get the response
+  // Assume that the run method increases the age of the employee by 5 and appends a new element in the array
+  let res = AppsScriptTaskTest.runTest(req, executeScript);
+
+  // Check the response for the expected integration variable and its corresponding values
+  AppsScriptTaskTest.containsIntegrationVariableWithValue(res, "employee", {name:"snape", age:40});
+  AppsScriptTaskTest.containsIntegrationVariable(res, "array", true);
+  AppsScriptTaskTest.containsIntegrationVariableWithValue(res, "array", ["A", "B", "C", "D"]);
+}
+</pre>
+
+<p>
+After running the test cases, you can view the assertions in the <b>Execution log</b>.
+  To view the logs, click <b>Execution log</b> from the menu.
+</p>
+
+<h2>Best practices
+</h2>
+
+<p>We do not recommend using the {{ apip_task_appsscript }} task if you require latency less than 1 to 2 seconds for
+  the task in your integration.
+</p>
+<p>In addition, we recommend coding all your logic in a single {{ apip_task_appsscript }} task, rather than chaining
+  multiple {{ apip_task_appsscript }} tasks, to minimize performance bottlenecks.
+</p>
+
+<p>For information about the usage limits that apply to the <b>{{ apip_task_appsscript }}</b> task, see <a href="/application-integration/docs/quotas#usage-limits"> Usage limits</a>. </p>
+
+<h2>Considerations
+</h2>
+
+<p>When including the {{ apip_task_appsscript }} task in your integration design, consider the following system limitations:
+  <ul>
+    <li>Maximum active deployments for an AppsScript: 50</li>
+    <li>Queries per second (QPS) for API executables:  5000/min</li>
+    <li>Queries per second (QPS) for Webapp deployments: 5000/min</li>
+    <li>Latency for API executables: 1.5s</li>
+    <li>Latency for Webapp: 2.5s</li>
+    <li>Maximum cumulative size of all the integration variables in an AppsScript: 15 MB</li>
+</ul>
+
+{% include "application-integration/docs/_shared/_retry_on_failure.html" %}
+
+<h2>SLA exclusions</h2>
+<p>The {{apip_task_appsscript}} task has a dependency on the <a href="https://developers.google.com/apps-script">Google Apps Script</a> product.
+   Because this dependency is external to the {{product_name}}, all executions of
+  <code>active</code> integrations that fail because of the failure in
+   the {{apip_task_appsscript}} task, are excluded from
+    the <a href="https://cloud.google.com/application-integration/sla">{{product_name}}
+       Service Level Agreement (SLA)</a> terms and conditions.</p>
+
+<h2>Quotas and limits</h2>
+    <p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+    <h2>What's next</h2>
+    <ul>
+      <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+      <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+        <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+      <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+    </ul>
+
+
+{% endblock %}

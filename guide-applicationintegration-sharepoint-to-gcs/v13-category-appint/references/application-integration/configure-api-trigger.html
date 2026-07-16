@@ -1,0 +1,120 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{ apip_trigger_api }}{% endblock %}
+{% block body %}
+
+
+<p>{{ apip_trigger_api }}s are used to directly invoke executions for integrations. </p>
+
+<p>Configuring an {{ apip_trigger_api }} in your integration enables you to do the following:
+  <ul>
+    <li>Set request and response payload using trigger specific input and output variables.</li>
+    <li><a href="#view-openapi-spec">Generate and view the OpenAPI Specification (OAS)</a> for your integration.</li>
+    <li>Invoke an integration <a href="{{basehrefpath}}/error-handling-strategy#synchronous-and-asynchronous-error-handling">synchronously</a> or <a href="{{basehrefpath}}/error-handling-strategy#synchronous-and-asynchronous-error-handling">asynchronously</a>.</li>
+  </ul>
+  To help you get started with {{apip_trigger_api}}s, see the <a href="{{basehrefpath}}/api-fulfilment">API fulfillment</a> tutorial. The tutorial shows you how to create an integration with an {{apip_trigger_api}} that receives API requests for retrieving customer information. 
+</p>
+
+
+<h2>Add an {{ apip_trigger_api }}</h2>
+
+To add an <b>{{ apip_trigger_api }}</b> to your integration, perform the following steps:
+<ol>
+  {{apip_apigee_steps_trigger}}
+  {{ apip_sa_steps_trigger }}
+  <li>Click and place the <b>{{ apip_trigger_api }}</b> element to the designer.</li>
+</ol>
+
+<h2>Configure an {{ apip_trigger_api }}</h2>
+<p>To configure an {{ apip_trigger_api }}, click the <b>{{ apip_trigger_api }}</b> element in the integration editor. The {{ apip_trigger_api }} configuration pane appears showing the following fields:
+  <ul>
+    <li><b>Label:</b> The visible name of the {{ apip_trigger_api }} in your integration. You can change the label to a name of your choice.
+    </li>
+    <li><b>Notes:</b> You can add notes to the {{ apip_trigger_api }} to provide additional information about the trigger.</li>
+    <li><b>Trigger ID:</b> A unique ID that is assigned to the {{ apip_trigger_api }} in the format <code>api_trigger/<var>TRIGGER_NAME</var></code>.
+      <aside class="note"><b>Note</b>: You can have more than one API trigger in your integration. Each
+        API trigger is assigned a unique <b>Trigger ID</b>.</aside></li>
+    <li><b>Input variables:</b> Trigger specific input variables that you can use to set the request payload for the {{ apip_trigger_api }}. 
+    <ul>
+      <li>To add or remove existing integration variables to the {{ apip_trigger_api }}, click <b>Modify</b> and select the required variables from the <b>API trigger input variables</b> pane.</li>
+      <li>To add a new variable, specifically for the selected {{ apip_trigger_api }}, click <b>Modify</b> and select <b>+ Add new variable</b> from the <b>API trigger input variables</b> pane. For information about the supported data types, see <a href="/application-integration/docs/variables#datatype">Supported variable data types</a>.</li>
+    </ul></li>
+    <li><b>Output variables:</b> Trigger specific output variables that you can use to set the response payload for the {{ apip_trigger_api }}.
+      <ul>
+        <li>To add or remove existing integration variables to the {{ apip_trigger_api }}, click <b>Modify</b> and select the required variables from the <b>API trigger output variables</b> pane.</li>
+        <li>To add a new variable, specifically for the selected {{ apip_trigger_api }}, click <b>Modify</b> and select <b>+ Add new variable</b> from the <b>API trigger output variables</b> pane. For information about the supported data types, see <a href="/application-integration/docs/variables#datatype">Supported variable data types</a>.</li>
+      </ul>
+    </li>
+    <aside class="note"><b>Note</b>: You can create input and output variables from both the <a href="/application-integration/docs/variables#create-a-variable">Variables pane</a> and the {{ apip_trigger_api }} configuration pane.
+      <ul>
+        <li>{{integration}} automatically adds variables created from the {{ apip_trigger_api }} configuration pane to that specific trigger as input or output variables.</li>
+        <li>You can manually add variables from one {{apip_trigger_api}} to another as input or output variables.</li>
+        <li>By default, all elements in your integration can access variables created from the Variables pane.</li>
+        <li>Changing the <b>Variable type</b> of a variable affects all the elements in your integration that use that variable.</li>
+      </ul></aside>
+  </ul>
+
+  <h2 id="view-openapi-spec">View OpenAPI Specification for your {{ apip_trigger_api }}</h2>
+
+  <p>{{integration}} provides the ability to dynamically generate and view the OpenAPI Specifications of your published integrations that are configured with one or more {{ apip_trigger_api }}s. For information about how to view the OpenAPI Specification, see <a href="/application-integration/docs/view-openapi-spec">View OpenAPI Specification for your integration</a>. </p>
+
+  <aside class="note"><b>Note:</b> This page focuses on invoking the API trigger using the v1 API. The OpenAPI Specification generated for your integration might include definitions for other API versions, such as v2.</aside>
+<h2>
+  Invoke an {{ apip_trigger_api }} using an API call
+</h2>
+After you have published an integration that has an <b>{{ apip_trigger_api }}</b> configured, you can use the <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations/execute"><code>projects.locations.integrations.execute</code></a> method to invoke that trigger from any application. This method triggers the execution in the <a href="/application-integration/docs/error-handling#error-handling-methods">synchronous mode</a>.
+
+<devsite-selector>
+  <section>
+    <h3>Syntax</h3>
+<pre class="devsite-terminal devsite-click-to-copy">
+curl -X POST \
+    -H "authorization: Bearer $(gcloud auth print-access-token)" \
+    -H "Content-Type: application/json" \
+    -H "X-Server-Timeout: <var>TIMEOUT_SECONDS</var>" \
+    -d '{"trigger_id":"api_trigger/<var>TRIGGER_NAME</var>"}' \
+    "https://<var>LOCATION</var>-integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>LOCATION</var>/integrations/-:execute"
+</pre>
+    <p>
+      Replace the following:
+    </p>
+    <ul>
+      <li><code><var>TIMEOUT_SECONDS</var></code>: The timeout in seconds for the API call. By default, the timeout is 120 seconds. For a list of pre-defined set of request parameters, see <a href="/apis/docs/system-parameters">System parameters</a>.</li>
+      <li><code><var>TRIGGER_NAME</var></code>: The name of the <b>{{ apip_trigger_api }}</b> in your integration.</li>
+      <li><code><var>PROJECT_ID</var></code>: The ID of your {{gcp_name}} project.</li>
+      <li><code><var>LOCATION</var></code>: The location of your {{gcp_name}} project.</li>
+    </ul>
+  </section>
+  <section>
+    <h3>Example</h3>
+    <p>The following example invokes an integration in <code>us-east1</code> region containing the <code>test_API_1</code> {{ apip_trigger_api }} in the <code>demo-project</code> Google Cloud project:</p>
+
+<pre class="devsite-terminal devsite-click-to-copy">
+curl -X POST \
+    -H "authorization: Bearer $(gcloud auth print-access-token)"
+    -H "Content-Type: application/json" \
+    -H "X-Server-Timeout: 300"
+    -d '{"trigger_id":"api_trigger/test_API_1"}' \
+    "https://us-east1-integrations.googleapis.com/v1/projects/demo-project/locations/us-central1/integrations/-:execute"
+</pre>
+  </section>
+</devsite-selector>
+
+<h2>Considerations</h2>
+
+<p>When using the API trigger, the cumulative size of all the input variables can
+be a maximum of 8 MB. If the size exceeds 8 MB, {{shared_product_name}} doesn't run the
+integration and you will get an error.</p>
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+
+
+{% endblock %}

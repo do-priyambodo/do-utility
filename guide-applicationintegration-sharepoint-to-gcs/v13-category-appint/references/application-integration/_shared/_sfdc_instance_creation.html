@@ -1,0 +1,54 @@
+<h3 id="sfdcinstance">Create a new Salesforce instance</h3>
+
+<p>To configure a new Salesforce instance, perform the following steps:</p>
+
+<ol>
+  <li>In the editable properties of the trigger, click <strong>Select a Salesforce
+    instance configuration</strong> > <strong>+ Add new Salesforce instance configuration</strong>.</li>
+
+  <li>In the <strong>Add Salesforce instance configuration</strong> dialog, set the following properties:</li>
+  <ul>
+    <li><strong>Salesforce instance connection name</strong>: Enter a name for the instance.
+      <p>After configuration, you will use this name to refer to the Salesforce instance.</p>
+    </li>
+    <li><strong>Salesforce domain</strong>: Enter a service authority for the instance. You can find the domain in your Salesforce account. For example,
+      <code>instance.my.salesforce.com</code>. The following image shows the Salesforce domain:
+      <p>
+        <img src="{{baseimagepath}}/images/salesforce-domain.png" alt="Get Salesforce domain in a Salesforce instance" class="screenshot">
+
+        <devsite-lightbox>
+          <img src="{{baseimagepath}}/images/salesforce-domain.png" alt="Get Salesforce domain in a Salesforce instance">
+        </devsite-lightbox>
+        </p></li>
+  <li><strong>Authentication profile</strong>: Select an authentication profile.
+    <p>If you don't have an authentication profile, <a href="/application-integration/docs/configure-authentication-profiles#createAuthProfile">create a new profile</a> of the
+    <i>OAuth 2.0 resource owner password credentials</i> authentication type. 
+    For information about the fields, see <a href="/application-integration/docs/configure-authentication-profiles#oauth2-owner">OAuth 2.0 resource owner password credentials</a>.
+      For the Salesforce instance, enter the following values:
+      <ul>
+        <li><b>Client ID:</b> enter the consumer key that you noted when you <a href="#create-a-connected-app">set up a connected app</a>.</li>
+        <li><b>Secret:</b> enter the consumer secret that you noted when you <a href="#create-a-connected-app">set up a connected app</a>.</li>
+        <li><b>Password:</b> Enter the user password with the <code><var>USER_PASSWORD</var><var>SECURITY_TOKEN</var></code> format. Replace the following: 
+        <ul>
+      <li><code><var>USER_PASSWORD</var></code>: the Salesforce user password.</li>
+      <li><code><var>SECURITY_TOKEN</var></code>: the <a href="#set-up-a-security-token">security token that you set</a> for your integration.</li>
+    </ul>
+    For example, if your <code><var>USER_PASSWORD</var></code> is <code>test-password</code> and <code><var>SECURITY_TOKEN</var></code> is <code>737K27NCa3O6</code>, then your password will be <code>test-password737K27NCa3O6</code>.
+    </li>
+      </ul>
+    </li>
+    <p>The following image shows the fields required to create an authentication profile:</p>
+
+
+    <p>
+      <img src="{{baseimagepath}}/images/authentication-profile-oauth2.png" alt="OAuth 2.0 resource owner password credentials" class="screenshot">
+
+      <devsite-lightbox>
+        <img src="{{baseimagepath}}/images/authentication-profile-oauth2.png" alt="OAuth 2.0 resource owner password credentials">
+      </devsite-lightbox>
+      </p>
+    <li><strong>Salesforce Organization ID</strong>: Enter the org id of the salesforce instance.
+      You can get the ID from your Salesforce administrator.</li>
+  </ul>
+  <li>Click <strong>Add</strong>.</li>
+</ol>

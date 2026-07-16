@@ -1,0 +1,22 @@
+{% extends "application-integration/_base.html" %}
+
+{% block page_title %}Application Integration and ADK{% endblock %}
+
+{% block body %}
+
+<p><a href="https://google.github.io/adk-docs/#what-is-agent-development-kit">Agent Development Kit</a> (ADK) is a framework for developing and deploying AI agents. ADK agents can use various tools, including {{integration}} workflows, to enhance their functionality. This document describes ADK's integration with {{integration}} and federated search.</p>
+
+<h2>{{integration}} tools</h2>
+<p>ADK agents use {{integration}} workflows as tools to securely access and interact with enterprise applications such as CRM, ERP, and databases.
+Integrating ADK with {{integration}} transforms standard process automations into agentic workflows. The agent intelligently decides when and how to execute these workflows to achieve specific goals.</p>
+<p>For information about using {{integration}} workflows as tools for ADK agents, see <a href="https://google.github.io/adk-docs/tools/google-cloud-tools/#application-integration-tools">Application Integration tools</a>.</p>
+
+<h2>Federated search</h2>
+
+<div class="video-wrapper">
+  <devsite-video video-id="JdlWOQe5RgU" start="455"></devsite-video>
+</div>
+<p>
+<a href="https://google.github.io/adk-docs/tools/google-cloud-tools/#application-integration-tools">Federated search</a> within {{integration}} enables ADK agents to query multiple enterprise applications and data sources simultaneously. This provides a single, uniform way to gather comprehensive information, eliminating the need to manually query each siloed system. For example, an agent can simultaneously query a CRM system for a customer's recent support tickets, a loyalty program database for their status, and an e-commerce platform for their order history. This unified view enables powerful automation tasks.</p>
+
+{% endblock %}

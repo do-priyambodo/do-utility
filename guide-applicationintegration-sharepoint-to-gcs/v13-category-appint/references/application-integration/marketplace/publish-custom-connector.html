@@ -1,0 +1,10 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Submit a publish request{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+{% include "_shared/integration-connectors/_publish-custom-connector.html" %}
+
+{% endblock %}

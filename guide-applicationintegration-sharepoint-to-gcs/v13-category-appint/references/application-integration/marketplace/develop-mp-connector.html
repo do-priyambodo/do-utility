@@ -1,0 +1,10 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Develop a Marketplace connector{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+{% include "_shared/integration-connectors/_develop-mp-connector.html" %}
+ 
+{% endblock %}

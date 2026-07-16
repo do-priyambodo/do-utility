@@ -1,0 +1,74 @@
+
+<h2><code>REMOVE_PROPERTY</code> function</h2>
+
+ <table>
+   <thead>
+      <tr>
+        <th>Function Name</th>
+
+        <th>Description</th>
+
+        <th>Usage</th>
+
+        <th>Input parameter</th>
+
+        <th>Return value</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      <td><code>REMOVE_PROPERTY</code></td>
+       <td>Removes a property from a JSON object.</td>
+       <td><code>REMOVE_PROPERTY(value)</code></td>
+       <td>Property name.</td>
+       <td>Updated JSON object after removing the specified property and its corresponding value.</td>
+      </tr>
+
+   </tbody>
+</table>
+
+<h2>Supported data type</h2>
+<p>
+  The <code>REMOVE_PROPERTY</code> function supports the following data type:
+</p>
+<ul>
+  <li>JSON</li>
+</ul>
+
+<h2>Example: Remove a property from a JSON object.</h2>
+
+<p>
+<strong>Sample data</strong>: <pre>$var1$ =
+{
+  "name": "Alex",
+  "address": {
+    "street": "1800 Amphibious Blvd",
+    "city": "Mountain View",
+    "state": "CA",
+    "pincode": "94045"
+  }
+}  </pre>
+</p>
+
+  <p>
+  <strong>Usage</strong>: <code>$var1$.REMOVE_PROPERTY("address.street")</code>
+</p>
+<p>
+  Remove the address.street property from the JSON.
+</p>
+<p>
+  <strong>Output</strong>: <pre>
+{
+  "name": "Alex",
+  "address": {
+    "city": "Mountain View",
+    "state": "CA",
+    "pincode": "94045"
+  }
+}</pre>
+</p>
+
+
+
+

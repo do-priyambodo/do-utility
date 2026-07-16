@@ -1,0 +1,111 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{apip_trigger_cron}}{% endblock %}
+{% block body %}
+
+
+<p>
+The <b>{{apip_trigger_cron}}</b> lets you run your integration periodically at specific time intervals.
+  This trigger is useful when you want to run your integration automatically without any manual
+  intervention. For example, you can consider using the <b>{{apip_trigger_cron}}</b> for the
+  following type of tasks:
+</p><ul>
+<li>Uploading files from one system to another system at regular intervals
+<li>Sending periodic email reminders
+<li>Syncing database at regular intervals</li></ul>
+
+{{shared_schedule_prereq}}
+
+<h2>Add a {{apip_trigger_cron}}</h2>
+
+To add a <b>{{apip_trigger_cron}}</b> to a new or existing integration, perform the following steps:
+<ol>
+{{ apip_sa_steps_trigger }}
+{{apip_apigee_steps_trigger}}
+
+ <li>Click and place the <b>{{apip_trigger_cron}}</b> element to the designer.</li>
+</ol>
+
+<h2>Configure a {{apip_trigger_cron}}</h2>
+
+<p>Click the <strong>{{apip_trigger_cron}}</strong> element in the integration editor to view the trigger configuration
+  pane.</p>
+
+<p>You can configure the <b>{{apip_trigger_cron}}</b> using either of the following modes:
+<ul>
+<li><b>Basic</b>: Provides a user interface to configure the frequency of the run.
+<li><b>Advanced</b>: Uses a cron expression to configure the frequency of the run.</li></ul>
+
+<p>In <strong>Basic</strong> mode, you can choose to run the integration at a specific time
+  or at hourly intervals. If you want to run the integration at a specific time, select
+  the <strong>Run at a specific time</strong> from the <strong>Times</strong> drop-down
+  and set the following properties:
+<ul>
+<li><strong>Time</strong>: The time (in 24-hour format) at which the integration must run.
+<li><strong>Days</strong>: The days on which the integration must run. You can select to run
+  the integration every day, on specific days of the week, on a specific day of
+  the month, etc.
+<li><strong>Months</strong>: The month(s) in which the integration must run. You can run the
+  integration every month or choose specific months.</li>
+</ul>
+
+<p>In <strong>Advanced</strong> mode, you can specify the frequency of the run using a cron expression.
+  The cron expression has five values that must be specified in the following order:
+<ul>
+  <li>Minute (0-59)</li>
+  <li>Hour (0-23)</li>
+  <li>Day of the month (1-31)</li>
+<li>Month, either of the following values:
+  <ul>
+    <li>A number 1-12</li>
+    <li>A three-letter month abbreviation (e.g. Jan, Feb, Mar, etc.)</li>
+  </ul>
+  </li>
+<li>Day of week, either of the following values:
+  <ul>
+    <li>A number from 0 - 6 starting with Sunday as 0</li>
+    <li>A three-letter day abbreviation (e.g. Mon, Tue, Wed, etc.)</li>
+  </ul>
+  </li>
+</ul>
+
+<p>For example, to run the integration on the first day of every month,
+  use the <code>* * 1 * *</code> cron expression.
+</p>
+
+<h2>Best practices</h2>
+<p>
+As a best practice, deactivate <b>{{apip_trigger_cron}}s</b> when they are no longer needed.
+  If you leave a redundant <b>{{apip_trigger_cron}}</b> active, it will continue to trigger the integration
+  automatically.</p>
+
+<p>To deactivate a <b>{{apip_trigger_cron}}</b>, you can do one of the following:
+<ul>
+<li>Unpublish the integration containing the <b>{{apip_trigger_cron}}</b>.  Your integration will no longer be
+  active and the trigger will not run.</li>
+<li>Replace the <b>{{apip_trigger_cron}}</b> with a different trigger and re-publish the integration.
+  The re-published, active version of the integration will not use the <b>{{apip_trigger_cron}}</b>.
+  <li>Delete the current version of the integration. You can find the <b>Delete</b> option under the version list
+    next to the integration name.</li>
+</ul>
+
+
+
+<h2>SLA exclusions</h2>
+<p>All executions of <code>active</code> integrations that fail because the {{apip_trigger_cron}}
+  didn't get scheduled for any reason, are excluded
+  from the <a href="https://cloud.google.com/application-integration/sla">{{product_name}}
+     Service Level Agreement (SLA)</a> terms and conditions.</p>
+
+
+  <h2>Quotas and limits</h2>
+  <p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+  <h2>What's next</h2>
+  <ul>
+    <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+    <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+      <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+    <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+  </ul>
+
+{% endblock %}

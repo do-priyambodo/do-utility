@@ -1,0 +1,87 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Introduction to error handling{% endblock %}
+{% block body %}
+
+<p>
+  In {{integration}}, errors might occur when you're testing and publishing an integration, or during the execution of an integration. These errors can occur due to various client-side and server-side issues, and are broadly classified as follows:
+</p>
+  <ul>
+    <li><b>Permanent errors:</b>
+    All client-side errors such as, authentication failures, data validation errors, are considered as permanent errors. Permanent errors cause permanent task failures.
+    </li>
+    
+    <li><b>Temporary errors:</b>
+    All server-side errors such as, HTTP 503 (service unavailable), HTTP 400 (bad request), are considered as temporary errors. Temporary errors cause temporary task failures.
+    </li>
+  </ul>
+
+  <p>
+    Error messages appear in the following locations:
+    </p>
+    
+    <ul>
+      <li><b>Execution logs page</b>: Displays errors encountered during the execution of an
+      integration. Each execution of an integration has a separate log entry. For information about execution logs page, see <a href="{{basehrefpath}}/viewing-logs">Execution logs</a>.
+    </li>
+      <li><b>Integration editor page</b>: Displays errors encountered when you publish an
+      integration. The errors are displayed at the bottom of the integration editor page. For information about the integration editor page, see <a href="{{basehrefpath}}/integrations-ui-layout">Integration editor</a>.
+    </li>
+    </ul>
+
+<p>For information on the list of error codes that you might encounter, see <a href="#codes">Error codes</a>.</p>
+
+<h2>Error handling methods</h2>
+<p>
+  {{integration}} supports the following error handling methods to throw, catch, retry, and customize the errors encountered in your integration:
+<ul>
+<li><a href="{{basehrefpath}}/error-handling-strategy"><b>Error handling strategies</b></a>: The error handling strategy for a task specifies the action to take if the task fails due to a temporary error. You can specify different error handling strategies for both synchronous and asynchronous execution
+  modes.</li>
+
+<li><a href="{{basehrefpath}}/error-catcher"><b>Error catcher</b></a>: Error catcher defines a customized way to handle the failure of an identified trigger, task, or edge condition in your integration. You can define one or more error catchers in a single integration to handle task errors and/or execution failures. Each error catcher can be invoked using a trigger, called the <a href="/application-integration/docs/configure-error-catcher-trigger">Error Catcher trigger</a>, to run the set of configured integration tasks customized to handle the error.</li>
+</ul>
+<p>You can use error handling methods for both synchronous and asynchronous modes of integration execution:</p>
+    {% include "application-integration/docs/_shared/_sync-async-execution-mode.html" %}
+    <h2>Best practice</h2>
+    <p>Use both <a href="/application-integration/docs/error-handling-strategy">error handling strategy</a> and <a href="/application-integration/docs/error-catcher">error catcher</a> in your integration. For any error, the integration follows the strategy defined in the error handling section. After exhausting the error handling strategy that are configured, error catcher logic is triggered. Use <a href="/application-integration/docs/variables#system-variables">system variables</a> to capture the value of error code and error message to send to your error catcher flow.</p>
+
+<h2>Example</h2>
+<p>Suppose you have an integration flow to create an order. New orders are created in {{sql_mysql_name}}. The flow uses a <a href="/application-integration/docs/configure-connectors-task">connector task</a> (<b>Create an order</b> in this example) to connect to {{sql_mysql_name}}. In case of a database outage, the connector task throws errors while inserting new orders into the database. As a best practice, you must use both <a href="#error-handling-strategy">error handling strategy</a> and <a href="#error-catcher">error catcher</a> in your integration.</p>
+
+<p>To add the error handling strategy, click the connector task in the integration designer to open the task configuration pane. The following diagram shows the error handling strategy configured for the <b>Create an order</b> connector task:</p>
+
+<p>
+  <img src="{{baseimagepath}}/images/example-add-retry-policy.png" alt="Error handling strategy for Create an order connector task"
+        data-modal-dialog-id="arch_diagram" class="screenshot">
+  
+  <devsite-lightbox id="arch_diagram">
+    <img src="{{baseimagepath}}/images/example-add-retry-policy.png" alt="Error handling strategy for Create an order connector task">
+  </devsite-lightbox>
+</p>
+
+<p>To add the error handling strategy, click the <b>Call REST Endpoint</b> task in the integration designer to open the task configuration pane. The following diagram shows the error handling strategy configured for the <b>Call REST Endpoint</b> task:</p>
+
+<p>
+  <img src="{{baseimagepath}}/images/example-retry-fixed-interval.png" alt="Error handling strategy for the Call REST Endpoint task"
+        data-modal-dialog-id="arch_diagram" class="screenshot">
+  
+  <devsite-lightbox id="arch_diagram">
+    <img src="{{baseimagepath}}/images/example-retry-fixed-interval.png" alt="Error handling strategy for the Call REST Endpoint task">
+  </devsite-lightbox>
+</p>
+
+<p>To add the error catcher, click the <b>Call REST Endpoint</b> task in the integration designer to open the task configuration pane. In the <b>Error Catcher</b> section, add the error catcher details. The following diagram shows the error catcher configured for the <b>Call REST Endpoint</b> task:</p>
+
+<p>
+  <img src="{{baseimagepath}}/images/example-add-error-catcher.png" alt="Error catcher for the Call REST Endpoint task"
+        data-modal-dialog-id="arch_diagram" class="screenshot">
+  
+  <devsite-lightbox id="arch_diagram">
+    <img src="{{baseimagepath}}/images/example-add-error-catcher.png" alt="Error catcher for the Call REST Endpoint task">
+  </devsite-lightbox>
+</p>
+
+<h2 id="codes">Error codes</h2>
+{% include "application-integration/docs/_shared/_troubleshoot.html" %}
+
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Replay executions{% endblock %}
+{% block body %}
+
+<p>Replaying published integration execution lets you rerun an integration using the same parameters as the previous execution, using different parameters, or from a specific point of failure. For example, you can replay an execution if an integration failed due to a timeout error or if the output of an integration is not as expected. For more information about the benefits of replaying executions, see <a href="/application-integration/docs/replay-executions">Introduction to replay executions</a>.</p>
+<p>The following sections describe how to replay executions from the {{integration}} <b>Execution Logs</b> page.</p>
+
+<h2>Required roles</h2>
+
+{% setvar action %}replay executions{% endsetvar %}
+{% setvar resource %}your project{% endsetvar %}
+{% setvar role_list %}
+* All: Application Integration Invoker (<code>roles/integrations.integrationInvoker</code>)
+{% endsetvar %}
+{% include "_shared/_required_roles.html" %}
+
+<h2>Replay executions</h2>
+<p>To replay an execution, select one of the following options:</p>
+<devsite-selector>
+  <section>
+    <h3>Console</h3>
+<ol>
+  <li>In <b>Application Integration</b>, go to the <b>Logs</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations/logs" target="console">Go to Application Integration Logs</a></p>
+   <p>The <b>Execution Logs</b> page appears displaying the lists of region specific execution logs.</p>
+  </li>
+    <li>Click <b><span class="material-icons">more_vert</span> (More actions)</b> for the execution log that you want to replay, and then select <b><span class="material-icons">refresh</span> Replay</b>. 
+      <p>If your execution is in the <b>Suspended</b>, <b>On hold</b>, or the <b>Retry on hold</b> state, select the <b><span class="material-icons">refresh</span> Cancel and replay</b> option.</p>
+
+ <aside><b>Note:</b> You can't cancel an integration execution if the integration is in the <b>In process</b> state.</aside>
+</li>
+<li>In the <b>Replay Execution</b> pane, provide the following inputs:
+<ol>
+  <li><b>Reason for replaying the execution:</b> Enter the reason for replaying the execution. This reason is displayed in the execution log and might be useful for debugging.</li>
+  <li><b>Replay from point of failure:</b> Select to replay the execution from the point of failure. This resumes from the first failed task or trigger in the previous run.
+    <aside><b>Note:</b> The <b>Replay from point of failure</b> option only appears for failed executions.
+    </aside></li>
+  <li><b>Configure input variables:</b> This section lets you configure the input variables for the replay execution. You can either use the existing values from the previous run or provide new values to replay.</li>
+</ol>
+</li>
+<li>Click <b>Replay</b>.</li>
+<p>The following image shows a sample execution log with the <b>Replay Execution</b> pane open:</p>
+ <p>
+  <img src="/application-integration/images/replay-execution-pane.png" alt="Replay executions"
+        data-modal-dialog-id="replay-execution" class="screenshot" width="70%">
+  <devsite-lightbox id="replay-execution">
+    <img src="/application-integration/images/replay-execution-pane.png" alt="Replay executions">
+  </devsite-lightbox>
+  </p>
+  </li>
+</ol>
+</section>
+  <section>
+    <h3>API</h3>
+<p>Call the <a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.executions/replay"><code>projects.locations.integrations.executions.replay</code> method</a> and provide the ID of the execution that you want to replay:</p>
+<pre class="devsite-terminal">curl -X POST https://integrations.googleapis.com/v1/projects/<var>PROJECT_ID</var>/locations/<var>REGION</var>/integrations/<var>INTEGRATION_NAME</var>/executions/<var>EXECUTION_ID</var>:replay -H "Authorization: Bearer $TOKEN"
+  </pre>
+</section>
+</devsite-selector>
+
+<h2>What's next</h2>
+  <ul>
+    <li>Learn about <a href="/application-integration/docs/replay-executions">replay executions</a>.</li>
+    <li>Learn about <a href="/application-integration/docs/cancel-executions">cancelling executions</a>.</li>
+    <li>Learn about <a href="/application-integration/docs/introduction-logs">logs in {{integration}}</a>.</li>
+  </ul>
+
+{% endblock %}

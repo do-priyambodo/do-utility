@@ -1,0 +1,17 @@
+{% extends "application-integration/_base_experimental.html" %}
+{% block page_title %}String functions{% endblock %}
+{% block body %}
+{% include "application-integration/docs/_shared/_data-transformer-reference-introduction.html" %}
+<hr class="full-width">
+{% include "application-integration/docs/_shared/data-transformer-functions/equal-ignore-case.html" %} 
+<hr class="full-width">
+{% include "application-integration/docs/_shared/data-transformer-functions/is-empty.html" %} 
+<hr class="full-width">
+{% include "application-integration/docs/_shared/data-transformer-functions/match.html" %} 
+<hr class="full-width">
+{% include "application-integration/docs/_shared/data-transformer-functions/trim.html" %} 
+<h2>Recommendation</h2>
+<ul>
+  <li>Learn how to add and configure a <a href="/application-integration/docs/configure-data-transformer-script-task">Data Transformer Script task</a> (<a href="https://cloud.google.com/terms/service-terms#1">Preview</a>)</li>
+</ul>
+{% endblock %}

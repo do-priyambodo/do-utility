@@ -1,0 +1,392 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{ apip_task_javascript }} task{% endblock %}
+{% block body %}
+<aside class="deprecated">
+  <b>Deprecated:</b> Effective January 24, 2025, Application Integration will no longer support Rhino as the JavaScript execution engine. All existing published <b>{{apip_task_javascript}} tasks</b> will continue to use Rhino and can be <a href="/application-integration/docs/configure-javascript-task#migrate-javascript-tasks">migrated to V8 manually</a>. Newly created <b>{{apip_task_javascript}} tasks</b> will exclusively use V8. See <a href="/application-integration/docs/configure-javascript-task#javascript-execution-engine">JavaScript execution engine</a> for more information.
+</aside>
+
+<p>
+The <b> {{apip_task_javascript}} </b> task lets you write custom JavaScript code snippets for your integration.
+</p>
+<p>
+Using the <b>JavaScript Editor</b>, you can code complex data mapping logic for your integration, perform variable assignments, and add or modify integration variables.
+</p>
+<p>
+The <b>JavaScript Editor</b> supports the following features:
+</p><ul>
+
+<li>A minimap that displays a high-level overview of the script code and helps with quick navigation.
+<li>Syntax/code highlighting, indentation, and line numbering for easier code readability and structure recognition.
+<li>Error highlighting to find and track errors in code.
+<li>Folding to expand and collapse regions of the script code.
+<li>Click-to-copy option to copy the script code to the clipboard.</li></ul>
+
+<h2>Configure the {{apip_task_javascript}} task</h2>
+<p>
+To add a <b> {{apip_task_javascript}} </b> task to your integration, perform the following steps:
+</p>
+
+<ol>
+  {{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Click and place the <b>{{apip_task_javascript}}</b> element in the integration editor.</li>
+  <li>Click the <b>{{apip_task_javascript}}</b> element on the designer to view the <b>{{apip_task_javascript}}</b> task configuration pane.</li>
+  <li>Click <b>Open script editor</b> to view and edit the <b>JavaScript Editor</b>. You can also use {{gemini_name_short}} to generate JavaScript code by click <b>Script with Gemini</b>. For information about using {{gemini_name_short}} to generate JavaScript code, see <a href="/application-integration/docs/build-integrations-gemini#configure-javascript-tasks">Configure <b>{{apip_task_javascript}} tasks</b> with Gemini assistance</a>.</li>
+  <li>Write your JavaScript code inside the <code>executesScript(event)</code> function that is automatically created in the <b>JavaScript Editor</b>. Close the editor once complete, any changes will be autosaved. 
+    <aside class="warning">
+      <b>Warning:</b> Don't delete the <code>executesScript(event)</code> function. This function is called when the <b>{{apip_task_javascript}}</b> task executes. 
+    </aside> 
+    <p>For information about accessing integration variables and the supported functions, see <a href="{{basehrefpath}}/run-javascript-task#using-the-javascript-editor"> Using the JavaScript Editor</a>.</p>
+    <p>For information about viewing the generated execution logs, see <a href="{{basehrefpath}}/viewing-logs">Execution logs</a>.
+    </p>
+  </li>
+</ol>
+
+<p>
+  The following image shows a sample layout of the <b>JavaScript Editor</b>:
+  <img src="{{baseimagepath}}/images/javascript_editor.png" alt="image showing javascript editor"
+   data-modal-dialog-id="editor" class="screenshot">
+  <devsite-lightbox id="editor">
+    <img src="{{baseimagepath}}/images/javascript_editor.png" alt="image showing javascript editor">
+  </devsite-lightbox>
+</p>
+
+<h2>Use the JavaScript Editor</h2>
+
+<p>To view and edit the <b>JavaScript Editor</b>, go to the <b>{{apip_task_javascript}}</b> task configuration pane and click <b>Open script editor</b>. The <b>JavaScript Editor</b> by default contains a function named <code>executesScript(<var>event</var>)</code>, where:</p>
+  <ul>
+    <li>
+      <code>executesScript()</code>: the function that is called when {{integration}} executes the <b>{{apip_task_javascript}}</b> task during an integration's run.
+    </code>
+  </li>
+  <li>
+    <code><var>event</var></code>: the <a href="{{basehrefpath}}/variables-overview#using-variable-data-in-integrations">in-memory object</a> of {{integration}}.
+    <p>For information about the supported methods of the <i>event</i> object, see <a href="{{basehrefpath}}/run-javascript-task#access-integration-variables"> Access integration variables</a>.</p>
+  </li>
+</ul>
+</p>
+
+<aside class="warning">
+  <b>Warning:</b> Don't delete the <code>executesScript(event)</code> function. This function is called when the <b>{{apip_task_javascript}}</b> task executes. 
+</aside> 
+
+<h2 id ="javascript-execution-engine">JavaScript execution engine</h2>
+
+<aside class="deprecated">
+  <b>Deprecated:</b> Effective January 24, 2025, Application Integration will no longer support Rhino as the JavaScript execution engine. All existing published <b>{{apip_task_javascript}} tasks</b> will continue to use Rhino and can be <a href="/application-integration/docs/configure-javascript-task#migrate-javascript-tasks">migrated to V8 manually</a>. Newly created <b>{{apip_task_javascript}} tasks</b> will exclusively use V8.
+</aside>
+
+<p>{{integration}} previously supported Rhino as the JavaScript execution engine for running <b>{{apip_task_javascript}} tasks</b>. To leverage the performance and security benefits of Google's open-source high-performance JavaScript engine, Rhino will be deprecated and all JavaScript executions will now utilize V8, Google's open-source high-performance JavaScript engine.</p>
+
+<h3>Benefits of V8</h3>
+<p>The V8 JavaScript engine offers the following benefits:</p>
+<ul>
+  <li><b>Performance:</b> V8 is significantly faster than Rhino, leading to improved execution speeds for your <b>{{apip_task_javascript}} tasks</b>. Scripts with large sized variables and complex computations can be executed faster.</li>
+  <li><b>Standards Compliance:</b> V8 supports ECMAScript 2024, ensuring better compatibility and maintainability.</li>
+  <li><b>Security:</b> V8 benefits from ongoing security updates and improvements, providing a more secure environment for your integrations.</li>
+  <li><b>Modern Features:</b> V8 supports the latest JavaScript features, allowing you to leverage modern language constructs and libraries.</li>
+</ul>
+
+<h3 id="migrate-javascript-tasks">Migrate existing JavaScript tasks to V8</h3>
+<p>To migrate your existing <b>{{apip_task_javascript}} tasks</b> running on Rhino to V8, do the following:</p>
+<ol>
+  <li>Identify the published integrations that contain <b>{{apip_task_javascript}} tasks</b> and unpublish them.</li>
+  <li>For each <b>{{apip_task_javascript}}</b>, click <b>Open script editor</b> from the task configuration pane.
+  <p>{{integration}} automatically updates the existing script to use V8.</p></li>
+  <li>Review and test the JavaScript code.</li>
+  <li>Publish the integrations.</li>
+</ol>
+
+<h2>Access integration variables</h2>
+<p>
+  Variables defined in your integration can be accessed from the <b>JavaScript Editor</b> using the {{integration}} <a href = "{{basehrefpath}}/variables-overview#using-variable-data-in-integrations"> in-memory <i>event</i></a> object.
+</p>
+<p>The following methods are supported to access integration variables from your <b>JavaScript Editor</b>: 
+<table class="full-width fixed">
+  <tr>
+   <th>Function name
+   </th>
+   <th>Description
+   </th>
+   <th colspan="2">Usage
+   </th>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="infoid">
+    <h3><code>getEventExecutionInfoId</code></h3>
+   </td>
+   <td>Returns the integration's run execution ID.
+<p>
+<b>Return type:</b> String
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b><code>event.getEventExecutionInfoId()</code>
+    <p><b>Example:</b>
+    <pre class="prettyprint suppresswarning" >
+function executeScript(event) {
+  event.getEventExecutionInfoId();
+  }
+      </pre>
+   </td>
+
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="projectid">
+    <h3><code>getGoogleCloudProjectId</code></h3>
+   </td>
+   <td>Returns the Google Cloud project ID.
+<p>
+<b>Return type:</b> String
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.getGoogleCloudProjectId()</code>
+    <p><b>Example:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.getGcpProjectId();
+  }
+</pre>
+   </td>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="name">
+    <h3><code>getIntegrationName</code></h3>
+   </td>
+   <td>Returns the current name of the integration.
+<p>
+<b>Return type:</b> String
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.getIntegrationName</code>
+    <p><b>Example:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.getIntegrationName();
+  }
+</pre>
+   </td>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="gpara">
+    <h3><code>getParameter</code></h3>
+   </td>
+   <td>Returns the value of the provided integration variable.
+<p>
+<b>Return type:</b> Data type of the integration variable
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.getParameter("variable_name")</code>
+<p>
+<b>Input parameter:</b> Integration variable name. If the <code>variable_name</code> is an auto-generated variable, then enclose the variable in backticks (<code>``</code>). For example, <code>`responseBody`</code>.</b>
+<p><b>Example:</b></p>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) { 
+  event.getParameter("var1");
+  }
+</pre>
+   </td>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="region">
+    <h3><code>getRegion</code></h3>
+   </td>
+   <td>Returns the name of the integration region.
+<p>
+<b>Return type:</b> String
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.getRegion()</code>
+    <p><b>Example:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.getRegion();
+  }
+</pre>
+   </td>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="log">
+    <h3><code>log</code></h3>
+   </td>
+   <td>Writes the specified value to the execution logs.
+    <p>For information about viewing the generated execution logs, see <a href="{{basehrefpath}}/viewing-logs">Execution logs</a>.
+    </p>
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.log(value)</code>
+<p>
+<b>Input parameter:</b> Any variable or function that is used in the script.
+<p>
+  <b>Example 1:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.log(event.getParameter("var1"));
+  }
+</pre>
+<p>
+  <b>Example 2:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.log("Lorem ipsum");
+  }
+</pre>
+   </td>
+  </tr>
+  <tr>
+   <td class="role-table-heading" id="spara">
+    <h3><code>setParameter</code></h3>
+   </td>
+   <td>Sets or updates the value of an integration variable.
+   </td>
+   <td colspan="2">
+    <p><b>Syntax: </b>
+     <code>event.setParameter("variable_name", "variable_value")</code>
+    <p>
+      <b>Input parameter:</b> This function takes the following arguments:
+      <ul>
+        <li>First argument: Variable name. If the <code>variable_name</code> is an auto-generated variable, then enclose the variable in backticks (<code>``</code>). For example, <code>`responseBody`</code>.</li>
+        <li>Second argument: Value.</li>
+      </ul>
+      <p><b>Example:</b>
+
+    <pre class="prettyprint suppresswarning ">
+function executeScript(event) {
+  event.setParameter("`responseBody`", "NewStringValue");
+  }
+</pre>
+   </td>
+  </tr>
+</table>
+
+<h2>Set task parameters</h2>
+<p>If your integration has multiple large sized parameters that are not used by the {{apip_task_javascript}} task, you can set the <code>TaskParameter</code> field for the {{apip_task_javascript}} task to improve performance.</p>
+
+<p>To set the <code>TaskParameter</code> field for the {{apip_task_javascript}} task, select one of the following options:</p>
+
+<devsite-selector>
+  <section>
+    <h3>Console</h3>
+    
+    <ol>
+      
+      <li>
+        Go to the <b>{{application_integration_name}}</b> page.
+        <p>
+          <a href="{{console_url}}integrations/list" target="console" class="button button-primary">
+            Go to Application Integration</a>
+        </p>
+      </li>
+      <li>
+        Select an integration. The integration editor opens.
+      </li>
+      <li>
+        Click <span class="material-icons">more_vert</span> <b>Action</b> {{and_then}} <b>Download Integration</b> {{and_then}} <b>Integration Version</b>. The integration version is downloaded as a JSON file.
+      </li>
+      <li>
+        Open the integration version file in an editor, and then do the following:
+        <ol>
+          <li>
+            Locate the <code>taskConfigs</code> field with the task as <code>JavaScriptTask</code>. In the <code>parameters</code> field, locate the parameter named <code>script</code>.
+
+<pre class="json">
+"taskConfigs": [{
+  "task": "JavaScriptTask",
+  "taskId": 1,
+  "parameters": {
+    "script": {
+      "key": "script",
+      "value": {
+        "stringValue": "function that is called during the JavaScriptTask execution"
+      }
+  }"
+}]
+</pre>
+          </li>
+
+          <li>
+            In this <code>parameters</code> field, add parameters that are used in the <code>JavaScriptTask</code> field by using the following template:
+<pre class="json">
+"ParamName": {
+  "key": "ParamName",
+  "value": {
+    "stringValue": "$ParamName$"
+  }
+}
+</pre>
+</li>
+</ol>
+</li>
+<li>Save the changes that you made to the integration version file.</li>
+<li><a href="/application-integration/docs/upload-download-integrations#upload-an-integration">Upload the integration version</a> file to the integration.</li>
+</ol></section>
+  <section>
+    <h3>API</h3>
+    <ol>
+      <li>To download the integration version, make a call to the <code><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions/download">projects.locations.integrations.versions.download</a></code> method with the <code>filFormat</code> set to <code>JSON</code>.</li>
+      <li>
+        Open the integration version file in an editor, and then do the following:
+        <ol>
+          <li>
+            Locate the <code>taskConfigs</code> field with the task as <code>JavaScriptTask</code>. In the <code>parameters</code> field, locate the parameter named <code>script</code>.
+
+<pre class="json">
+"taskConfigs": [{
+  "task": "JavaScriptTask",
+  "taskId": 1,
+  "parameters": {
+    "script": {
+      "key": "script",
+      "value": {
+        "stringValue": "function that is called during the JavaScriptTask execution"
+      }
+  }"
+}]
+</pre>
+          </li>
+
+          <li>
+            In this <code>parameters</code> field, add parameters that are used in the <code>JavaScriptTask</code> field by using the following template:
+<pre class="json">
+"ParamName": {
+  "key": "ParamName",
+  "value": {
+    "stringValue": "$ParamName$"
+  }
+}
+</pre>
+</li>
+</ol>
+      <li>To upload the integration version, make a call to the <code><a href="/application-integration/docs/reference/rest/v1/projects.locations.integrations.versions/upload">projects.locations.integrations.versions.upload</a></code> method with the updated integration version file.</li>
+    </ol>
+</section>
+</devsite-selector>
+
+{% include "application-integration/docs/_shared/_retry_on_failure.html" %}
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about the following:
+    <ul>
+      <li><a href="/application-integration/docs/build-integrations-gemini#configure-javascript-tasks">Configuring JavaScript tasks with Gemini assistance</a>
+      </li><a href="/application-integration/docs/all-triggers-tasks">All tasks and triggers</a></li>
+      <li><a href="/application-integration/docs/test-publish-integrations">Testing and publishing integrations<a></li>
+      <li> <a href="/application-integration/docs/error-handling-strategy">Error handling</a></li>
+      <li><a href="/application-integration/docs/introduction-logs">Integration execution logs</a></li>
+    </ul>
+  </li>
+</ul>
+
+{% endblock %}

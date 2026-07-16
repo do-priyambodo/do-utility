@@ -1,0 +1,591 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}Jira Server (Data Center) trigger{% endblock %}
+
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}Jira Server (Data Center) trigger{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>The <b>Jira Server (Data Center) trigger</b> is a <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a> that lets you invoke an integration based on the <a href="#events">Jira Server (Data Center) events</a> that you've subscribed to in your Jira Server (Data Center) connection.</p>
+
+<aside class="note"><b>Important:</b> Integration Connectors is a billable component of Google Cloud. For information about the costs and charges of using Integration Connectors, see <a href="/integration-connectors/docs/pricing">Integration Connectors pricing</a>.</aside>
+
+<h2>Before you begin</h2>
+<ul>
+  <li>If you plan to create or configure a new connection for the Jira Server (Data Center) trigger, make sure that you have the <b>Connector Admin</b> (<code>roles/connectors.admin</code>) IAM role on the project. For information about granting roles, see <a href="/iam/docs/granting-changing-revoking-access">Manage access</a>.
+  </li>
+  <li>Grant the <b>Application Integration Invoker</b> (<code>roles/integrations.integrationInvoker</code>) IAM role to the service account that you want to use for the Jira Server (Data Center) trigger.
+  </li>
+  <li>Create a new integration or open an existing integration to add the Jira Server (Data Center) trigger.</li>
+</ul>
+
+<h2>Configure Jira Server (Data Center) trigger using an existing connection</h2>
+
+<p>
+  You can configure the <b>Jira Server (Data Center) trigger</b> using an existing Jira Server (Data Center) connection in Integration Connectors. Note that the <b>Jira Server (Data Center) trigger</b> is an <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a>, therefore you can only use a Jira Server (Data Center) connection with event subscription enabled to configure the trigger. 
+</p>
+<p>For information about how to configure a <b>Jira Server (Data Center) trigger</b> using a new Jira Server (Data Center) connection, See <a href="#create">Configure Jira Server (Data Center) trigger using a new connection</a></p>
+<p>To configure a <b>Jira Server (Data Center) trigger</b> using an existing Jira Server (Data Center) connection, perform the following steps:</p>
+
+<ol>
+  <li>Click the <b>Jira Server (Data Center) trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Provide the following configuration details in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li><b>Region:</b> Select the region of your Jira Server (Data Center) connection.</li>
+      <li><b>Connection:</b> Select the Jira Server (Data Center) connection that you want to use.
+      <p>{{integration}} only displays those Jira Server (Data Center) connections that are active and have an <a href="/integration-connectors/docs/eventsubscription">event subscription</a> enabled. 
+      </p>
+    </li>
+      <li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+      <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the Jira Server (Data Center) trigger.</li>
+    </ol>
+  </li>
+  <li>Click <b>Done</b> to complete the trigger configuration and close the page.</li>
+</ol>
+
+
+<h2 id="create">Configure Jira Server (Data Center) trigger using a new connection</h2>
+
+<p>To configure the <b>Jira Server (Data Center) trigger</b> using a new Jira Server (Data Center) connection, perform the following steps:</p>
+<ol>
+  <li>Click the <b>Jira Server (Data Center) trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Skip the <b>Region</b> field.</li>
+  <li>Click <b>Connection</b> and select the <b>Create Connection</b> option from the drop-down menu.</li>
+  <li>Complete the following steps in the <b>Create Connection</b> pane:
+  <ol>
+    <li>In the <b>Location</b> step, choose the location for the new Jira Server (Data Center) connection:
+      <ol>
+        <li><b>Region:</b> Select a region from the drop-down list.
+        </li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+    <li>In the <b>Connection Details</b> section, complete the following:
+      <ol>
+        <li><b>Connector</b>: Select <b>Jira Server (Data Center)</b> from the drop down list of available Connectors.</li>
+        <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+        </li>
+        <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+          <p>Connection names must meet the following criteria:
+          <ul>
+            <li>Connection names can use letters, numbers, or hyphens.</li>
+            <li>Letters must be lower-case.</li>
+            <li>Connection names must begin with a letter and end with a letter or number.</li>
+            <li>Connection names cannot exceed 49 characters.</li>
+          </ul>
+
+        </li>
+        <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+        {{connector_cloud_logging}}
+        <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+        <li><b>Enable event subscription:</b> Select to create and enable a new event subscription for the Jira Server (Data Center) connection. You can either only enable event subscriptions or also include connection <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a>.
+          <aside class="note"><b>Note:</b> The following additional connection configuration steps are required if you choose to enable <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a> for the connection:
+            <ul>
+              <li>Destinations</li>
+              <li>Authentication</li>
+            </ul>
+          </aside>
+        {{connector_node_config}}
+        {{connector_ssl_config_steps}}
+        <li>Optionally, click <b>+ ADD LABEL</b> to add a label to the Connection in the form of a key/value pair.</li>
+        <li>Click <b>NEXT</b>.</li>
+      </ol>
+    </li>
+      <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to.
+        <ol>
+          <li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+            {{connector_dest_type_config}}
+            <p>To enter additional destinations, click <b>+ADD DESTINATION</b>.</p>
+          </li>
+          <li>Click <b>NEXT</b>.</li>
+        </ol>
+    <li>
+      In the <b>Authentication</b> section, enter the authentication details. 
+      <ol>
+          <li>Select an <b>Authentication type</b> and enter the relevant details.
+            <p>The following authentication types are supported by the Jira Server (Data Center) connection:</p>
+                <ul>
+                  <li>    User password
+                  </li>
+                  <li>    API Token
+                  </li>
+                  <li>Personal Access Token</li>
+                  <li>    OAuth 2.0 - Authorization code
+                  </li>
+                </ul>
+          </li>
+          <p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+        <li>Click <b>NEXT</b>.</li>
+      </ol>
+    </li>
+    <li>
+      In the <b>Event subscription details</b> section, provide details of the Jira Server (Data Center) account where the event subscriptions will be created.
+      <ol>
+        <li><b>Destination Type:</b>  Select <b>Host address</b>.</li>
+        <li><b>Host:</b>  Enter the registration URL of your Jira Server (Data Center) account. Event subscriptions will be created for this URL.</li>
+        <li><b>API token:</b> Select the Secret Manager secret containing the API token associated with the username.</li>
+        <li><b>Secret version:</b> Select a secret version.</li>
+        <li><b>Enable data enrichment:</b> Select this checkbox if you want the Jira Server (Data Center) trigger to retrieve the complete event payload from the Jira Server (Data Center) instance. See <a href="#output">Trigger output</a> for examples.</li>
+        {{connector_psc_eventing_step}}
+        {{connector_dead_letter_config_step}}
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+<li><b>Review</b>: Review the provided Jira Server (Data Center) connection details.</li>
+<li>Click <b>Create</b> to complete creating a new Jira Server (Data Center) connection.</li>
+</ol>
+</li>
+<li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+<li>Click <b>Done</b> and close the page. <p>The <b>Jira Server (Data Center) trigger</b> takes a couple of minutes to complete the event subscription configuration. You can view the status of your event subscription in the trigger configuration pane under <b>Event Subscription details</b>.</p></li>
+</ol>
+
+
+
+<devsite-expandable expanded id="exp1">
+  <h2 class="showalways" id="configure-auth" >Configure authentication</h2>
+
+
+<p>Enter the details based on the authentication you want to use.</p>
+    <ul>
+      <li>
+        <b>    User Password
+</b>
+            <ul>
+              <li><b>Username</b>: Enter the Jira Server (Data Center) user account used to authenticate.</li>
+              <li><b>Password</b>: Enter the password associated with the account.</li>
+            </ul>
+      </li>
+      <li>
+        <b>    API Token
+</b>
+            <ul>
+              <li><b>Username</b>: Enter the Jira Server (Data Center) username used to create the API token.</li>
+              <li><b>API token</b>: Enter the password for the username will be an API token. Select the Secret Manager Secret containing the API token.</li>
+            </ul>
+      </li>
+      <li>
+        <b>    Personal Access Token
+</b>
+<ul>
+  <li><b>Personal access token</b>: Provide the secret manager secret containing the personal access token.</li>
+  <li><b>Secret version</b>: Select the secret version for the secret selected.</li>
+</ul>
+      </li>
+      <li>
+        <b>    OAuth 2.0 - Authorization code
+</b>
+<ul>
+  <li><b>Client ID</b>: Provide the client ID as provided by your external application.</li>
+  <li><b>Scopes</b>: Specify the required permission scopes.</li>
+  <li><b>Client secret </b>: Select the <a href="/secret-manager/docs/create-secret-quickstart">Secret Manager secret</a>.
+    You must have created the Secret Manager secret before configuring this authorization.</li>
+  <li><b>Secret version</b>: Select the secret manager secret version for client secret.</li>
+  <li><b>Authorization URL: </b>Provide the URL generated during client creation.</li>
+  <p>For the <code>Authorization code</code> authentication type, after creating the connection, you
+    must perform a few additional steps for configuring authentication. For more information,
+    see <a href="/integration-connectors/docs/connectors/jiraserverdc/configure#add-steps">Additional steps after connection creation</a>.</p>
+
+  <aside class="note"><b>Note:</b> If you are using <code>Authorization code</code> authentication
+    type and have made any configuration changes in your Jira Server (Data Center) application, you must re-authorize your
+    Jira Server (Data Center) connection. To understand how to re-authorize, see
+    <a href="/integration-connectors/docs/connectors/jiraserverdc/configure#re-auth">Re-authorization for Authorization code</a>. </aside>
+  </ul>
+      </li>
+    </ul>
+  </devsite-expandable>
+
+<h2 id="output">Trigger output</h2>
+
+<p>In addition to the event subscription status, the <b>Event Subscription details</b> section also displays other details such as connection region, connection name, event subscription name, and more.</p>
+
+<h3>Trigger output variable</h3>
+<p>
+  For each event, the <b>Jira Server (Data Center) trigger</b> generates a <code>ConnectorEventPayload</code> output variable which you can use in your downstream tasks. The output variable is in JSON format containing the output Jira Server (Data Center) payload schema.
+</p>
+<devsite-expandable>
+  <h4 class="showalways">An example output payload for the <code> issue_created</code> Jira Server (Data Center) event</h4>
+  
+  <pre class="prettyprint lang-json devsite-click-to-copy">
+    {
+      "timestamp": 1744689885826,
+      "webhookEvent": "jira:issue_created",
+      "issue_event_type_name": "issue_created",
+      "user": {
+        "self": "https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user",
+        "name": "vais_adminpat_user",
+        "key": "JIRAUSER10401",
+        "emailAddress": "baklavainthebalkans@gmail.com",
+        "avatarUrls": {
+          "48x48": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=48",
+          "24x24": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=24",
+          "16x16": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=16",
+          "32x32": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=32"
+        },
+        "displayName": "VAIS Admin PAT Jira User",
+        "active": true,
+        "timeZone": "UTC"
+      },
+      "issue": {
+        "id": "467526",
+        "self": "https://example.altostrat.com:8443/rest/api/2/issue/467526",
+        "key": "VISP-87",
+        "fields": {
+          "issuetype": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/issuetype/10003",
+            "id": "10003",
+            "description": "A task that needs to be done.",
+            "iconUrl": "https://example.altostrat.com:8443/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype",
+            "name": "Task",
+            "subtask": false,
+            "avatarId": 10318
+          },
+          "timespent": null,
+          "project": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/project/12015",
+            "id": "12015",
+            "key": "VISP",
+            "name": "VAIS Incremental Sync Project",
+            "projectTypeKey": "software",
+            "avatarUrls": {
+              "48x48": "https://example.altostrat.com:8443/secure/projectavatar?avatarId=10324",
+              "24x24": "https://example.altostrat.com:8443/secure/projectavatar?size=small&avatarId=10324",
+              "16x16": "https://example.altostrat.com:8443/secure/projectavatar?size=xsmall&avatarId=10324",
+              "32x32": "https://example.altostrat.com:8443/secure/projectavatar?size=medium&avatarId=10324"
+            }
+          },
+          "fixVersions": [],
+          "customfield_10111": null,
+          "aggregatetimespent": null,
+          "resolution": null,
+          "customfield_10107": "0|i269s7:",
+          "customfield_10108": null,
+          "customfield_10109": null,
+          "resolutiondate": null,
+          "workratio": -1,
+          "lastViewed": null,
+          "watches": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/issue/VISP-87/watchers",
+            "watchCount": 0,
+            "isWatching": false
+          },
+          "created": "2025-04-15T04:04:45.740+0000",
+          "priority": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/priority/3",
+            "iconUrl": "https://example.altostrat.com:8443/images/icons/priorities/medium.svg",
+            "name": "Medium",
+            "id": "3"
+          },
+          "customfield_10100": null,
+          "customfield_10101": null,
+          "customfield_10102": null,
+          "labels": [],
+          "customfield_10103": null,
+          "timeestimate": null,
+          "aggregatetimeoriginalestimate": null,
+          "versions": [],
+          "issuelinks": [],
+          "assignee": null,
+          "updated": "2025-04-15T04:04:45.740+0000",
+          "status": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/status/10000",
+            "description": "",
+            "iconUrl": "https://example.altostrat.com:8443/",
+            "name": "To Do",
+            "id": "10000",
+            "statusCategory": {
+              "self": "https://example.altostrat.com:8443/rest/api/2/statuscategory/2",
+              "id": 2,
+              "key": "new",
+              "colorName": "default",
+              "name": "To Do"
+            }
+          },
+          "components": [],
+          "timeoriginalestimate": null,
+          "description": null,
+          "timetracking": {},
+          "archiveddate": null,
+          "attachment": [],
+          "aggregatetimeestimate": null,
+          "summary": "Test Issue 1e704d97-3f89-452a-b8e2-aaba609f3a79",
+          "creator": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user",
+            "name": "vais_adminpat_user",
+            "key": "JIRAUSER10401",
+            "emailAddress": "baklavainthebalkans@gmail.com",
+            "avatarUrls": {
+              "48x48": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=48",
+              "24x24": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=24",
+              "16x16": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=16",
+              "32x32": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=32"
+            },
+            "displayName": "VAIS Admin PAT Jira User",
+            "active": true,
+            "timeZone": "UTC"
+          },
+          "subtasks": [],
+          "reporter": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user",
+            "name": "vais_adminpat_user",
+            "key": "JIRAUSER10401",
+            "emailAddress": "baklavainthebalkans@gmail.com",
+            "avatarUrls": {
+              "48x48": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=48",
+              "24x24": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=24",
+              "16x16": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=16",
+              "32x32": "https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm&s=32"
+            },
+            "displayName": "VAIS Admin PAT Jira User",
+            "active": true,
+            "timeZone": "UTC"
+          },
+          "customfield_10000": "{}",
+          "aggregateprogress": {
+            "progress": 0,
+            "total": 0
+          },
+          "customfield_10200": null,
+          "environment": null,
+          "duedate": null,
+          "progress": {
+            "progress": 0,
+            "total": 0
+          },
+          "comment": {
+            "comments": [],
+            "maxResults": 0,
+            "total": 0,
+            "startAt": 0
+          },
+          "votes": {
+            "self": "https://example.altostrat.com:8443/rest/api/2/issue/VISP-87/votes",
+            "votes": 0,
+            "hasVoted": false
+          },
+          "worklog": {
+            "startAt": 0,
+            "maxResults": 20,
+            "total": 0,
+            "worklogs": []
+          },
+          "archivedby": null
+        }
+      }
+    }
+  </pre>
+  </devsite-expandable>
+
+  <devsite-expandable>
+    <h4 class="showalways">An example data enriched output payload for the <code> issue_updated</code> Jira Server (Data Center) event</h4>
+    <pre class="prettyprint lang-json devsite-click-to-copy">
+      {
+        "id": "f655bd2d-d9a9-4e52-bb0b-1453a825bdbe",
+        "source": "JiraServer",
+        "specVersion": "1",
+        "attributes": {
+          "action": {
+            "ceString": "updated"
+          },
+          "entityID": {
+            "ceString": "467517"
+          },
+          "entityType": {
+            "ceString": "issues"
+          },
+          "time": {
+            "ceTimestamp": "2025-04-14T05:48:58.785330694Z"
+          }
+        },
+        "textData": "{\"changelog\":{\"id\":\"336642\",\"items\":[{\"field\":\"summary\",\"fieldtype\":\"jira\",\"from\":null,\"fromString\":\"New ValueTest2\",\"to\":null,\"toString\":\"New ValueTest3\"}]},\"context-data\":{\"aclInfo\":{\"readers\":[{\"principals\":[{\"user_id\":\"user4.ucs.qatest@altostrat.com\"},{\"user_id\":\"user5.ucs.qatest@altostrat.com\"},{\"user_id\":\"user3.ucs.qatest@altostrat.com\"},{\"user_id\":\"user6.ucs.qatest@altostrat.com\"},{\"user_id\":\"user1.ucs.qatest@altostrat.com\"},{\"user_id\":\"baklavainthebalkans@gmail.com\"},{\"user_id\":\"user2.ucs.qatest@altostrat.com\"},{\"user_id\":\"krishnasr@google.com\"}]}]},\"id\":\"467517\",\"structData\":{\"AffectedVersionsAggregate\":\"\",\"AggregateProgress\":0,\"AggregateTimeEstimate\":null,\"AggregateTimeOriginalEstimate\":null,\"AggregateTimeSpent\":null,\"AssigneeAccountId\":null,\"AssigneeDisplayName\":null,\"AssigneeEmail\":null,\"AssigneeKey\":null,\"AssigneeName\":null,\"ComponentsAggregate\":\"\",\"Created\":\"2025-04-11T15:20:16Z\",\"CreatorAccountId\":null,\"CreatorDisplayName\":\"VAIS Admin PAT Jira User\",\"CreatorEmail\":\"baklavainthebalkans@gmail.com\",\"CreatorKey\":\"JIRAUSER10401\",\"CreatorName\":\"vais_adminpat_user\",\"Description\":null,\"DueDate\":null,\"Environment\":null,\"FixVersionsAggregate\":\"\",\"HasVotes\":false,\"Id\":467517,\"IsWatching\":true,\"IssueLinksAggregate\":\"\",\"IssueTypeId\":\"10003\",\"IssueTypeName\":\"Task\",\"ItemURL\":\"https://34.134.129.75:8443/browse/VISP-78\",\"Key\":\"VISP-78\",\"Labels\":\"\",\"LastViewed\":null,\"OriginalEstimate\":null,\"OriginalEstimateSeconds\":null,\"ParentId\":null,\"ParentIssueTypeId\":null,\"ParentIssueTypeName\":null,\"ParentKey\":null,\"ParentStatusId\":null,\"ParentStatusName\":null,\"PriorityId\":\"3\",\"PriorityName\":\"Medium\",\"ProjectId\":\"12015\",\"ProjectKey\":\"VISP\",\"ProjectName\":\"VAIS Incremental Sync Project\",\"RemainingEstimate\":null,\"RemainingEstimateSeconds\":null,\"ReporterAccountId\":null,\"ReporterDisplayName\":\"VAIS Admin PAT Jira User\",\"ReporterEmail\":\"baklavainthebalkans@gmail.com\",\"ReporterKey\":\"JIRAUSER10401\",\"ReporterName\":\"vais_adminpat_user\",\"ResolutionDate\":null,\"ResolutionDescription\":null,\"ResolutionId\":null,\"ResolutionName\":null,\"SecurityLevel\":null,\"StatusCategoryId\":2,\"StatusCategoryKey\":\"new\",\"StatusCategoryName\":\"To Do\",\"StatusId\":\"10000\",\"StatusName\":\"To Do\",\"SubtasksAggregate\":\"\",\"Summary\":\"New ValueTest3\",\"TimeSpent\":null,\"TimeSpentSeconds\":null,\"TotalProgress\":0,\"Updated\":\"2025-04-14T05:48:58Z\",\"Votes\":0,\"WatchCount\":1,\"WorkRatio\":-1}},\"issue\":{\"fields\":{\"aggregateprogress\":{\"progress\":0,\"total\":0},\"aggregatetimeestimate\":null,\"aggregatetimeoriginalestimate\":null,\"aggregatetimespent\":null,\"archivedby\":null,\"archiveddate\":null,\"assignee\":null,\"attachment\":[],\"comment\":{\"comments\":[],\"maxResults\":0,\"startAt\":0,\"total\":0},\"components\":[],\"created\":\"2025-04-11T15:20:16.000+0000\",\"creator\":{\"active\":true,\"avatarUrls\":{\"16x16\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=16\",\"24x24\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=24\",\"32x32\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=32\",\"48x48\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=48\"},\"displayName\":\"VAIS Admin PAT Jira User\",\"emailAddress\":\"baklavainthebalkans@gmail.com\",\"key\":\"JIRAUSER10401\",\"name\":\"vais_adminpat_user\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user\",\"timeZone\":\"UTC\"},\"customfield_10000\":\"{}\",\"customfield_10100\":null,\"customfield_10101\":null,\"customfield_10102\":null,\"customfield_10103\":null,\"customfield_10107\":\"0|i269q7:\",\"customfield_10108\":null,\"customfield_10109\":null,\"customfield_10111\":null,\"customfield_10200\":null,\"description\":null,\"duedate\":null,\"environment\":null,\"fixVersions\":[],\"issuelinks\":[],\"issuetype\":{\"avatarId\":10318,\"description\":\"A task that needs to be done.\",\"iconUrl\":\"https://example.altostrat.com:8443/secure/viewavatar?size=xsmall\\u0026avatarId=10318\\u0026avatarType=issuetype\",\"id\":\"10003\",\"name\":\"Task\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/issuetype/10003\",\"subtask\":false},\"labels\":[],\"lastViewed\":null,\"priority\":{\"iconUrl\":\"https://example.altostrat.com:8443/images/icons/priorities/medium.svg\",\"id\":\"3\",\"name\":\"Medium\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/priority/3\"},\"progress\":{\"progress\":0,\"total\":0},\"project\":{\"avatarUrls\":{\"16x16\":\"https://example.altostrat.com:8443/secure/projectavatar?size=xsmall\\u0026avatarId=10324\",\"24x24\":\"https://example.altostrat.com:8443/secure/projectavatar?size=small\\u0026avatarId=10324\",\"32x32\":\"https://example.altostrat.com:8443/secure/projectavatar?size=medium\\u0026avatarId=10324\",\"48x48\":\"https://example.altostrat.com:8443/secure/projectavatar?avatarId=10324\"},\"id\":\"12015\",\"key\":\"VISP\",\"name\":\"VAIS Incremental Sync Project\",\"projectTypeKey\":\"software\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/project/12015\"},\"reporter\":{\"active\":true,\"avatarUrls\":{\"16x16\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=16\",\"24x24\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=24\",\"32x32\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=32\",\"48x48\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=48\"},\"displayName\":\"VAIS Admin PAT Jira User\",\"emailAddress\":\"baklavainthebalkans@gmail.com\",\"key\":\"JIRAUSER10401\",\"name\":\"vais_adminpat_user\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user\",\"timeZone\":\"UTC\"},\"resolution\":null,\"resolutiondate\":null,\"status\":{\"description\":\"\",\"iconUrl\":\"https://example.altostrat.com:8443/\",\"id\":\"10000\",\"name\":\"To Do\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/status/10000\",\"statusCategory\":{\"colorName\":\"default\",\"id\":2,\"key\":\"new\",\"name\":\"To Do\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/statuscategory/2\"}},\"subtasks\":[],\"summary\":\"New ValueTest3\",\"timeestimate\":null,\"timeoriginalestimate\":null,\"timespent\":null,\"timetracking\":{},\"updated\":\"2025-04-14T05:48:58.000+0000\",\"versions\":[],\"votes\":{\"hasVoted\":false,\"self\":\"https://example.altostrat.com:8443/rest/api/2/issue/VISP-78/votes\",\"votes\":0},\"watches\":{\"isWatching\":true,\"self\":\"https://example.altostrat.com:8443/rest/api/2/issue/VISP-78/watchers\",\"watchCount\":1},\"worklog\":{\"maxResults\":20,\"startAt\":0,\"total\":0,\"worklogs\":[]},\"workratio\":-1},\"id\":\"467517\",\"key\":\"VISP-78\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/issue/467517\"},\"issue_event_type_name\":\"issue_updated\",\"timestamp\":1744609737983,\"user\":{\"active\":true,\"avatarUrls\":{\"16x16\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=16\",\"24x24\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=24\",\"32x32\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=32\",\"48x48\":\"https://www.altostrat.com/avatar/c6e1562d286aa0bff37d0ff6b39b4e29?d=mm\\u0026s=48\"},\"displayName\":\"VAIS Admin PAT Jira User\",\"emailAddress\":\"baklavainthebalkans@gmail.com\",\"key\":\"JIRAUSER10401\",\"name\":\"vais_adminpat_user\",\"self\":\"https://example.altostrat.com:8443/rest/api/2/user?username=vais_adminpat_user\",\"timeZone\":\"UTC\"},\"webhookEvent\":\"jira:issue_updated\"}"
+      }
+    </pre>
+    </devsite-expandable>
+
+  <h2>Edit Jira Server (Data Center) trigger</h2>
+  <p>You can edit a <b>Jira Server (Data Center) trigger</b> to change or update the connection configuration and event subscription details.</p>
+  <aside class="note"><b>Important:</b> When you edit or modify a Jira Server (Data Center) trigger, you can either retain the previously configured event subscription that is attached to the trigger, or you can delete it. Deleting an event subscription will affect all the published integrations using that event subscription. </aside>
+  <p>To edit a Jira Server (Data Center) trigger, perform the following steps:</p>
+  <ol>
+  <li>Click the <b>Jira Server (Data Center) trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure Jira Server (Data Center) trigger</b>.</li>
+  <li>Do the following in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li>To retain the previously configured event subscription, click <b>Retain</b>, else click <b>Delete</b>.
+      <aside class="warning"><b>Warning:</b> Deleting an event subscription will affect all the published integrations using the event subscription. This task cannot be undone.</aside>
+    </li>
+    <li>Update the connection configuration and event subscription details as desired.</li>
+    <li>Click <b>Done</b>.</li>
+  </ol>
+  </li>
+  <p>You can view the updated connection and event subscription details in the trigger configuration pane under <b>Event Subscription details</b>.</p>
+  </ol> 
+
+<h2 id="events">Supported event subscription types</h2>
+  <p>You can use the <b>Jira Server (Data Center) trigger</b> to invoke an integration for the following event subscription types:</p>
+  <devsite-filter>
+    <input type="text" placeholder="Type a keyword here to find the right event subscription type">
+  <table>
+    <thead>
+      <tr>
+        <th width="30%">Event subscription types</th>
+        <th width="70%">Description</th>
+      </tr>
+    </thead>
+    <tbody class="list">
+      <tr>
+        <td>issue_created
+        </td>
+        <td>Issue is created
+        </td>
+       </tr>
+       <tr>
+        <td>issued_deleted
+        </td>
+        <td>Issue is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>issued_updated
+        </td>
+        <td>Issue is updated
+        </td>
+       </tr>
+       <tr>
+        <td>board_created
+        </td>
+        <td>Board is created.
+        </td>
+       </tr>
+       <tr>
+        <td>borard_deleted
+        </td>
+        <td>Board is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>board_updated
+        </td>
+        <td>Board is updated
+        </td>
+       </tr>
+       <tr>
+        <td>comment_created
+        </td>
+        <td>Comment is created 
+        </td>
+       </tr>
+       <tr>
+        <td>comment_deleted
+        </td>
+        <td>Comment is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>comment_updated
+        </td>
+        <td>Comment is updated
+        </td>
+       </tr>
+       <tr>
+        <td>project_Created
+        </td>
+        <td>Project is created
+        </td>
+       </tr>
+       <tr>
+        <td>project_deleted
+        </td>
+        <td>Project is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>project_updated
+        </td>
+        <td>Project is updated
+        </td>
+       </tr>
+       <tr>
+        <td>sprint_closed
+        </td>
+        <td>Sprint is closed
+        </td>
+       </tr>
+       <tr>
+        <td>sprint_deleted
+        </td>
+        <td>Sprint is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>sprint_updated
+        </td>
+        <td>Sprint is updated
+        </td>
+       </tr>
+       <tr>
+        <td>sprint_created
+        </td>
+        <td>Sprint is created
+        </td>
+       </tr>
+       <tr>
+        <td>sprint_started
+        </td>
+        <td>Sprint is started
+        </td>
+       </tr>
+       <tr>
+        <td>user_Created
+        </td>
+        <td>User is created
+        </td>
+       </tr>
+       <tr>
+        <td>user_updated
+        </td>
+        <td>User is updated
+        </td>
+       </tr>
+       <tr>
+        <td>user_deleted
+        </td>
+        <td>User is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>worklog_created
+        </td>
+        <td>Worklog is created
+        </td>
+       </tr>
+       <tr>
+        <td>worklog_deleted
+        </td>
+        <td>Worklog is deleted
+        </td>
+       </tr>
+       <tr>
+        <td>worklog_updated
+        </td>
+        <td>Worklog is updated
+        </td>
+       </tr>
+    </tbody>
+  </table>
+</devsite-filter>
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}

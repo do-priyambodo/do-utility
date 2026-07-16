@@ -1,0 +1,1357 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}Zendesk trigger{% endblock %}
+
+{% block body %}
+
+<p>The <b>Zendesk trigger</b> is a <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a> that lets you invoke an integration based on the <a href="#events">Zendesk events</a> that you've subscribed to in your Zendesk connection.</p>
+
+<aside class="note"><b>Important:</b> Integration Connectors is a billable component of Google Cloud. For information about the costs and charges of using Integration Connectors, see <a href="/integration-connectors/docs/pricing">Integration Connectors pricing</a>.</aside>
+
+<h2 id="iam">Before you begin</h2>
+<p>If you plan to create or configure a new connection for the <b>Zendesk trigger</b>, make sure that you have the following IAM role on the project:</p>
+<ul>
+  <li>Connector Admin (<code>roles/connectors.admin</code>) </li>
+  <p>For information about granting roles, see <a href="/iam/docs/granting-changing-revoking-access">Manage access</a>.</p>
+</ul>
+
+<p>Grant the following IAM roles to the service account that you want to use for the <b>Zendesk trigger</b>:</p>
+<ul>
+  <li>Application Integration Invoker (<code>roles/integrations.integrationInvoker</code>) </li>
+  <p>For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</p>
+</ul>
+
+<h2>Add the Zendesk trigger</h2>
+
+<p>
+To add a <b>Zendesk trigger</b> to your integration, perform the following steps:
+</p>
+
+<ol>
+  {{apip_apigee_steps_trigger}}
+  {{ apip_sa_steps_trigger }}
+<li>Click and place the <b>Zendesk trigger</b> element in the integration editor.</li>
+<p>To configure the <b>Zendesk trigger</b>, you can either use an existing Zendesk connection available in Integration Connectors, or create a new Zendesk connection using the inline connection creation option.</p>
+</ol>
+
+<h2>Configure Zendesk trigger using an existing connection</h2>
+
+<p>
+  You can configure the <b>Zendesk trigger</b> using an existing Zendesk connection in Integration Connectors. Note that the <b>Zendesk trigger</b> is an <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a>, therefore you can only use a Zendesk connection with event subscription enabled to configure the trigger. 
+</p>
+<p>For information about how to configure a <b>Zendesk trigger</b> using a new Zendesk connection, See <a href="#create">Configure Zendesk trigger using a new connection</a></p>
+<p>To configure a <b>Zendesk trigger</b> using an existing Zendesk connection, perform the following steps:</p>
+
+<ol>
+  <li>Click the <b>Zendesk trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Provide the following configuration details in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li><b>Region:</b> Select the region of your Zendesk connection.</li>
+      <li><b>Connection:</b> Select the Zendesk connection that you want to use.
+      <p>{{integration}} only displays those Zendesk connections that are active and have an event subscription enabled. 
+      </p>
+    </li>
+      <li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+      <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the Zendesk trigger.</li>
+    </ol>
+  </li>
+  <li>Click <b>Done</b> to complete the trigger configuration and close the page.</li>
+</ol>
+
+
+<h2 id="create">Configure Zendesk trigger using a new connection</h2>
+
+
+<p>To configure the <b>Zendesk trigger</b> using a new Zendesk connection, perform the following steps:</p>
+<ol>
+  <li>Click the <b>Zendesk trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Skip the <b>Region</b> field.</li>
+  <li>Click <b>Connection</b> and select the <b>Create Connection</b> option from the drop-down menu.</li>
+  <li>Complete the following steps in the <b>Create Connection</b> pane:
+  <ol>
+    <li>In the <b>Location</b> step, choose the location for the new Zendesk connection:
+      <ol>
+        <li><b>Region:</b> Select a region from the drop-down list.
+        </li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+  
+    <li>In the <b>Connection Details</b> step, provide details about the new Zendesk connection:
+      <ol>
+        <li><b>Connector version:</b> Choose an available version of the Zendesk connector from the drop-down list.
+        </li>
+        <li><b>Connection Name:</b> Enter a name for the Zendesk connection.
+          <aside class="note"><b>Note:</b> Connection names must meet the following criteria:
+          <ul>
+            <li>Connection names can use letters, numbers, or hyphens.</li>
+            <li>Letters must be lower-case.</li>
+            <li>Connection names must begin with a letter and end with a letter or number.</li>
+            <li>Connection names cannot exceed 63 characters.</li>
+          </ul>
+        </aside>
+        </li>
+        <li>(Optional) <b>Description: </b> Enter a description for the connection.</li>
+        <li>(Optional) <b>Enable Cloud Logging:</b> Select this checkbox to store all log data of the connection.</li>
+        <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the Zendesk connection.</li>
+        <li><b>Enable event subscription:</b> Select to create and enable a new event subscription for the Zendesk connection. You can either only enable event subscriptions or also include connection <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a>.
+        <aside class="note"><b>Note:</b> The following additional connection configuration steps are required if you choose to enable <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a> for the connection:
+          <ul>
+            <li><a href="#destination">Destinations</a></li>
+            <li><a href="#auth">Authentication</a></li>
+          </ul>
+        </aside>
+      </li>
+        <li>(Optional) Expand <b>Advanced settings</b> to configure the connection node settings.
+          <p>
+            For more information about the connection node settings for Zendesk, see the <a href="/integration-connectors/docs/connectors/zendesk/configure">Zendesk connection</a> documentation.
+          </p></li>
+        <li>(Optional) Click <b>+ Add label</b> to add a label to the connection in the form of a key-value pair.</li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+
+  <li id="destination">
+    In the <b>Destinations</b> step, provide the Zendesk instance details: 
+    <ol>
+      <li><b>Destination Type:</b>  Select <b>Host address</b>.</li>
+      <li><b>Host:</b> Enter the hostname or IP address of your Zendesk instance.</li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li> 
+
+  <li id="auth">
+    In the <b>Authentication</b> step, provide the authentication details for the Zendesk instance: 
+    <ol>
+      <li>Select your desired authentication type and enter the relevant details to access the provided Zendesk host URL.
+        <p>To understand how to configure these authentication types, see <a href="/integration-connectors/docs/connectors/zendesk/configure#configure-auth">Configure authentication</a>.</p>
+      </li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li> 
+
+    <li>
+      In the <b>Event subscription details</b> step, provide details of the Zendesk instance where the event subscriptions will be created. 
+      <ol>
+        <li><b>Destination Type:</b>  Select <b>Host address</b>.</li>
+        <li><b>Host:</b>  Enter the registration URL of your Zendesk instance. Event subscriptions will be created for this URL.</li>
+        <li><b>Username:</b> Enter the username to access the provided registration URL.</li>
+        <li><b>Password:</b> Select the Secret Manager secret containing the password associated with the username.</li>
+        <li><b>Secret version:</b> Select a secret version.</li>
+        <li><b>Enable data enrichment:</b> Select this checkbox if you want the <b>Zendesk trigger</b> to retrieve the complete event payload from the Zendesk instance. See <a href="#output">Trigger output</a> for examples.</li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li> 
+  
+    <li><b>Review</b>: Review the provided Zendesk connection details.</li>
+  <li>Click <b>Create</b> to complete creating a new Zendesk connection.</li>
+  </ol>
+  </li>
+  <li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+  <li>Click <b>Done</b> and close the page.</li>
+  </ol>
+
+
+<h2 id="output">Trigger output</h2>
+<p>The <b>Zendesk trigger</b> takes a couple of minutes to complete the event subscription configuration. You can view the status of your event subscription in the trigger configuration pane under <b>Event Subscription details</b>.</p>
+<p>The <b>Zendesk trigger</b> indicates the status of an event subscription using the following states:</p>
+  <ul>
+    <li><span class="material-icons">
+      restart_alt
+      </span><code>Creating</code>: Indicates that the trigger is subscribing to the event subscription.
+    <li><span class="material-icons">
+      check_circle
+      </span><code>Active</code>: Indicates that the trigger is successfully subscribed to an event subscription.</li>
+    <li><span class="material-icons">
+      error
+      </span><code>Error</code>: Indicates that the there is an issue with the configured event subscription. </li>
+</ul>
+<p>In addition to the event subscription status, the <b>Event Subscription details</b> section also displays other details such as connection region, connection name, event subscription name, and more.</p>
+<p>The following image shows a sample layout of the Zendesk trigger configuration pane:</p>
+<img src="{{baseimagepath}}/images/zendesk_trigger_1.png" alt="image showing Zendesk trigger configuration pane"
+      data-modal-dialog-id="zen_ui" class="screenshot">
+
+<devsite-lightbox id="zen_ui">
+  <img src="{{baseimagepath}}/images/zendesk_trigger_1.png" alt="image showing Zendesk trigger configuration pane">
+</devsite-lightbox>
+
+<h3>Trigger output variable</h3>
+<p>
+  For each event, the <b>Zendesk trigger</b> generates a <code>ConnectorEventPayload</code> output variable which you can use in your downstream tasks. The output variable is in JSON format containing the output Zendesk payload schema.
+</p>
+<devsite-expandable>
+<h4 class="showalways">Example 1: Output payload for the Zendesk event: <b>Agent Assignment Changed</b></h4>
+
+<pre class="prettyprint lang-json devsite-click-to-copy">
+  {
+    "description": "The root schema of event that has occurred in Zendesk.",
+    "type": "object",
+    "properties": {
+        "data": {
+    "description": "",
+    "type": "object",
+    "properties": {
+        "accountId": {
+            "description": "Zendesk account ID.",
+            "type": "number",
+            "readOnly": false
+        },
+        "integration_key": {
+            "description": "Integration Key retrieved from ZIS bundle.",
+            "type":  "string",
+            "readOnly": false
+        },
+        "subdomain": {
+            "description": "Account subdomain.",
+            "type":  "string",
+            "readOnly": false
+        },
+        "input": {
+            "description": "Contains information about events changes.",
+            "type": "object",
+            "properties": {
+                "ticket_event": {
+                    "description": "Type of event is ticket event.",
+                    "type": "object",
+                    "properties": {
+                        "meta": {
+                            "description": "Metadata about the ticket.",
+                            "type": "object",
+                            "properties": {
+                                "version": {
+                                    "description": "Event version",
+                                    "type":  ["string", "null"]
+                                },
+                                "occurred_at": {
+                                    "description": "Timestamp when the event occurred.",
+                                    "type":  "string"
+                                },
+                                "ref": {
+                                    "description": "Reference ID",
+                                    "type":  ["string", "null"]
+                                },
+                                "sequence": {
+                                    "description": "Sequence of Occurrence",
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "description": "",
+                                            "type":  ["string", "null"]
+                                        },
+                                        "position": {
+                                            "description": "",
+                                            "type": ["number","null"]
+                                        },
+                                        "total": {
+                                            "description": "",
+                                            "type": ["number","null"]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "type": {
+                            "description": "Type of Ticket Event ",
+                            "type":  "string"
+                        },
+                        "previous": {
+                            "description": "Previous ID",
+                            "type": ["number","null"]
+                        },
+                        "current": {
+                            "description": "Current ID",
+                            "type": ["number","null"]
+                        },
+                        "ticket": {
+                            "description": "Properties related to the ticket",
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "description": "Ticket ID",
+                                    "type": "number"
+                                },
+                                "created_at": {
+                                    "description": "Timestamp of ticket creation.",
+                                    "type":  "string"
+                                },
+                                "updated_at": {
+                                    "description": "Timestamp of ticket updation.",
+                                    "type":  "string"
+                                },
+                                "type": {
+                                    "description": "Type of ticket",
+                                    "type":  ["string", "null"]
+                                },
+                                "priority": {
+                                    "description": "Priority of ticket.",
+                                    "type":  ["string", "null"]
+                                },
+                                "status": {
+                                    "description": "Status of the ticket.",
+                                    "type":  ["string", "null"]
+                                },
+                                "requester_id": {
+                                    "description": "ID of the ticket requestor.",
+                                    "type": ["number","null"]
+                                },
+                                "submitter_id": {
+                                    "description": "ID of the ticket submitter.",
+                                    "type": ["number","null"]
+                                },
+                                "assignee_id": {
+                                    "description": "ID of the ticket assignee.",
+                                    "type": ["number","null"]
+                                },
+                                "organization_id": {
+                                    "description": "ID of the organization ticket belongs to.",
+                                    "type": ["number","null"]
+                                },
+                                "group_id": {
+                                    "description": "ID of the group ticket belongs to.",
+                                    "type": ["number","null"]
+                                },
+                                "brand_id": {
+                                    "description": "ID of the brand ticket belongs to",
+                                    "type": ["number","null"]
+                                },
+                                "form_id": {
+                                    "description": "ID of the form associated with the ticket.",
+                                    "type": ["number","null"]
+                                },
+                                "external_id": {
+                                    "description": "",
+                                    "type":  ["string", "null"]
+                                },
+                                "tags": {
+                                    "description": "Tags associated with the ticket.",
+                                    "type": "array",
+                                    "items": {
+                                        "description": "",
+                                        "type":  ["string", "null"]
+                                    }
+                                },
+                                "via": {
+                                    "description": "Channel via which change was made.",
+                                    "type": "object",
+                                    "properties": {
+                                        "channel": {
+                                            "description": "",
+                                            "type":  "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "readOnly": false
+        }
+    }
+}
+}
+}
+
+</pre>
+</devsite-expandable>
+
+<devsite-expandable>
+  <h4 class="showalways">Example 2: Data enriched output payload for the Zendesk event: <b>Agent Assignment Changed</b></h4>
+  
+  <pre class="prettyprint lang-json devsite-click-to-copy">
+    {
+      "description": "The root schema of event that has occurred in Zendesk.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "accountId": {
+              "description": "Zendesk account ID.",
+              "type": "number",
+              "readOnly": false
+            },
+            "integration_key": {
+              "description": "Integration Key retrieved from ZIS bundle.",
+              "type": "string",
+              "readOnly": false
+            },
+            "subdomain": {
+              "description": "Account subdomain.",
+              "type": "string",
+              "readOnly": false
+            },
+            "input": {
+              "description": "Contains information about events changes.",
+              "type": "object",
+              "properties": {
+                "ticket_event": {
+                  "description": "Type of event is ticket event.",
+                  "type": "object",
+                  "properties": {
+                    "meta": {
+                      "description": "Metadata about the ticket.",
+                      "type": "object",
+                      "properties": {
+                        "version": {
+                          "description": "Event version",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "occurred_at": {
+                          "description": "Timestamp when the event occurred.",
+                          "type": "string"
+                        },
+                        "ref": {
+                          "description": "Reference ID",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sequence": {
+                          "description": "Sequence of Occurrence",
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "description": "",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "position": {
+                              "description": "",
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "total": {
+                              "description": "",
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "type": {
+                      "description": "Type of Ticket Event ",
+                      "type": "string"
+                    },
+                    "previous": {
+                      "description": "Previous ID",
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "current": {
+                      "description": "Current ID",
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "ticket": {
+                      "description": "Properties related to the ticket",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "Ticket ID",
+                          "type": "number"
+                        },
+                        "created_at": {
+                          "description": "Timestamp of ticket creation.",
+                          "type": "string"
+                        },
+                        "updated_at": {
+                          "description": "Timestamp of ticket updation.",
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "Type of ticket",
+                          "type": "string"
+                        },
+                        "priority": {
+                          "description": "Priority of ticket.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "description": "Status of the ticket.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requester_id": {
+                          "description": "ID of the ticket requestor.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "submitter_id": {
+                          "description": "ID of the ticket submitter.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "assignee_id": {
+                          "description": "ID of the ticket assignee.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "organization_id": {
+                          "description": "ID of the organization ticket belongs to.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "group_id": {
+                          "description": "ID of the group ticket belongs to.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "brand_id": {
+                          "description": "ID of the brand ticket belongs to",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "form_id": {
+                          "description": "ID of the form associated with the ticket.",
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "external_id": {
+                          "description": "",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "tags": {
+                          "description": "Tags associated with the ticket.",
+                          "type": "array",
+                          "items": {
+                            "description": "",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "via": {
+                          "description": "Channel via which change was made.",
+                          "type": "object",
+                          "properties": {
+                            "channel": {
+                              "description": "",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "readOnly": false
+            }
+          }
+        },
+<strong>"context-data": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "Id": {
+              "type": "number",
+              "readOnly": false,
+              "description": "Automatically assigned when the ticket is created."
+            },
+            "Subject": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The value of the subject field for this ticket. When used in WHERE clause: The text in the ticket subject"
+            },
+            "RawSubject": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The dynamic content placeholder, if present, or the subject value, if not."
+            },
+            "Description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The first comment on the ticket. When used in WHERE clause: The text in the tickets description and comments"
+            },
+            "Type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The type of this ticket. Possible values: problem, incident, question or task."
+            },
+            "Priority": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The urgency with which the ticket should be addressed. Possible values: urgent, high, normal, low."
+            },
+            "Status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The state of the ticket. Possible values: new, open, pending, hold, solved, closed."
+            },
+            "Recipient": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The original recipient e-mail address of the ticket."
+            },
+            "HasIncidents": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Is true of this ticket has been marked as a problem, false otherwise."
+            },
+            "DueAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "If this is a ticket of type task it has a due date. Due date format uses ISO 8601 format."
+            },
+            "RequesterId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The user who requested this ticket."
+            },
+            "SubmitterId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The user who submitted the ticket. The submitter always becomes the author of the first comment on the ticket. "
+            },
+            "AssigneeId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The agent currently assigned to the ticket."
+            },
+            "OrganizationId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The organization of the requester. You can only specify the ID of an organization associated with the requester."
+            },
+            "GroupId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The group this ticket is assigned to. When used in WHERE clause: The assigned agents group name."
+            },
+            "CollaboratorIds": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The ids of users currently cc-ed on the ticket."
+            },
+            "FollowerIds": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Agents currently following the ticket."
+            },
+            "ForumTopicId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The topic this ticket originated from, if any."
+            },
+            "ProblemId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "For tickets of type incident, the ID of the problem the incident is linked to."
+            },
+            "ExternalId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "An id you can use to link Zendesk Support tickets to local records."
+            },
+            "FollowupIds": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Closed tickets only. The ids of the followups created from this ticket."
+            },
+            "ViaFollowupSourceId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "POST requests only. The id of a closed ticket when creating a follow-up ticket.."
+            },
+            "MacroIds": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "POST requests only. List of macro IDs to be recorded in the ticket audit."
+            },
+            "TicketFormId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Enterprise only. The id of the ticket form to render for the ticket."
+            },
+            "BrandId": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Enterprise only. The id of the brand this ticket is associated with."
+            },
+            "Tags": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The array of tags applied to this ticket."
+            },
+            "ViaChannel": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "This tells you how the ticket or event was created. Examples: web, mobile, rule, system."
+            },
+            "ViaSource": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The tickets source. "
+            },
+            "CustomFields": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Custom fields for the ticket.The values of custom field are set and get dynamically"
+            },
+            "SatisfactionRating": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The satisfaction rating of the ticket, if it exists, or the state of satisfaction, offered or unoffered."
+            },
+            "SharingAgreementIds": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The ids of the sharing agreements used for this ticket."
+            },
+            "AllowChannelback": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Is false if channelback is disabled, true otherwise. Only applicable for channels framework ticket."
+            },
+            "IsPublic": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Is true if any comments are public, false otherwise."
+            },
+            "CreatedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "When this record was created."
+            },
+            "UpdatedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "When this record last got updated."
+            },
+            "Url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The API url of this ticket."
+            },
+            "View_Id": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The view that tickets belong to."
+            },
+            "User_Id": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The user that tickets belong to."
+            },
+            "Assignee": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The assigned agent or other entity. You can specify none, me, user name (full name or partial), email address, user ID, or phone number"
+            },
+            "GroupName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The assigned agents group name."
+            },
+            "Requester": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The ticket requester. You can specify none, me, user name (full name or partial), email address, user ID, or phone number."
+            },
+            "Submitter": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The ticket submitter. This may be different than the requester if the ticket was submitted by an agent on behalf of the requester. You can specify none, me, user name (full name or partial), email address, user ID, or phone number. ."
+            },
+            "Brand": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Search for a specific Brand on a ticket."
+            },
+            "Via": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "The tickets source, which can be any of the following:mail, api, phone, etc."
+            },
+            "Commenter": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "People who have added comments to tickets. You can specify none, me, user name (full name or partial), email address, user ID, or phone number."
+            },
+            "Cc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "People who have been CCd on tickets. You can specify none, me, user name (full name or partial), email address, user ID, or phone number."
+            },
+            "HasAttachment": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "readOnly": false,
+              "description": "Search for all tickets with or without attachments using true or false."
+            },
+            "Ticket status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "readOnly": false
+            }
+          }
+        }</strong>
+      }
+    }
+    
+  </pre>
+  </devsite-expandable>
+
+  <h3>View event subscriptions</h3>
+<p>To view and manage all the event subscriptions associated with a connection in Integration Connectors, do the following:</p>
+
+<ol>
+  <li>Go to <b>Integration Connectors > Connections</b> page.
+      <p><a href="{% dynamic print site_values.console_url %}connectors/connections" target="console" class="button button-primary">
+          Go to the Connections page</a></p></li>
+  <li>Click the connection for which you want to view the subscriptions.</li>
+  <li>Click the <b>Event subscriptions</b> tab.
+  <p>This displays all the event subscriptions for the connection.</p>
+  </li>
+</ol>
+
+  <h2>Edit Zendesk trigger</h2>
+  <p>You can edit a <b>Zendesk trigger</b> to change or update the connection configuration and event subscription details.</p>
+  <aside class="note"><b>Important:</b> When you edit or modify a Zendesk trigger, you can either retain the previously configured event subscription that is attached to the trigger, or you can delete it. Deleting an event subscription will affect all the published integrations using that event subscription. </aside>
+  <p>To edit a Zendesk trigger, perform the following steps:</p>
+  <ol>
+  <li>Click the <b>Zendesk trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure Zendesk trigger</b>.</li>
+  <li>Do the following in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li>To retain the previously configured event subscription, click <b>Retain</b>, else click <b>Delete</b>.
+      <aside class="warning"><b>Warning:</b> Deleting an event subscription will affect all the published integrations using the event subscription. This task cannot be undone.</aside>
+    </li>
+    <li>Update the connection configuration and event subscription details as desired.</li>
+    <li>Click <b>Done</b>.</li>
+  </ol>
+  </li>
+  <p>You can view the updated connection and event subscription details in the trigger configuration pane under <b>Event Subscription details</b>.</p>
+  </ol> 
+
+<h2 id="events">Supported event subscription types</h2>
+  <p>You can use the <b>Zendesk trigger</b> to invoke an integration for the following event subscription types:</p>
+  <devsite-filter>
+    <input type="text" placeholder="Type a keyword here to find the right event subscription type">
+  <table>
+    <thead>
+      <tr>
+        <th width="30%">Event subscription types</th>
+        <th width="70%">Description</th>
+      </tr>
+    </thead>
+    <tbody class="list">
+      <tr>
+        <td><code>organization.ExternalChanged</code>
+        </td>
+        <td >An organization's external ID changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>organization.OrganizationCreated</code>
+        </td>
+        <td >An organization is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>organization.TagsChanged</code>
+        </td>
+        <td >An organization's tags changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.AgentAssignmentChanged</code>
+        </td>
+        <td >A ticket is reassigned to another agent in support.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.AttachmentLinkedToComment</code>
+        </td>
+        <td >An attachment is linked to a ticket comment in support.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.AttachmentRedactedFromComment</code>
+        </td>
+        <td >An attachment is redacted from an existing comment in a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td ><code>ticket.BrandChanged</code>
+        </td>
+        <td >The brand is changed. A brand is a customer-facing identity which can be represented as multiple products or services, or multiple brands owned by the company.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.CcsChanged</code>
+        </td>
+        <td >Users were added or removed from a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.CommentAdded</code>
+        </td>
+        <td >A comment is added when a support ticket is created or updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.CommentMadePrivate</code>
+        </td>
+        <td >A private comment is added on a support ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.CommentRedacted</code>
+        </td>
+        <td >Words or strings were permanently removed from a ticket comment.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.DescriptionChanged</code>
+        </td>
+        <td >The description is changed in a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.ExternalIdChanged</code>
+        </td>
+        <td >The external ticket ID is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.FollowersChanged</code>
+        </td>
+        <td >Followers were changed on a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.GroupAssignmentChanged</code>
+        </td>
+        <td >A ticket is reassigned to another group of agents.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.MarkedAsSpam</code>
+        </td>
+        <td >A ticket is marked as spam.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.OrganizationChanged</code>
+        </td>
+        <td >The organization is changed in the ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.PriorityChanged</code>
+        </td>
+        <td >The priority is changed on a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.ProblemLinkChanged</code>
+        </td>
+        <td >The problem ID associated with an incident type ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.RequesterChanged</code>
+        </td>
+        <td >The requester of a ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.StatusChanged</code>
+        </td>
+        <td >The status of a ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.SubjectChanged</code>
+        </td>
+        <td >The subject of a ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.SubmitterChanged</code>
+        </td>
+        <td >The submitter of a ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TagsChanged</code>
+        </td>
+        <td >Tags were changed in a ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TaskDueAtChanged</code>
+        </td>
+        <td >The task due date and time on a ticket is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketCreated</code>
+        </td>
+        <td >A support ticket is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketFormChanged</code>
+        </td>
+        <td >The form is changed in the ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketMerged</code>
+        </td>
+        <td >A ticket is merged with another ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketPermanentlyDeleted</code>
+        </td>
+        <td >A ticket is permanently deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketSoftDeleted</code>
+        </td>
+        <td >A ticket is deleted such that it is not visible to any users, including admins using either the product interface or the API.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketTypeChanged</code>
+        </td>
+        <td >A ticket type is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>ticket.TicketUndeleted</code>
+        </td>
+        <td >A ticket is undeleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.CustomRoleChanged</code>
+        </td>
+        <td >A user's custom role changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.ExternalidChanged</code>
+        </td>
+        <td >A user's external ID changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.LastLoginChanged</code>
+        </td>
+        <td >A user's last login time changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.OnlyPrivateCommentsChanged</code>
+        </td>
+        <td >A user's ability to create public comments changed. 
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.TageChanged</code>
+        </td>
+        <td >A user's tags changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>userTimeZoneChanged</code>
+        </td>
+        <td >A user's time zone changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserAliasChanged</code>
+        </td>
+        <td >A user's alias changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserCreated</code>
+        </td>
+        <td >A user is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserDetailsChanged</code>
+        </td>
+        <td >A user's details changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserGroupAdded</code>
+        </td>
+        <td >A user is added to a group.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserGroupRemoved</code>
+        </td>
+        <td >A user is removed from a group.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserIdentityChanged</code>
+        </td>
+        <td >A user's identity changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserIdentityCreated</code>
+        </td>
+        <td >A user's identity is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserIdentityRemoved</code>
+        </td>
+        <td >A user's identity is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserActiveChanged</code>
+        </td>
+        <td >A user's active status changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserMerged</code>
+        </td>
+        <td >A user is merged with another user.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserNameChanged</code>
+        </td>
+        <td >A user's name changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserNotesChanged</code>
+        </td>
+        <td >A user's notes changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserOrganizationAdded</code>
+        </td>
+        <td >A user is added to an organization.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserOrganizationRemoved</code>
+        </td>
+        <td >A user is removed from an organization.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserPhotoChanged</code>
+        </td>
+        <td >A user's photo changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user.UserRoleChanged</code>
+        </td>
+        <td >A user's role changed.
+        </td>
+       </tr>
+    </tbody>
+  </table>
+</devsite-filter>
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}

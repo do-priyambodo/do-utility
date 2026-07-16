@@ -1,0 +1,115 @@
+{% extends "application-integration/_base.html" %}
+
+{% include "/_shared/apis/console/_local_variables.html" %}
+
+{% block page_title %}Handle JSON payloads as strings in HTTP Connectors task{% endblock %}
+
+{% block body %}
+
+<p>In this tutorial, you learn how to handle JSON payloads when you use an <b>HTTP Connectors</b> task in {{integration}}.</p>
+<p>Incorrectly treating the payload can cause APIs to misinterpret it, resulting in <code>400 Bad Request</code> errors. To ensure APIs receive and parse your JSON payload correctly, treat the JSON payload as a string and explicitly set the <code>Content-Type</code> header to <code>application/json</code>.</p>
+
+<h2>Before you begin</h2>
+<ul>
+  <li>Verify you can access <a href="/application-integration/docs/setup-application-integration">{{integration}}</a>.</li>
+  <li>
+    <p>Select your {{gcp_name}} project and complete the following tasks:</p>
+    <ul>
+      {% include "/application-integration/docs/_shared/_common-required-roles.html" %}
+      <li>Enable the following services:
+        <ul>
+          {% include "/application-integration/docs/_shared/_common-enable-services.html" %}
+        </ul>
+        <p>If you haven't enabled these services for your project, the <b>Create Connection</b> page prompts you to enable them
+        when you create the connection.</p>
+      </li>
+    </ul>
+  </li>
+  <li>Add and configure an <a href="/application-integration/docs/configure-connectors-task">HTTP Connectors</a> task.</li>
+  <li>Add and configure the <a href="/application-integration/docs/configure-data-transformer-script-task">Data Transformer task</a> to prepare the JSON payload and headers.</li>
+</ul>
+
+<h2 id="handle-json-payloads">Handle JSON payloads as strings</h2>
+<p>To handle JSON payloads that contain special characters when you use an <b>HTTP Connectors</b> task, complete the following steps:</p>
+<ul>
+  <li><a href="#create-string-variable">Create a string variable for the JSON payload</a></li>
+  <li><a href="#map-string-variable">Map the string variable to the connector input body</a></li>
+  <li><a href="#add-content-type-header">Add a custom Content-Type header</a></li>
+  <li><a href="#execute-connector-task">Execute the HTTP Connectors task</a></li>
+</ul>
+
+<h3 id="create-string-variable">Create a string variable for the JSON payload</h3>
+<ol>
+  <li>In the {{console_name}}, go to the <b>Application Integration</b> page.
+    <p><a href="{{ console_url }}integrations" target="console" class="button button-primary">Go to Application Integration</a></p>
+  </li>
+  <li>In the navigation menu, click <b>Integrations</b>.</li>
+  <li>Select an existing integration or <a href="/application-integration/docs/setup-application-integration">create a new one</a>. Ensure your integration includes the configured <b>HTTP Connectors</b> and <b>Data Transformer</b> tasks as detailed in the <a href="#before-you-begin">Before you begin</a> section.</li>
+  <li>In the <i>integration editor</i>, click <span class="material-icons">add</span> <b>Create</b> to open the <b>Create variable</b> dialog.</li>
+  <li>In the <b>Create variable</b> dialog:
+    <ol>
+      <li>Enter the following information:
+        <ol>
+          <li><b>Name:</b> Enter a name, for example, <code>jsonPayloadString</code>.</li>
+          <li><b>Data Type:</b> Select <b>String</b>.</li>
+          <li><b>Default Value:</b>
+            <ul>
+              <li>If the JSON payload is populated by a preceding task in the integration flow, for example, another <a href="/application-integration/docs/configure-data-transformer-script-task">Data Transformer</a> task, leave this field empty. The variable will be populated dynamically based on the output of previous tasks in the integration.</li>
+              <li>If the JSON payload is not populated by a preceding task, you must provide a static default JSON payload. Enter the JSON structure as a single string in this field.
+                <p>Here are two examples of how to enter JSON strings in the <b>Default Value</b> field:</p>
+                <p><b>Without special characters</b>: To represent the JSON <code>{"name": "Developer", "key": "test"}</code>, enter exactly: <code>{ "name": "Developer", "key": "test" }</code>.</p>
+                <p><b>With special characters</b>: When your JSON contains special characters like newline (<code>\n</code>), you must escape them. For example, to represent the JSON <code>{"key": "value1\nvalue2"}</code>, enter <code>{"key": "value1\\nvalue2"}</code> in the field.</p>
+              </li>
+            </ul>
+          </li>
+        </ol>
+      </li>
+      <li>Click <b>Create</b>.
+    </ol>
+    <img src="/application-integration/images/string.png" alt="Create a string variable for the JSON payload" width="75%">
+  </li>
+For more information on creating and using variables, see <a href="/application-integration/docs/variables">Variables</a>.</li>
+</ol>
+
+<h3 id="map-string-variable">Map the string variable to the connector input body</h3>
+<p>In the <b>Data Transformer Editor</b>, map the <code>jsonPayloadString</code> variable to the <b>connectorInputPayload.Body</b> field.</p>
+<ol>
+  <li>In your integration, add a <a href="/application-integration/docs/configure-data-transformer-script-task">Data Transformer task</a>.</li>
+  <li>Open the <b>Data Transformer Editor</b>. You can use either the <b>Diagram mode</b> or the <b>Script mode</b>.</li>
+  <li>To map the variable:
+    <ul>
+      <li><b>Diagram mode:</b> Add <code>jsonPayloadString</code> as an input and map it to the <b>connectorInputPayload.Body</b> output field.</li>
+      <li><b>Script mode:</b> Write Jsonnet code to assign the value: <code>connectorInputPayload.Body = vars.jsonPayloadString;</code>.</li>
+    </ul>
+  </li>
+</ol>
+
+<h3 id="add-content-type-header">Add a custom Content-Type header</h3>
+<ol>
+  <li>In the <b>Data Transformer Editor</b>, add a mapping for custom headers to the <b>connectorInputPayload.Headers</b> field.
+    <ul>
+      <li><b>Diagram mode:</b> Add a constant input with the value <code>{"Content-Type": "application/json"}</code> and map it to <b>connectorInputPayload.Headers</b>.</li>
+      <li><b>Script mode:</b> Add the following Jsonnet to set the header:
+        <pre class="devsite-click-to-copy">
+connectorInputPayload.Headers = {
+  "Content-Type": "application/json"
+};
+        </pre>
+      </li>
+    </ul>
+  </li>
+</ol>
+
+<h3 id="execute-connector-task">Execute the HTTP Connectors task</h3>
+<p>Before executing your integration, verify that <a href="#map-string-variable"><code>connectorInputPayload.Body</code></a> is populated by the <a href="#map-string-variable"><code>jsonPayloadString</code></a> variable and that <a href="#add-content-type-header"><code>connectorInputPayload.Headers</code></a> includes the <a href="#add-content-type-header"><code>Content-Type: application/json</code> header</a>. This setup ensures the <b>HTTP Connectors</b> task sends the JSON payload as a string with the correct <code>Content-Type</code> in the <b>Data Transformer</b> task.</p>
+<p>Run your integration to test the API request. If the API returns a <code>400 Bad Request</code> error, verify the mappings for <code>connectorInputPayload.Body</code> and <code>connectorInputPayload.Headers</code> again in the <b>Data Transformer</b> task.</p>
+
+<h2>What's next</h2>
+<p>Try building integrations with other connectors. For a list
+  of all supported connectors,
+  see <a href="/integration-connectors/docs/connector-reference-overview">
+  Connector reference</a>.</p>
+
+{% endblock %}
+
+

@@ -1,0 +1,289 @@
+{% extends "_shared/templates/_tutorial_lesson.html" %}
+
+{% block pagevariables %}
+{% include "application-integration/docs/_shared/_integration_connector_localvars.html" %}
+{% setvar title %}Build CICD for your integration{% endsetvar %}
+
+{% setvar cleanup %}{% endsetvar %}
+{% setvar no_incurring_charges %}{% endsetvar %}
+
+{% setvar whatsnext %}{% endsetvar %}
+
+{% include "application-integration/_local_variables.html" %}
+{% include "solutions/_shared/_tutorial_index_link.html" %}
+<meta name="book_path" value="{{book_path}}" />
+<meta name="project_path" value="{{project_path}}" />
+<meta name="keywords" value="docType:Tutorial" />
+<meta name="description" content="Build CICD for Application Integration" />
+{% endblock %}
+
+{% block overview %}
+
+<p>This tutorial describes how to automate promoting an integration between different environments in different Google Cloud projects using <a href="/application-integration/docs/variables#config_var">config variables</a> (<a href="https://cloud.google.com/products#product-launch-stages">preview</a>).</p>
+
+<aside><b>Note:</b> You cannot use config variables to configure entity operations and actions for connectors.</aside>
+
+<aside class="tip">
+  <b>Tip:</b> To learn how to store integration and connector assets to a source code repository, promote changes across environments, and how such deployments can be automated, see the <a href="https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811">CICD for {{integration}}</a> blog.
+</aside>
+
+<h2>Overview</h2>
+
+In this tutorial, you'll automate {{integration}} deployments using config variable for a sample integration. This sample integration flow calls an API and publishes the response from the API to a {{pubsub_name}} topic.
+This sample is meant to illustrate the use of <b>Call REST Endpoint</b> and <b>Connectors</b> tasks. You can store the sample integration in GitHub repositories that correspond to the different environments and {{gcp_name}} projects.</p>
+
+{% endblock %}
+
+{% block objectives %}
+
+<p>This tutorial shows you how to complete the following tasks in your integration:</p>
+<ul>
+  <li>Create an integration.</li>
+  <li>Create config variables and use them in your integration.</li> 
+  <li>Promote your integration to another environment.</li>
+
+</ul>
+
+{% endblock %}
+
+{% block costs %}
+
+<p>In this tutorial, you use the following billable components of Google Cloud:</p>
+  <ul>
+  <li><a href="/application-integration/docs/pricing" track-type="solution" track-name="internalLink" track-metadata-position="body">
+  Application Integration</a>
+</li>
+  <li><a href="/integration-connectors/docs/pricing" track-type="solution" track-name="internalLink" track-metadata-position="body">
+    Integration Connectors</a></li>
+  </ul>
+
+<p>The instructions in this tutorial are designed to keep your resource usage within the limits of {{gcp_name}} <a href="/free/docs/free-cloud-features">Free cloud features and trial offer</a>. 
+{% include "cloud/_shared/_info_cleanup_reminder.html" %}
+</p>
+
+{% endblock %}
+
+{% block prerequisites %}
+
+{% setvar task_type %}console{% endsetvar %}
+{% dynamic setvar api_list %}secretmanager.googleapis.com, connectors.googleapis.com{% dynamic endsetvar %}
+{% dynamic setvar api_names %}Secret Manager API, Connectors API{% dynamic endsetvar %}
+{% dynamic setvar credential_type %}SERVICE_ACCOUNT{% dynamic endsetvar %}
+{% dynamic setvar iam_roles %}Pub/Sub Publisher (<code>roles/pubsub.publisher</code>){% dynamic endsetvar %}
+{% dynamic setvar service_account_key %}false{% dynamic endsetvar %}
+<ol>{% include "cloud/_shared/_before_you_begin.html" %}</ol>
+
+{% endblock %}
+
+{% block lessoncontent %}
+
+<h2>Create a {{pubsub_name}} topic</h2>
+
+<ol>
+  <li><p>In the {{console_name_short}}, go to the {{pubsub_name}} <strong>Topics</strong> page.</p>
+  <p><a href="{{ console_url }}cloudpubsub/topic" target="_blank" class="button button-primary">Go to Topics</a></p></li>
+  <li><p>Click <strong>Create topic</strong>.</p></li>
+  <li><p>In the <strong>Topic ID</strong> field, enter an ID for your topic. For more information about naming topics, see <a href="/pubsub/docs/pubsub-basics#resource_names">Guidelines to name a topic, subscription, schema, or snapshot. </a></p></li>
+  <li><p>Retain the option <strong>Add a default subscription</strong>.</p></li>
+  <li><p>Do not select the other options.</p></li>
+  <li><p>Click <strong>Create topic</strong>.</p></li>
+  </ol>
+
+<h2 id="create-pub-sub-connector">Configure a {{pubsub_name}} connector</h2>
+
+<ol>
+  <li>
+    In the <a href="{% dynamic print site_values.console_url %}">{{console_name}}</a>, go to the <b>{{integration_connectors_name}} > Connections</b> page
+    and then select or create a {{gcp_name}} project.
+    <p>
+      <a href="{% dynamic print site_values.console_url %}connectors/connections" target="console" class="button button-primary">
+        Go to the Connections page
+      </a>
+    </p>
+  </li>
+  <li>Click <b>+ Create New</b> to open the <b>Create Connection</b> page.</li>
+
+  <li>In the <b>Location</b> section, choose the location for the connection.
+    <ol>
+      <li><b>Region</b>: Select a location from the drop-down list.
+      
+        {{connector_regions}}
+      </li>
+      <li>Click <b>NEXT</b>.</li>
+    </ol>
+  </li>
+
+  <li>In the <b>Connection Details</b> section, complete the following:
+    <ol>
+      <li><b>Connector</b>: Select <b>Pub/Sub</b> from the drop down list of available Connectors.</li>
+      <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+      </li>
+      <li>In the <b>Connection Name</b> field, enter <code>pub-sub-connector</code>.
+        <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+                  <li>
+                    <b>Project ID</b>: {{gcp_name}} project ID where the {{pubsub_name}} instance resides.
+                  </li>
+                  <li>
+                    <b>Topic ID</b>: Enter the name of your <a href="#create-a-pubsub-topic">{{pubsub_name}} topic</a>.
+                  </li>
+                <li>Click <b>Next</b>.</li>
+              </ol>
+            </li>
+            <li>In the <b>Authentication</b> section, click <b>NEXT</b>.</li>
+          </li> 
+            <li><b>Review</b>: Review your connection and authentication details.</li>
+          <li>Click <b>Create</b>.</li>
+</ol>
+
+<h2>Create a new integration</h2>
+<p>
+  After you <a ref="/application-integration/docs/setup-application-integration">Set up {{application_integration_name}}</a>, you can create a new integration:
+  </p>
+  <ol>
+  {{apip_common_steps}}
+    <li>Click <span class="material-icons">add_box</span> <b>Create integration</b> and provide the following details in the <b>Create Integration</b> page:
+      <ol>
+        <li><b>Integration name:</b> Enter a name for your integration. For example, <code>build-cicd</code>.</li>
+        <li><b>Description:</b> Optionally, enter a description for your integration. For example, <code>Demo integration created for CICD tutorial</code>.</li>
+        <li><b>Region:</b> Select the region <code>us-central1</code> from the list of provisioned
+          regions. If the region that you want to select is not provision, see <a href="/application-integration/docs/enable-new-region#provision-new-region">Provision a new region</a>. To see a list of supported regions, see <a href="{{supported_regions_link}}">{{application_integration_name}} locations</a>.</li>
+        <li><b>Service account</b>: This field appears if you have enabled governance for your region.
+        Select the service account for your integration. To learn how to enable governance for your
+        region, see <a href="/application-integration/docs/enable-new-region#edit-region">Edit region</a>.</li>
+        <li>Click <b>Create</b>. This opens the integration editor page in which you can add the <a href="/application-integration/docs/tasks">tasks</a> and the <a href="/application-integration/docs/triggers">triggers</a> to build your integration.</li>
+      </ol>
+  </li>
+  </ol>
+
+<h2>Create an integration flow</h2>
+
+<h3>Add an {{ apip_trigger_api }} and a {{apip_task_rest}}</h3>
+
+To add an <strong>{{ apip_trigger_api }}</strong> trigger, perform the following steps:
+<ol>
+  <li>In the {{console_name_short}}, go to the <b>Application Integration</b> page.
+    <p><a class="button button-primary" href="{{console_url}}integrations" target="console">Go to Application Integration</a></p>
+    </li>
+    <li>In the navigation menu, click <b>Integrations</b>
+    <p>
+      The <b>Integrations List</b> page appears listing all the integrations available in the Google Cloud project.
+      </p></li>
+      <li>Select the <code>build-cicd</code> integration.
+        <p>
+          This opens the integration in the <i>integration editor</i>.
+          </p></li>
+            <li>In the <i>integration editor</i> navigation bar, click <b>Triggers {{and_then}} API Trigger</b> to add the trigger.
+            </li>
+            <li>In the <i>integration editor</i> navigation bar, click <b>Tasks {{and_then}} Call REST Endpoint</b> to add the task.
+            </li>
+            <li>Add an edge connection from the <b>{{apip_trigger_api}}</b> element to the
+              <b>{{apip_task_rest}}</b> element by hovering over a control point on the <b>{{apip_trigger_api}}</b> element, then
+                clicking and dragging a line to a control point on the <b>{{apip_task_rest}}</b> task element.
+      </li>
+</ol>
+
+<h3>Create config variables</h3>
+
+To create config variables, follow these steps:
+<ol>
+<li>In the integration editor navigation bar, click <span class="material-icons">last_page</span> (Toggle panel) to bring up the <b>Variables</b> pane.</li>
+  <li>Click <b>+Create</b>.</li>
+  <li>Do the following in the <b>Create Variable</b> pane:
+  <ol>
+      <li>For <b>Name</b>, enter <code>url</code>.
+      <p>{{integration}} adds <code>`CONFIG_</code> prefix to the config variables. If you want to add the config variable to your integration using APIs, use the following format for config variables: <code>`CONFIG_<var>CONFIG_VARIABLE_NAME</var>`</code>. For information about how to download and upload integrations, see <a href="/application-integration/docs/upload-download-integrations">Upload and download integrations</a>.</p></li>
+      <li>For <b>Variable type</b>, select <b>Config Variable</b>.</li>
+      <li>For <b>Data type</b>, select <b>String</b>.</li>
+      <li>Click <b>Create</b>. <p>The config variable appears in the <b>Variables</b> pane.</li>
+  </ol>
+  <li>Repeat Step 2 and 3 to add the following config variable:
+    <ul>
+      <li><b>Name:</b> <code>connection_name</code></li>
+      <li><b>Variable type:</b> <code>Config Variable</code></li>
+      <li><b>Data type:</b> <code>String</code></li>
+    </ul>
+</li>
+</ol>
+
+<h3>Add and configure {{apip_task_rest}}</h3>
+
+To create a config variable, follow these steps:
+<ol>
+<li>In the <i>integration editor</i>, click the <b>{{apip_task_rest}}</b> task to open the task configuration pane. Then, do the following:
+<ol>
+  <li>Expand the <b>Task input</b> section.</li>
+  <li>In the <b>Endpoint base URL</b> click <b>Variable</b> and add <code>$`CONFIG_url`$</code>.</li>
+</ol>
+</li>
+</ol>
+
+<h3>Add and configure a {{apip_task_connector}} task</h3>
+
+<ol>
+  <li>In the <i>integration editor</i> navigation bar, click <b>Task {{and_then}} Connectors</b>.
+  </li>
+  <li>Click <b>Configure Connectors</b>.</li>
+  <li>From the <b>Region</b> list, select the region where you created your {{pubsub_name}} connector.</li>
+  <li>In the <b>Connection</b> field, select the <a href="#create-pub-sub-connector">{{pubsub_name}} connector</a> that you created in the preceding step.</li>
+  <li>In the <b>Type</b> section, select <b>Actions</b>.</li>
+  <li>In the <b>Set entities/actions</b> section, for <b>Actions</b>, select <b>publishMessage</b>.</li>
+  <li>In the <b>Default value</b>, add the default value for the config variable.
+  <li>Click <b>Create</b>.</li>
+  <li>In the <b>Connectors</b> task configuration pane, expand the <b>Connection details</b> section to update the following field:
+    <ol>
+      <li>In the <b>Connection name</b> field, click <b>Variable</b> and select <code>$`CONFIG_connection_name`$</code>.</li>
+    </ol>
+</ol>
+
+<h3>Add a {{apip_task_datamapping}} task</h3>
+
+<ol>
+  <li>In the <i>integration editor</i> navigation bar, click <b>Task {{and_then}} Data mapping</b>.
+  </li>
+  <li>Add an edge connection from the <b>{{apip_task_rest}}</b> element to the
+    <b>{{apip_task_datamapping}}</b> element by hovering over a control point on the <b>{{apip_task_rest}}</b> element, then
+      clicking and dragging a line to a control point on the <b>{{apip_task_datamapping}}</b> task element.
+</li>
+<li>Add another edge connection from the <b>{{apip_task_datamapping}}</b> element to the
+  <b>{{apip_task_connector}}</b> element by hovering over a control point on the <b>{{apip_task_datamapping}}</b> element, then
+    clicking and dragging a line to a control point on the <b>{{apip_task_connector}}</b> task element.
+</li>
+  <li>In the {{ apip_task_datamapping }} task configuration pane, click <b>Open Data Mapping Editor</b>.
+  </li>
+  <li>Map the output variable of the {{apip_task_rest}} task to the input variable of the {{apip_task_connector}} task.</li>
+</ol>
+
+<h2>Publish the integration</h2>
+
+To publish the integration, follow these steps:
+
+<ol>
+  <li>To publish the integration click <b>Publish</b> in the integration editor toolbar.
+  <p>The <i>Publish integration</i> dialog appears.</li>
+  <li>In the <i>Publish integration</i> dialog, enter the value for the following config variables:
+  <ol>
+    <li><code>url</code>: Enter the name of the endpoint URL.</li>
+    <li><code>connection_name</code>: Enter the name of the {{pubsub_name}} connector that you created in the <a href="#create-pub-sub-connector">preceding step</a>.</li>
+  </ol>
+  <li>Click <b>Publish</b>.</li>
+  </li>
+  <li>Upon successfully publishing your integration, you can view and inspect the <a href="/application-integration/docs/integration-execution-logs">execution logs</a> of the published integration. To view logs, click <b>Logs</b> in the toolbar of the integration editor.</li>
+</ol>
+
+<h2>Promote integration across environments</h2>
+
+<p>To promote your integration across environments, you can use the <code>integrationcli</code> tool, which is an open-source tool that lets you interact with <a href="/application-integration/docs/reference/rest">{{integration}} APIs</a> and <a href="/integration-connectors/docs/reference/rest">{{integration_connectors_name}} APIs</a>. This tool lets you manage integration entities such as integrations, auth configs, and so on. For information about how to generate the scaffold for the integration and apply the changes generated by the scaffold, see <a href="https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811#toc-hId--834912134">Introduction to <code>integrationcli</code></a> in the community blog.</p>
+
+<p>You can also promote changes across environments by setting up DevOps pipelines for example, by using Jenkins, GitLab, {{builder_name}}, and so on. For more information, see <a href="https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811#toc-hId--1425956340">Integration with {{builder_name}}</a>.</p>
+
+<p>If you don't want to use <code>integrationcli</code>, you can manually <a href="/application-integration/docs/upload-download-integrations">download and upload the integration</a> to a new project. You'll have to create the connectors in the new project manually as they are currently not downloadable. When you publish the integration in the new environment, {{integration}} enables you to enter values for the config variables.</p>
+
+<h2>What's next</h2>
+
+<ul>
+  <li>Explore <a href="https://github.com/GoogleCloudPlatform/application-integration-samples">sample integrations</a> in GitHub.</li>
+  <li>Learn more about <a href="/application-integration/docs/variables">config variables</a>.</li>
+  <li>Learn more about the <a href="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit"><code>integrationcli</code></a> tool.</li>
+</ul>
+
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "_shared/templates/_product_samples_page_catalog.html" %}
+
+{% block pagevariables %}
+{% include "application-integration/_local_variables.html" %}
+{% setvar landing_page_title %}Application Integration code samples{% endsetvar %}
+{% setvar title %}Application Integration code samples{% endsetvar %}
+<meta name="book_path" value="{{book_path}}" />
+<meta name="project_path" value="{{project_path}}" />
+<meta name="description" content="Samples for {{product_name_short}}" />
+{% endblock %}
+
+{% include "_shared/_product_names.html" %}
+
+{% block samples %}
+<header class="samples-header">
+  <h1>{{title}}</h1>
+  <p>This page contains code samples for {{product_name_short}}.
+    To search and filter code samples for other
+    {{google_cloud_name_short}} products, see the
+    <a href="/docs/samples">{{google_cloud_name_short}} sample browser</a>.
+  </p>
+</header>
+<devsite-catalog
+      query="tenant:cloud|clouddocs+docType:Sample+product:CloudApplicationIntegration+keyword:fromExternalYamlFile"
+                  maxresults="10000"
+                  sortorder="recency"
+                  items-per-page="{{ num_sample_cards|default('30') }}"
+                  fields="title summary app category doctype"
+                  pagination-type="numeric"
+                  template="card">
+  <input type="text" placeholder="Filter results">
+  <select name="language" label="Choose languages" multiple>
+    <option value="JSON">JSON</option>
+  </select>
+</devsite-catalog>
+{% endblock %}

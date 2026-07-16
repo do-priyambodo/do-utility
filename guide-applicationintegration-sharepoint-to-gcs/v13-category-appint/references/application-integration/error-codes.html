@@ -1,0 +1,92 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Error codes{% endblock %}
+{% block body %}
+
+<p>
+The following table describes the errors that you might encounter, and the corresponding causes for the errors. {{integration}} uses the canonical error codes defined in <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto"><code>google.rpc.Code</code></a>.</p>
+<p>For information about {{integration}} errors and different error handling strategies, see <a href="/application-integration/docs/error-handling">Errors and error handling</a>.</p>
+
+<table>
+<thead>
+<tr>
+   <th>Standard exception type</th>
+   <th>Canonical code</th>
+   <th>HTTP code</th>
+   <th>Description</th>
+ 
+</tr>
+</thead>
+<tr>
+  <td>FailedPreconditionException</td>
+  <td><code>FAILED_PRECONDITION</code></td>
+  <td>400</td>
+  <td>Request can not be executed in the current system state.
+  </td>
+</tr>
+<tr>
+  <td>BadRequestException</td>
+  <td><code>INVALID_ARGUMENT</code></td>
+  <td>400</td>
+  <td>Client specified an invalid argument. Check error message and error details for more information.
+  </td>
+</tr>
+<tr>
+  <td>UnauthenticatedException</td>
+  <td><code>UNAUTHENTICATED</code></td>
+  <td>401</td>
+  <td>Request not authenticated due to missing, invalid, or expired OAuth token.
+  </td>
+</tr>
+<tr>
+  <td>ForbiddenException</td>
+  <td><code>PERMISSION_DENIED</code></td>
+  <td>403</td>
+  <td>Client does not have sufficient permission. This can happen if the OAuth token doesn't have the right scopes, the client doesn't have the required permissions, or the API has not been enabled.
+  </td>
+</tr>
+<tr>
+  <td>NotFoundException</td>
+  <td><code>NOT_FOUND</code></td>
+  <td>404</td>
+  <td>A specified resource is not found.
+  </td>
+</tr>
+<tr>
+  <td>AlreadyExistsException</td>
+  <td><code>ALREADY_EXISTS</code></td>
+  <td>409</td>
+  <td>The resource that a client tried to create already exists.
+  </td>
+</tr>
+<tr>
+  <td>InternalError</td>
+  <td><code>INTERNAL</code></td>
+  <td>500
+  </td>
+  <td>Internal server error. Typically a server bug. This can happen if any of the tasks or triggers are incorrectly configured.</td>
+</tr>
+<tr>
+  <td>UnimplementedException</td>
+  <td><code>UNIMPLEMENTED</code></td>
+  <td>501</td>
+  <td>API method not implemented by the server.
+  </td>
+</tr>
+<tr>
+  <td>ServiceUnavailableException</td>
+  <td><code>UNAVAILABLE</code></td>
+  <td>503</td>
+  <td>Service unavailable. Typically the server is down.
+  </td>
+</tr>
+<tr>
+  <td>AbortedException</td>
+  <td><code>ABORTED</code></td>
+  <td>409</td>
+  <td>Response size is too large.
+  </td>
+</tr>
+</table>
+
+
+{% endblock %}

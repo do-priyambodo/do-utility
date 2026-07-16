@@ -1,0 +1,57 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Introduction to replay executions{% endblock %}
+{% block body %}
+
+{% dynamic setvar launch_stage %}preview{% dynamic endsetvar %}
+{% dynamic setvar launch_type %}feature{% dynamic endsetvar %}
+{% dynamic setvar feature_name %}Replay executions{% dynamic endsetvar %}
+{% include "cloud/_shared/_info_launch_stage_disclaimer.html" %}
+
+<p>With {{integration}} you can replay executions by rerunning the original integration as a new
+  integration execution. {{integration}} flows are designed to orchestrate communication and data exchange between different systems. These flows can be complex, involving multiple steps, and often rely on interactions with external third-party systems. As a result, your executions can sometimes fail due to various reasons including the following:</p>
+
+<ul>
+  <li><b>Errors within the flow:</b> Your integration flow contains incorrect logic such as faulty data transformations or misconfigured steps.</li>
+  <li><b>Issues with external systems:</b> Problems or downtime with third-party systems–such as databases, web services, or APIs–that the integration flow interacts with.</li>
+  <li><b>Transient network errors:</b> Temporary glitches in connectivity between systems involved in the integration.</li>
+</ul>
+  </p>
+
+  <p>After debugging failures in your published integrations, you can <a href="/application-integration/docs/replay-executions-logs">replay your integration executions</a>. Replaying an execution regenerates the flow and reprocesses the original integration as a new integration execution.</p>
+
+  <aside><b>Note:</b> Replaying an execution is only available for published integrations. You cannot replay an execution for unpublished integrations.</aside>
+
+  <h2>Benefits</h2>
+  <p>Replaying an execution can be useful for the following scenarios:</p>
+  <ul>
+    <li><b>Trigger event handling:</b> When you want to rerun a failed execution, especially one triggered by an external system, replay allows you to configure the input variables that would have been provided by that event. For example, suppose that you have an integration with a {{pubsub_name}} trigger that is triggered on receiving an event from an external application such as Jira. When you replay the execution, the trigger event from {{pubsub_name}} is executed as it might be difficult to trigger the same event from Jira.</li>
+    <li><b>Retrying failed executions:</b> If your integration fails due to transient errors or issues with external systems, you can replay the execution to re-run the flow and complete the integration.</li>
+    <li><b>Validating published integrations with modified input values:</b> Replay allows you to test published integrations by re-running them with different input variable values. This saves time by avoiding the need to manually rerun the entire integration. Both masked and unmasked variables can be modified during replay.</li>
+    <li><b>Replaying executions from point of failure:</b> Replay allows you to rerun executions from the point of failure in a published integration. This avoids unnecessary re-execution of successful tasks, saving debugging time and resources.</li>
+  </ul>
+
+  <p>To learn more about how to replay executions, see <a href="/application-integration/docs/replay-executions-logs">Replay executions</a>.</p>
+
+  <h2>Considerations</h2>
+  <p>The following considerations apply to replay executions:</p>
+  <ul>
+    <li><b>Execution states:</b> You can replay executions that have the following states: <b>Succeeded</b>, <b>Failed</b>, and <b>Cancelled</b>. To replay executions that are in other states, you must <a href="/application-integration/docs/cancel-executions">cancel the executions</a>.
+    <aside><b>Note:</b> You can't cancel an integration execution if the integration is in the <b>In process</b> state.</li>
+    <li><b>Compatible published versions:</b> When you replay an execution after making changes to the published integration version, ensure that those changes are compatible with the original execution. For example, if the original execution required two input variables and the updated integration version requires only one inpute variable, then the replay execution fails.</li>
+    <li><b>Execution mode:</b> Replay executions follow the same <a href="/application-integration/docs/triggers#execution-modes">execution mode</a> as the original execution even if there is a change in the integration version.</li>
+  </ul>
+
+  <h2>Limitations</h2>
+  <p>Replaying an execution is subject to the following limitations:</p>
+<ul>
+  <li>Replaying an execution that is triggered by a <a href="/application-integration/docs/configure-schedule-trigger">Schedule trigger</a> isn't supported.</li>
+  <li>By default, replayed executions have a deadline time of 10 minutes. If the execution does not complete within the deadline, the execution status is set to <code>CANCELLED</code>.</li>
+</ul>
+
+  <h2>What's next</h2>
+  <ul>
+    <li>Learn about <a href="/application-integration/docs/introduction-logs">logs in {{integration}}</a>.</li>
+    <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish integrations</a>.</li>
+  </ul>
+
+{% endblock %}

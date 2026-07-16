@@ -1,0 +1,56 @@
+{% extends "application-integration/_base.html" %}
+{% block page_title %}Triggers{% endblock %}
+{% block body %}
+
+<p>A trigger is an external event that initiates a task, or sequence of tasks, in an integration.
+You can think of a trigger as an entry point to your integration and the event tied to the trigger causes the
+  tasks associated with the trigger to run.</p>
+
+  <p>You can add multiple triggers to your integration. However, when an event occurs, only the trigger
+    associated with the event begins executing its tasks. For more information, see <a href="#multi-trigger">Adding multiple triggers in an integration</a>.
+  </p>
+
+<p>For the list of all the available out-of-the-box triggers, see <a href="/application-integration/docs/all-triggers-tasks">All triggers</a>. </p>
+
+
+<h2>Connector Event triggers</h2>
+
+<p>
+  Connector Event triggers are specialized triggers that let you invoke an integration based on the <a href="/integration-connectors/docs/eventsubscription">event subscription</a> created in various business applications using <a href="/integration-connectors/docs">Integration Connectors</a>.
+</p>
+
+<p>For the list of all the available Connector Event triggers, see <a href="/application-integration/docs/all-triggers-tasks#event_triggers">Connector Event triggers</a>. For more information about event subscriptions in Integration Connectors, see <a href="/integration-connectors/docs/eventsubscription">Event subscriptions</a>.</p>
+
+
+<h2 id="multi-trigger">Adding multiple triggers in an integration</h2>
+
+You can add one or more triggers in an integration where each trigger is associated with a different task.
+The integration starts from the trigger for which the event occurs. For example, consider your integration
+has two triggers where <code>Trigger-1</code> is associated with <code>Task-1</code>,
+and <code>Trigger-2</code> is associated with a downstream task <code>Task-5</code>.
+Now suppose an event triggers <code>Trigger-2</code>, the integration runs from <code>Task-5</code> onwards.
+<p>
+If multiple triggers run at the same time, each trigger runs its copy of the integration. In the
+preceding example, if both <code>Trigger-1</code> and <code>Trigger-2</code> run simultaneously,
+<code>Trigger-1</code> runs the integration from <code>Task-1</code> onwards, and <code>Trigger-2</code>
+runs a separate copy of the integration from <code>Task-5</code> onwards. There is no overlap between the execution flows of the two integrations.
+</p>
+
+<h2>Execution modes</h2>
+<p>Based on the trigger, your integration is executed in either synchronous or asynchronous mode:
+</p>
+
+{% include "application-integration/docs/_shared/_sync-async-execution-mode.html" %}
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+
+{% endblock %}

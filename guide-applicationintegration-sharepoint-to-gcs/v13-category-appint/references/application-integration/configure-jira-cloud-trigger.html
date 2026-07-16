@@ -1,0 +1,444 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}Jira Cloud trigger{% endblock %}
+
+{% block body %}
+
+<p>The <b>Jira Cloud trigger</b> is a <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a> that lets you invoke an integration based on the <a href="#events">Jira Cloud events</a> that you've subscribed to in your Jira Cloud connection.</p>
+
+<aside class="note"><b>Important:</b> Integration Connectors is a billable component of Google Cloud. For information about the costs and charges of using Integration Connectors, see <a href="/integration-connectors/docs/pricing">Integration Connectors pricing</a>.</aside>
+
+<h2 id="iam">Before you begin</h2>
+<p>If you plan to create or configure a new connection for the <b>Jira Cloud trigger</b>, make sure that you have the following IAM role on the project:</p>
+<ul>
+  <li>Connector Admin (<code>roles/connectors.admin</code>) </li>
+  <p>For information about granting roles, see <a href="/iam/docs/granting-changing-revoking-access">Manage access</a>.</p>
+</ul>
+
+<p>Grant the following IAM roles to the service account that you want to use for the <b>Jira Cloud trigger</b>:</p>
+<ul>
+  <li>Application Integration Invoker (<code>roles/integrations.integrationInvoker</code>) </li>
+  <p>For information about granting roles to a service account, see <a href="/iam/docs/manage-access-service-accounts">Manage access to service accounts</a>.</p>
+</ul>
+
+<h2>Add the Jira Cloud trigger</h2>
+
+<p>
+To add a <b>Jira Cloud trigger</b> to your integration, perform the following steps:
+</p>
+
+<ol>
+  {{apip_apigee_steps_trigger}}
+  {{ apip_sa_steps_trigger }}
+<li>Click and place the <b>Jira Cloud trigger</b> element in the integration editor.</li>
+<p>To configure the <b>Jira Cloud trigger</b>, you can either use an existing Jira Cloud connection available in Integration Connectors, or create a new Jira Cloud connection using the inline connection creation option.</p>
+</ol>
+
+<h2>Configure Jira Cloud trigger using an existing connection</h2>
+
+<p>
+  You can configure the <b>Jira Cloud trigger</b> using an existing Jira Cloud connection in Integration Connectors. Note that the <b>Jira Cloud trigger</b> is an <a href="/application-integration/docs/triggers#event-triggers">Connector Event trigger</a>, therefore you can only use a Jira Cloud connection with event subscription enabled to configure the trigger. 
+</p>
+<p>For information about how to configure a <b>Jira Cloud trigger</b> using a new Jira Cloud connection, See <a href="#create">Configure Jira Cloud trigger using a new connection</a></p>
+<p>To configure a <b>Jira Cloud trigger</b> using an existing Jira Cloud connection, perform the following steps:</p>
+
+<ol>
+  <li>Click the <b>Jira Cloud trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Provide the following configuration details in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li><b>Region:</b> Select the region of your Jira Cloud connection.</li>
+      <li><b>Connection:</b> Select the Jira Cloud connection that you want to use.
+      <p>{{integration}} only displays those Jira Cloud connections that are active and have an <a href="/integration-connectors/docs/eventsubscription">event subscription</a> enabled. 
+      </p>
+    </li>
+      <li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+      <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the Jira Cloud trigger.</li>
+    </ol>
+  </li>
+  <li>Click <b>Done</b> to complete the trigger configuration and close the page.</li>
+</ol>
+
+
+<h2 id="create">Configure Jira Cloud trigger using a new connection</h2>
+
+
+<p>To configure the <b>Jira Cloud trigger</b> using a new Jira Cloud connection, perform the following steps:</p>
+<ol>
+  <li>Click the <b>Jira Cloud trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure trigger</b>.</li>
+  <li>Skip the <b>Region</b> field.</li>
+  <li>Click <b>Connection</b> and select the <b>Create Connection</b> option from the drop-down menu.</li>
+  <li>Complete the following steps in the <b>Create Connection</b> pane:
+  <ol>
+    <li>In the <b>Location</b> step, choose the location for the new Jira Cloud connection:
+      <ol>
+        <li><b>Region:</b> Select a region from the drop-down list.
+        </li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+  
+    <li>In the <b>Connection Details</b> step, provide details about the new Jira Cloud connection:
+      <ol>
+        <li><b>Connector version:</b> Choose an available version of the Jira Cloud connector from the drop-down list.
+        </li>
+        <li><b>Connection Name:</b> Enter a name for the Jira Cloud connection.
+          <aside class="note"><b>Note:</b> Connection names must meet the following criteria:
+          <ul>
+            <li>Connection names can use letters, numbers, or hyphens.</li>
+            <li>Letters must be lower-case.</li>
+            <li>Connection names must begin with a letter and end with a letter or number.</li>
+            <li>Connection names cannot exceed 63 characters.</li>
+          </ul>
+        </aside>
+        </li>
+        <li>(Optional) <b>Description: </b> Enter a description for the connection.</li>
+        <li>(Optional) <b>Enable Cloud Logging:</b> Select this checkbox to store all log data of the connection.</li>
+        <li><b>Service Account</b>: Select a service account with the <a href="#iam">required IAM roles</a> for the Jira Cloud connection.</li>
+        <li><b>Enable event subscription:</b> Select to create and enable a new event subscription for the Jira Cloud connection. You can either only enable event subscriptions or also include connection <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a>.
+        <aside class="note"><b>Note:</b> The following additional connection configuration steps are required if you choose to enable <a href="/integration-connectors/docs/entities-operation-action">entities, operations, and actions</a> for the connection:
+          <ul>
+            <li><a href="#destination">Destinations</a></li>
+            <li><a href="#auth">Authentication</a></li>
+          </ul>
+        </aside>
+      </li>
+        <li>(Optional) Expand <b>Advanced settings</b> to configure the connection node settings.
+          <p>
+            For more information about the connection node settings for Jira Cloud, see the <a href="/integration-connectors/docs/connectors/jiracloud/configure">Jira Cloud connection</a> documentation.
+          </p></li>
+        <li>(Optional) Click <b>+ Add label</b> to add a label to the connection in the form of a key-value pair.</li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+
+  <li id="destination">
+    In the <b>Destinations</b> step, provide the Jira Cloud account details: 
+    <ol>
+      <li><b>Destination Type:</b>  Select <b>Host address</b>.</li>
+      <li><b>Host:</b> Enter the hostname or IP address of your Jira Cloud account.</li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li> 
+
+  <li id="auth">
+    In the <b>Authentication</b> step, provide the authentication details for the Jira Cloud account: 
+    <ol>
+      <li><b>Username:</b> Enter the username to access the provided destination address.</li>
+        <li><b>API token:</b> Select the Secret Manager secret containing the API Token associated with the Jira Cloud username.</li>
+        <li><b>Secret version:</b> Select a secret version.</li>
+        <p>To know more about how to configure authentication, see <a href="/integration-connectors/docs/connectors/jiracloud/configure#configure-auth">Configure authentication</a>.</p>
+      </li>
+      <li>Click <b>Next</b>.</li>
+    </ol>
+  </li> 
+
+    <li>
+      In the <b>Event subscription details</b> step, provide details of the Jira Cloud account where the event subscriptions will be created. 
+      <ol>
+        <li><b>Destination Type:</b>  Select <b>Host address</b>.</li>
+        <li><b>Host:</b>  Enter the registration URL of your Jira Cloud account. Event subscriptions will be created for this URL.</li>
+        <li><b>Username:</b> Enter the username to access the provided registration URL.</li>
+        <li><b>API token:</b> Select the Secret Manager secret containing the API token associated with the username.</li>
+        <li><b>Secret version:</b> Select a secret version.</li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li> 
+  
+    <li><b>Review</b>: Review the provided Jira Cloud connection details.</li>
+  <li>Click <b>Create</b> to complete creating a new Jira Cloud connection.</li>
+  </ol>
+  </li>
+  <li><b>Event subscription type:</b> Select the type of event subscription that triggers the integration. For information about the supported event subscription types for this trigger, see <a href="#events">Supported event subscription types</a>.</li> 
+  <li>Click <b>Done</b> and close the page.</li>
+  </ol>
+
+
+<h2 id="output">Trigger output</h2>
+<p>The <b>Jira Cloud trigger</b> takes a couple of minutes to complete the event subscription configuration. You can view the status of your event subscription in the trigger configuration pane under <b>Event Subscription details</b>.</p>
+<p>The <b>Jira Cloud trigger</b> indicates the status of an event subscription using the following states:</p>
+<ul>
+  <li><span class="material-icons">
+    restart_alt
+    </span><code>Creating</code>: Indicates that the trigger is subscribing to the event subscription.
+  <li><span class="material-icons">
+    check_circle
+    </span><code>Active</code>: Indicates that the trigger is successfully subscribed to an event subscription.</li>
+  <li><span class="material-icons">
+    error
+    </span><code>Error</code>: Indicates that the there is an issue with the configured event subscription. </li>
+</ul>
+
+<p>In addition to the event subscription status, the <b>Event Subscription details</b> section also displays other details such as connection region, connection name, event subscription name, and more.</p>
+<p>The following image shows a sample layout of the Jira Cloud trigger configuration pane:</p>
+<img src="{{baseimagepath}}/images/jiracloud_trigger_1.png" alt="image showing Jira Cloud trigger configuration pane"
+      data-modal-dialog-id="jira_ui" class="screenshot">
+
+<devsite-lightbox id="jira_ui">
+  <img src="{{baseimagepath}}/images/jiracloud_trigger_1.png" alt="image showing Jira Cloud trigger configuration pane">
+</devsite-lightbox>
+
+
+
+<h3>Trigger output variable</h3>
+<p>
+  For each event, the <b>Jira Cloud trigger</b> generates a <code>ConnectorEventPayload</code> output variable which you can use in your downstream tasks. The output variable is in JSON format containing the output Jira Cloud payload schema.
+</p>
+
+<h3>View event subscriptions</h3>
+<p>To view and manage all the event subscriptions associated with a connection in Integration Connectors, do the following:</p>
+<ol>
+  <li>Go to <b>Integration Connectors > Connections</b> page.
+      <p><a href="{% dynamic print site_values.console_url %}connectors/connections" target="console" class="button button-primary">
+          Go to the Connections page</a></p></li>
+  <li>Click the connection for which you want to view the subscriptions.</li>
+  <li>Click the <b>Event subscriptions</b> tab.
+  <p>This displays all the event subscriptions for the connection.</p>
+  </li>
+</ol>
+
+  <h2>Edit Jira Cloud trigger</h2>
+  <p>You can edit a <b>Jira Cloud trigger</b> to change or update the connection configuration and event subscription details.</p>
+  <aside class="note"><b>Important:</b> When you edit or modify a Jira Cloud trigger, you can either retain the previously configured event subscription that is attached to the trigger, or you can delete it. Deleting an event subscription will affect all the published integrations using that event subscription. </aside>
+  <p>To edit a Jira Cloud trigger, perform the following steps:</p>
+  <ol>
+  <li>Click the <b>Jira Cloud trigger</b> element in the integration editor to open the trigger configuration pane.</li>
+  <li>Click <b>Configure Jira Cloud trigger</b>.</li>
+  <li>Do the following in the <b>Connector Event Trigger Editor</b> page:
+    <ol>
+      <li>To retain the previously configured event subscription, click <b>Retain</b>, else click <b>Delete</b>.
+      <aside class="warning"><b>Warning:</b> Deleting an event subscription will affect all the published integrations using the event subscription. This task cannot be undone.</aside>
+    </li>
+    <li>Update the connection configuration and event subscription details as desired.</li>
+    <li>Click <b>Done</b>.</li>
+  </ol>
+  </li>
+  <p>You can view the updated connection and event subscription details in the trigger configuration pane under <b>Event Subscription details</b>.</p>
+  </ol> 
+
+<h2 id="events">Supported event subscription types</h2>
+  <p>You can use the <b>Jira Cloud trigger</b> to invoke an integration for the following event subscription types:</p>
+  <devsite-filter>
+    <input type="text" placeholder="Type a keyword here to find the right event subscription type">
+  <table>
+    <thead>
+      <tr>
+        <th width="30%">Event subscription types</th>
+        <th width="70%">Description</th>
+      </tr>
+    </thead>
+    <tbody class="list">
+      <tr>
+        <td><code>attachment_created</code>
+        </td>
+        <td >An attachment is created for a Jira ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>attachment_deleted</code>
+        </td>
+        <td >The attachment assiciated with a Jira ticket is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>board_created</code>
+        </td>
+        <td >A new Jira board is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>board_deleted</code>
+        </td>
+        <td >A Jira board is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>comment_created</code>
+        </td>
+        <td >A comment is added to the Jira ticket.
+        </td>
+       </tr>
+       <tr>
+        <td><code>comment_deleted</code>
+        </td>
+        <td >A comment in a Jira ticket is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td ><code>comment_updated</code>
+        </td>
+        <td >An existing comment in a Jira ticket is updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>filter_created</code>
+        </td>
+        <td >A new Jira filter is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>filter_deleted</code>
+        </td>
+        <td >A Jira filter is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>filter_updated</code>
+        </td>
+        <td >An existing Jira filter is updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>issue_created</code>
+        </td>
+        <td >A new Jira issue is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>issue_deleted</code>
+        </td>
+        <td >A Jira issue is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>issue_updated</code>
+        </td>
+        <td >An existing Jira issue is updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>issuelink_created</code>
+        </td>
+        <td >A new issue link is created for a Jira instance.
+        </td>
+       </tr>
+       <tr>
+        <td><code>issuelink_deleted</code>
+        </td>
+        <td >The issue link for a Jira instance is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>option_issuelinks_changed</code>
+        </td>
+        <td >An existing issue link for a Jira instance is changed or updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>option_subtasks_changed</code>
+        </td>
+        <td >The subtasks for an issue is updated or changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>option_voting_changed</code>
+        </td>
+        <td >The number of votes for a Jira issue is changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>option_watching_changed</code>
+        </td>
+        <td >The watchers or list of users who are added to watch a Jira issue have changed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>project_created</code>
+        </td>
+        <td >A new project is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>project_deleted</code>
+        </td>
+        <td >A project is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>project_restored_deleted</code>
+        </td>
+        <td >A deleted project is restored.
+        </td>
+       </tr>
+       <tr>
+        <td><code>project_soft_deleted</code>
+        </td>
+        <td >A project is deleted such that it is not visible to any users, including admins using either the product interface or the API.
+        </td>
+       </tr>
+       <tr>
+        <td><code>project_updated</code>
+        </td>
+        <td >The project details are updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>sprint_closed</code>
+        </td>
+        <td >The sprint is closed.
+        </td>
+       </tr>
+       <tr>
+        <td><code>sprint_created</code>
+        </td>
+        <td >A sprint is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>sprint_deleted</code>
+        </td>
+        <td >A sprint is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>sprint_updated</code>
+        </td>
+        <td >The details of a sprint are changed or updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user_created</code>
+        </td>
+        <td >	A user is created.
+        </td>
+       </tr>
+       <tr>
+        <td><code>user_updated</code>
+        </td>
+        <td >The details of a user are changed or updated.
+        </td>
+       </tr>
+       <tr>
+        <td><code>worklog_created</code>
+        </td>
+        <td >A worklog entry is added.
+        </td>
+       </tr>
+       <tr>
+        <td><code>worklog_deleted</code>
+        </td>
+        <td >A worklog entry is deleted.
+        </td>
+       </tr>
+       <tr>
+        <td><code>worklog_updated</code>
+        </td>
+        <td >A worklog entry is changed or updated.
+        </td>
+       </tr>
+       
+    </tbody>
+  </table>
+</devsite-filter>
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}

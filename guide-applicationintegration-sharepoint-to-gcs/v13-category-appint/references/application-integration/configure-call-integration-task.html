@@ -1,0 +1,137 @@
+{% extends "application-integration/_base.html"  %}
+{% block page_title %}{{ apip_task_callintegration }} task{% endblock %}
+{% block body %}
+
+
+<p>The <b>{{ apip_task_callintegration }}</b> task lets you invoke or call other integrations created within your Google Cloud project.</p>
+<p>The <b>{{ apip_task_callintegration }}</b> task is useful in scenarios where you need to define multiple small integrations (sub-integrations) that is controlled using a main integration (parent integration). After running a {{ sub_int }}, you can also
+  read the response of the {{ sub_int }} in your main integration.
+</p>
+
+<h2>Before you begin</h2>
+<ul>
+  <li>The <b>{{ apip_task_callintegration }}</b> task uses the API trigger to identify and call other integrations and sub-integrations. Therefore, you must ensure that the integrations you want to call are configured using the API trigger. For information about configuring an API trigger see <a href="{{basehrefpath}}/configuring-api-trigger">API trigger</a>.
+  </li>
+
+    {{configure_byosa}}
+  </ul>
+</ul>
+
+
+<h2>Configure the {{ apip_task_callintegration }} task</h2>
+
+<p>To configure the <b>{{ apip_task_callintegration }}</b> task:
+<ol>
+  {{apip_apigee_steps}}
+  {{ apip_sa_steps }}
+  <li>Click and place the <b>{{ apip_task_callintegration }}</b> element in the integration editor.</li>
+   <li>Click the <b>{{ apip_task_callintegration }}</b> task element on the designer to view the <b>{{ apip_task_callintegration }}</b>
+     task configuration pane.</li>
+  <li>Configure the following sub integration details:
+    <ol>
+      <li><b>API Trigger ID:</b> Type the <a href="{{basehrefpath}}/configuring-api-trigger#configure-an-api-trigger">API trigger ID</a> of the integration that you want to call. You can call a single integration or multiple integrations with the same trigger ID.</li>
+      <li><b>Run all integrations with this API Trigger ID:</b> Select this option to call all the integrations
+        that have the same API <b>Trigger ID</b>.
+        <p>
+        For example, if integration
+        <code>A</code> and integration <code>B</code>, have the same API
+        <b>Trigger ID</b>, both the integrations <code>A</code> and <code>B</code>
+        are run. <p>
+        <aside class="note"><b>Note</b>: If you select this option, the response from the {{ sub_int }}s
+        will not be available in the main integration. If you want to access the response of the
+        {{ sub_int }}s, select the <b>Run a single integration</b> option.
+      </aside>
+      </li>
+      <li><b>Run a single integration</b>: Select this option to call only the integration specified in the
+      <b>Integration name</b> field. You can access and map the response from the {{ sub_int }}
+        by configuring the fields detailed in <a href="#params">Map sub-integration response variables</a>.
+        <p>
+      </li>
+      <li><b>Execution strategy:</b> Select the execution modes for the sub-integrations that you want to call.
+      <ul>
+       <li><b>SYNC</b>: Runs the {{ sub_int }} in synchronous mode. In this mode, the main integration
+     waits for the {{ sub_int }}s to complete before continuing with the downstream tasks.
+<p></li> 
+<li> 
+<b>ASYNC</b>: Runs the {{ sub_int }} in asynchronous mode. In this mode, the main integration
+ does not wait for the {{ sub_int }}s to complete. Immediately after calling the sub
+  integrations, the main integration runs the downstream tasks.
+<p>
+  <p>
+    If this option is selected, set the <b>Execution delay (in milliseconds)</b>. When set, this specifies the
+    time delay until the integration is run.
+     </p>
+      </p>
+    </li> 
+  </li>
+    </ul>
+    
+  <p>
+    All changes to the properties are saved automatically.
+    </p></li>
+</ol>
+</ol>
+
+
+<h2 id="params">Map sub-integration response variables</h2>
+
+The following table describes the configuration properties to map variables between the main integration and sub-integrations:
+
+<table>
+  <tr>
+   <th><b>Property</b>
+   </th>
+   <th><b>Description</b>
+   </th>
+  </tr>
+
+   <tr>
+    <td><code>Map to {{ sub_int }} input(s)</code>
+   </td>
+   <td><p>
+  Maps values from the main integration to the {{ sub_int }}.  This field takes
+  values in the form of key-value pairs, where the key is a variable in the main integration, and
+     the value is the corresponding input variable in the {{ sub_int }}. </p>
+     
+     <p>For example, if you want to map the main integration's <code>productID</code> variable to the
+       <code>subIntProductID</code> {{ sub_int }} variable,
+  select <code>productID</code> from the <b>Integration variable to map from</b>
+  field and enter <code>subIntProductID</code> in the <b>Subintegration input
+    to map to</b> field.</p>
+   </td>
+  </tr>
+  
+  <tr>
+    <td><code>Map values to sub-integration output(s)</code>
+   </td>
+   <td>
+     Maps the {{ sub_int }} output variables to the main integration variables. 
+       
+  <p>Click <b>Subintegration output to map from</b> and select the
+   {{ sub_int }}. Click <b>Integration variable to map to</b> and select the corresponding main integration variable.
+     </p>
+     <aside class="note"><b>Note:</b> This field is only displayed when the <b>Run a single integration</b> option is selected with the <b>SYNC</b> execution strategy.
+     </aside>
+   </td>
+  </tr>
+
+</table>
+
+<h2>Best practices</h2>
+
+<p>For information about the usage limits that apply to the <b>{{ apip_task_callintegration }}</b> task, see <a href="/application-integration/docs/quotas#usage-limits"> Usage limits</a>.
+</p>
+
+{% include "application-integration/docs/_shared/_retry_on_failure.html" %}
+
+<h2>Quotas and limits</h2>
+<p>For information about quotas and limits, see <a href="/application-integration/docs/quotas">Quotas and limits</a>.</p>
+
+<h2>What's next</h2>
+<ul>
+  <li>Learn about <a href="/application-integration/docs/all-triggers-tasks">all tasks and triggers</a>.</li>
+  <li>Learn how to <a href="/application-integration/docs/test-publish-integrations">test and publish an integration<a>.</li>
+    <li>Learn about <a href="/application-integration/docs/error-handling-strategy">error handling</a>.</li>
+  <li>Learn about <a href="/application-integration/docs/introduction-logs">integration execution logs</a>.</li>
+</ul>
+{% endblock %}
