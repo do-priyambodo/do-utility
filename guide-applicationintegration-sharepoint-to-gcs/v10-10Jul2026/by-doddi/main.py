@@ -5,6 +5,8 @@ import urllib.parse
 import datetime
 import re
 import time
+import gc
+import concurrent.futures
 import functions_framework
 from google.cloud import storage
 
@@ -528,8 +530,10 @@ def main(request):
         file_batch_size = params.get("CONFIG_File_Batch_Size", 20 * raw_batch_size if raw_batch_size <= 10 else raw_batch_size)
         # Keep heavy Base64 PDF pages safely at raw_batch_size (5 items/batch ~1.0 MB payload)
         page_batch_size = params.get("CONFIG_Page_Batch_Size", raw_batch_size)
-        max_workers = max(10, raw_workers)
-        chunk_size = max(100, file_batch_size * max_workers)
+        max_workers = max(1, raw_workers)
+        if conv_engine == "playwright" or any(item.get("IsPage") for item in sync_list):
+            max_workers = min(3, max(1, max_workers // 2))
+        chunk_size = min(30, max(20, file_batch_size * max_workers))
 
         def _render_lazy_page(item):
             if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):
@@ -628,10 +632,14 @@ def main(request):
                 # Immediate memory eviction after dispatching chunk
                 for item in chunk:
                     item.pop("VirtualContent", None)
+                gc.collect()
+                time.sleep(0.3)
         elif len(sync_list) > 0:
             print(f"⚡ Rendering pages in parallel without Integration trigger ({len(sync_list)} items)...")
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 list(executor.map(_render_lazy_page, sync_list))
+            for item in sync_list: item.pop("VirtualContent", None)
+            gc.collect()
 
         # Clean helper keys from output lists
         clean_all_list = [{k: v for k, v in item.items() if not k.startswith("_")} for item in all_list]
