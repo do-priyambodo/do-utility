@@ -77,81 +77,10 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 
 Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**16 GiB RAM**, **4 vCPUs**, **86,400s timeout**). 
 
-You can execute this either via our automated deployment script or by running the exact underlying `gcloud` commands directly:
-
-### Option A: Automated Script Deployment (Recommended)
 Our automated script copies `parameters.json` and dependencies into `cf-sharepoint/`, builds the container, deploys the 24-Hour Cloud Run Job (`${FUNCTION_NAME}`), and grants `roles/run.invoker` automatically:
 
 ```bash
 ./deploy/deploy_cloud_run.sh
-```
-
-### Option B: Manual Command-Line Deployment
-If you prefer to run each command step-by-step in your terminal:
-
-```bash
-# 1. Copy context parameters for Docker build
-cp parameters.json cf-sharepoint/ && [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true && [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
-
-# 2. Build and deploy/update the 24-Hour Continuous Cloud Run Job (VPC-SC Immune Async Build)
-IMAGE_NAME="gcr.io/${PROJECT_ID}/${FUNCTION_NAME}:latest"
-BUILD_ID=$(gcloud builds submit ./cf-sharepoint --tag="${IMAGE_NAME}" --project="${PROJECT_ID}" --async --format="value(id)")
-while :; do
-  STATUS=$(gcloud builds describe "${BUILD_ID}" --project="${PROJECT_ID}" --format="value(status)" 2>/dev/null || echo "WORKING")
-  if [ "$STATUS" = "SUCCESS" ]; then break; elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "TIMEOUT" ]; then exit 1; fi
-  sleep 10
-done
-
-gcloud run jobs create "${FUNCTION_NAME}" \
-  --image="${IMAGE_NAME}" \
-  --region="${LOCATION}" \
-  --tasks=1 \
-  --max-retries=0 \
-  --task-timeout=86400s \
-  --memory=16384Mi \
-  --cpu=4 \
-  --service-account="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}" || \
-gcloud run jobs update "${FUNCTION_NAME}" \
-  --image="${IMAGE_NAME}" \
-  --region="${LOCATION}" \
-  --tasks=1 \
-  --max-retries=0 \
-  --task-timeout=86400s \
-  --memory=16384Mi \
-  --cpu=4 \
-  --service-account="${SERVICE_ACCOUNT}" \
-  --project="${PROJECT_ID}"
-
-# 3. Grant Job Execution IAM permissions (roles/run.invoker) to Cloud Scheduler Service Account & Developer Member
-gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
-  --region="${LOCATION}" \
-  --member="serviceAccount:${SERVICE_ACCOUNT}" \
-  --role="roles/run.invoker" \
-  --project="${PROJECT_ID}"
-
-if [[ "${DEV_MEMBER}" == "group:"* ]]; then
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}" || \
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="user:${DEV_MEMBER#group:}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-else
-  gcloud run jobs add-iam-policy-binding "${FUNCTION_NAME}" \
-    --region="${LOCATION}" \
-    --member="${DEV_MEMBER}" \
-    --role="roles/run.invoker" \
-    --project="${PROJECT_ID}"
-fi
-
-# 4. Clean up local Docker context copy
-rm -f cf-sharepoint/parameters.json && [ -f config_schema.py ] && rm -f cf-sharepoint/config_schema.py || true && [ -d sharepoint_engine ] && rm -rf cf-sharepoint/sharepoint_engine || true
-echo "✅ Cloud Run Job (${FUNCTION_NAME}) successfully deployed with 24-hour continuous timeout!"
 ```
 
 ---
