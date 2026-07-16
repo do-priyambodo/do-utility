@@ -64,7 +64,6 @@ def get_persistent_browser(force_restart=False):
                 "--disable-disk-cache",
                 "--disk-cache-size=1",
                 "--disable-application-cache",
-                "--js-flags=--max-old-space-size=512",
                 "--disable-extensions",
                 "--disable-background-networking",
                 "--disable-default-apps",
