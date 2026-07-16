@@ -71,15 +71,7 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 
 ---
 
-## Step 3.5: Pre-Deployment Parity & Syntax Verification (`Mandatory Check`)
 
-Before deploying to Cloud Run, run this exact dynamic one-liner in your terminal to pull the latest release tag and verify in 2 seconds that your local repository and `pdf_renderer.py` have 100% parity with our verified Playwright-exclusive release:
-
-```bash
-git fetch origin && git checkout -f origin/main -- deploy/deploy_cloud_run.sh cf-sharepoint/pdf_renderer.py DO-SYNC-ALL-SHAREPOINT.md && chmod +x deploy/deploy_cloud_run.sh && python3 -c "assert '--async' in open('deploy/deploy_cloud_run.sh').read() and '_THREAD_LOCAL = threading.local()' in open('cf-sharepoint/pdf_renderer.py').read(); print('VERIFIED: You are on Revision 00033 with VPC-SC immune async build and greenlet isolation.')"
-```
-
----
 
 ## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`16 GiB / 4 vCPUs / 24-Hour Timeout`)
 
