@@ -60,7 +60,7 @@ gcloud run jobs create "${SERVICE_NAME}" \
   --tasks=1 \
   --max-retries=0 \
   --task-timeout=86400s \
-  --memory=8192Mi \
+  --memory=16384Mi \
   --cpu=4 \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}" || \
@@ -70,7 +70,7 @@ gcloud run jobs update "${SERVICE_NAME}" \
   --tasks=1 \
   --max-retries=0 \
   --task-timeout=86400s \
-  --memory=8192Mi \
+  --memory=16384Mi \
   --cpu=4 \
   --service-account="${SERVICE_ACCOUNT}" \
   --project="${PROJECT_ID}"
