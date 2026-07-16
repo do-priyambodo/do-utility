@@ -1,0 +1,558 @@
+{% import "integration-connectors/_macros.html" as macros3 %}
+{% set cards =
+  [
+
+  {
+ 'logo':'/integration-connectors/images/logos/ad.png',
+ 'href':'/integration-connectors/docs/connectors/activedirectory/configure',
+ 'name':'Active Directory',
+},
+{
+  'logo':'/integration-connectors/images/logos/acumatica.png',
+  'href':'/integration-connectors/docs/connectors/acumatica/configure',
+  'name':'Acumatica',
+},
+{
+  'logo':'/integration-connectors/images/logos/airtable.png',
+  'href':'/integration-connectors/docs/connectors/airtable/configure',
+  'name':'Airtable',
+},
+{
+  'logo':'/integration-connectors/images/logos/amazons3.png',
+  'href':'/integration-connectors/docs/connectors/amazons3/configure',
+  'name':'Amazon S3',
+ },
+{
+  'logo':'/integration-connectors/images/logos/cassandra.png',
+  'href':'/integration-connectors/docs/connectors/apachecassandra/configure',
+  'name':'Apache Cassandra',
+ },
+ {
+  'logo':'/integration-connectors/images/logos/couchdb.png',
+  'href':'/integration-connectors/docs/connectors/apachecouchdb/configure',
+  'name':'Apache CouchDB',
+ },
+ {
+  'logo':'/integration-connectors/images/logos/kafka.png',
+  'href':'/integration-connectors/docs/connectors/apachekafka/configure',
+  'name':'Apache Kafka',
+ },
+{
+  'logo':'/integration-connectors/images/logos/asana.png',
+  'href':'/integration-connectors/docs/connectors/asana/configure',
+  'name':'Asana',
+ },
+{'logo':'/integration-connectors/images/logos/authorize-net.png',
+ 'href':'/integration-connectors/docs/connectors/authorize.net/configure',
+ 'name':'AuthorizeNet',
+},
+{
+  'logo':'/integration-connectors/images/logos/azuread.png',
+  'href':'/integration-connectors/docs/connectors/azuread/configure',
+  'name':'Azure AD (Entra ID)',
+},
+{'logo':'/integration-connectors/images/logos/datalake.png',
+ 'href':'/integration-connectors/docs/connectors/azuredatalakestorage/configure',
+ 'name':'Azure Data Lake Storage',
+},
+{'logo':'/integration-connectors/images/logos/azuredevops.png',
+ 'href':'/integration-connectors/docs/connectors/azuredevops/configure',
+ 'name':'Azure DevOps',
+},
+{'logo':'/integration-connectors/images/logos/azuresynapse.png',
+ 'href':'/integration-connectors/docs/connectors/azuresynapse/configure',
+ 'name':'Azure Synapse',
+},
+{
+ 'logo':'/integration-connectors/images/logos/bigcommerce.png',
+ 'href':'/integration-connectors/docs/connectors/bigcommerce/configure',
+ 'name':'BigCommerce',
+},
+{
+ 'logo':'/integration-connectors/images/logos/box.png',
+ 'href':'/integration-connectors/docs/connectors/box/configure',
+ 'name':'Box',
+},
+{
+ 'logo':'/integration-connectors/images/logos/cockroachdb.png',
+ 'href':'/integration-connectors/docs/connectors/cockroachdb/configure',
+ 'name':'CockroachDB',
+},
+{
+  'logo':'/integration-connectors/images/logos/commercetools.png',
+  'href':'/integration-connectors/docs/connectors/commercetools/configure',
+  'name':'Commercetools',
+ },
+{
+  'logo':'/integration-connectors/images/logos/confluence.png',
+  'href':'/integration-connectors/docs/connectors/confluence/configure',
+  'name':'Confluence',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/commercetools.png',
+ 'href':'/integration-connectors/docs/connectors/commercetools/configure',
+ 'name':'Commercetools',
+},
+
+{
+ 'logo':'/integration-connectors/images/logos/couchbase.png',
+ 'href':'/integration-connectors/docs/connectors/couchbase/configure',
+ 'name':'Couchbase',
+},
+{'logo':'/integration-connectors/images/logos/dataverse.png',
+ 'href':'/integration-connectors/docs/connectors/dataverse/configure',
+ 'name':'Dataverse',
+},
+{
+  'logo':'/integration-connectors/images/logos/docusign.png',
+  'href':'/integration-connectors/docs/connectors/docusign/configure',
+  'name':'Docusign',
+},
+{'logo':'/integration-connectors/images/logos/dropbox.png',
+ 'href':'/integration-connectors/docs/connectors/dropbox/configure',
+ 'name':'Dropbox',
+},
+{'logo':'/integration-connectors/images/logos/dynamics365.png',
+ 'href':'/integration-connectors/docs/connectors/dynamics365/configure',
+ 'name':'Dynamics 365',
+},
+{'logo':'/integration-connectors/images/logos/dynamics365bc.png',
+ 'href':'/integration-connectors/docs/connectors/dynamics365bc/configure',
+ 'name':'Dynamics 365 Business Central',
+},
+{
+ 'logo':'/integration-connectors/images/logos/elastic.png',
+ 'href':'/integration-connectors/docs/connectors/elasticsearch/configure',
+ 'name':'Elasticsearch',
+},
+{
+ 'logo':'/integration-connectors/images/logos/mail.png',
+ 'href':'/integration-connectors/docs/connectors/email/configure',
+ 'name':'Email',
+},
+  { 'logo':'/integration-connectors/images/logos/enterprisedb.png',
+'href':'/integration-connectors/docs/connectors/enterprisedb/configure',
+'name':'EnterpriseDB',
+
+  },
+  { 'logo':'/integration-connectors/images/logos/excelonline.png',
+'href':'/integration-connectors/docs/connectors/excelonline/configure',
+'name':'Excel Online',
+
+  },
+  { 'logo':'/integration-connectors/images/logos/financialforce.png',
+'href':'/integration-connectors/docs/connectors/financialforce/configure',
+'name':'FinancialForce',
+  },
+  {
+ 'logo':'/integration-connectors/images/logos/fresh-books.png',
+ 'href':'/integration-connectors/docs/connectors/freshbooks/configure',
+ 'name':'FreshBooks',
+},
+{
+ 'logo':'/integration-connectors/images/logos/ftp.png',
+ 'href':'/integration-connectors/docs/connectors/ftp/configure',
+ 'name':'FTP',
+},
+{
+  'logo':'/integration-connectors/images/logos/github.png',
+  'href':'/integration-connectors/docs/connectors/github/configure',
+  'name':'GitHub',
+},
+{
+ 'logo':'/integration-connectors/images/logos/greenplum.png',
+ 'href':'/integration-connectors/docs/connectors/greenplum/configure',
+ 'name':'Greenplum',
+},
+{
+  'logo':'/integration-connectors/images/logos/hdfs.png',
+  'href':'/integration-connectors/docs/connectors/hdfs/configure',
+  'name':'HDFS',
+ },
+{
+  'logo':'/integration-connectors/images/logos/hl7.png',
+  'href':'/integration-connectors/docs/connectors/hl7/configure',
+  'name':'HL7',
+ },
+{
+  'logo':'/integration-connectors/images/logos/http.png',
+  'href':'/integration-connectors/docs/connectors/http/configure',
+  'name':'HTTP',
+},
+{
+  'logo':'/integration-connectors/images/logos/hubspot.png',
+  'href':'/integration-connectors/docs/connectors/hubspot/configure',
+  'name':'HubSpot',
+},
+{
+  'logo':'/integration-connectors/images/logos/db2.png',
+  'href':'/integration-connectors/docs/connectors/db2/configure',
+  'name':'IBM DB2',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/ibmmq.png',
+ 'href':'/integration-connectors/docs/connectors/ibmmq/configure',
+ 'name':'IBM MQ',
+},
+{
+ 'logo':'/integration-connectors/images/logos/instagram.png',
+ 'href':'/integration-connectors/docs/connectors/instagram/configure',
+ 'name':'Instagram',
+},
+{
+  'logo':'/integration-connectors/images/logos/jira.png',
+  'href':'/integration-connectors/docs/connectors/jiracloud/configure',
+  'name':'Jira Cloud',
+},
+{
+  'logo':'/integration-connectors/images/logos/jira.png', 
+  'href':'/integration-connectors/docs/connectors/jiraserverdc/configure',
+  'name':'Jira Server (Data Center)',
+},
+{
+  'logo':'/integration-connectors/images/logos/jirasm.png',
+  'href':'/integration-connectors/docs/connectors/jiraservicemanagement/configure',
+  'name':'Jira Service Management',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/kintone.png',
+ 'href':'/integration-connectors/docs/connectors/kintone/configure',
+ 'name':'Kintone',
+},
+{
+  'logo':'/integration-connectors/images/logos/ldap.png',
+  'href':'/integration-connectors/docs/connectors/ldap/configure',
+  'name':'LDAP',
+},
+{
+  'logo':'/integration-connectors/images/logos/linkedin.svg',
+  'href':'/integration-connectors/docs/connectors/linkedin/configure',
+  'name':'LinkedIn',
+},
+{
+  'logo':'/integration-connectors/images/logos/magento.png',
+  'href':'/integration-connectors/docs/connectors/magento/configure',
+  'name':'Magento',
+},
+{
+  'logo':'/integration-connectors/images/logos/mailchimp.png',
+  'href':'/integration-connectors/docs/connectors/mailchimp/configure',
+  'name':'MailChimp',
+},
+{
+ 'logo':'/integration-connectors/images/logos/mariadb.png',
+ 'href':'/integration-connectors/docs/connectors/mariadb/configure',
+ 'name':'MariaDB',
+},
+{
+ 'logo':'/integration-connectors/images/logos/marketo.png',
+ 'href':'/integration-connectors/docs/connectors/marketo/configure',
+ 'name':'Marketo',
+ },
+{
+'logo':'/integration-connectors/images/logos/metaads.png',
+'href':'/integration-connectors/docs/connectors/metaads/configure',
+'name':'MetaAds',
+},
+{
+  'logo':'/integration-connectors/images/logos/monday.png',
+  'href':'/integration-connectors/docs/connectors/monday/configure',
+  'name':'Monday',
+},
+{
+ 'logo':'/integration-connectors/images/logos/mongodb.png',
+ 'href':'/integration-connectors/docs/connectors/mongodb/configure',
+ 'name':'MongoDB',
+},
+{
+  'logo':'/integration-connectors/images/logos/exchange.png',
+  'href':'/integration-connectors/docs/connectors/exchange/configure',
+  'name':'Microsoft Exchange',
+ },
+{
+  'logo':'/integration-connectors/images/logos/msteams.png',
+  'href':'/integration-connectors/docs/connectors/msteams/configure',
+  'name':'Microsoft Teams',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/mysql.png',
+ 'href':'/integration-connectors/docs/connectors/mysql/configure',
+ 'name':'MySQL',
+},
+{
+ 'logo':'/integration-connectors/images/logos/netsuite.png',
+ 'href':'/integration-connectors/docs/connectors/netsuite/configure',
+ 'name':'Netsuite',
+},
+{
+ 'logo':'/integration-connectors/images/logos/neo4j.png',
+ 'href':'/integration-connectors/docs/connectors/neo4j/configure',
+ 'name':'Neo4j',
+},
+{
+  'logo':'/integration-connectors/images/logos/okta.png',
+  'href':'/integration-connectors/docs/connectors/okta/configure',
+  'name':'Okta',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/office365.png',
+ 'href':'/integration-connectors/docs/connectors/office365/configure',
+ 'name':'Office 365',
+},
+{
+  'logo':'/integration-connectors/images/logos/onedrive.png',
+  'href':'/integration-connectors/docs/connectors/onedrive/configure',
+  'name':'OneDrive',
+ },
+{
+  'logo':'/integration-connectors/images/logos/oracledb.png',
+  'href':'/integration-connectors/docs/connectors/oracledb/configure',
+  'name':'Oracle DB',
+},
+{
+  'logo':'/integration-connectors/images/logos/oracleeloqua.png',
+  'href':'/integration-connectors/docs/connectors/oracleeloqua/configure',
+  'name':'Oracle Eloqua',
+},
+{
+  'logo':'/integration-connectors/images/logos/oraclesalescloud.png',
+  'href':'/integration-connectors/docs/connectors/oraclesalescloud/configure',
+  'name':'Oracle Sales Cloud',
+},
+{
+  'logo':'/integration-connectors/images/logos/paypal.png',
+  'href':'/integration-connectors/docs/connectors/paypal/configure',
+  'name':'PayPal',
+},
+{
+ 'logo':'/integration-connectors/images/logos/postgresql.png',
+ 'href':'/integration-connectors/docs/connectors/postgresql/configure',
+ 'name':'PostgreSQL',
+},
+{
+  'logo':'/integration-connectors/images/logos/qb.png',
+  'href':'/integration-connectors/docs/connectors/quickbooksonline/configure',
+  'name':'QuickBooks Online',
+},
+{
+  'logo':'/integration-connectors/images/logos/rabbitmq.png',
+  'href':'/integration-connectors/docs/connectors/rabbitmq/configure',
+  'name':'Rabbit MQ',
+},
+{
+ 'logo':'/integration-connectors/images/logos/reddis.png',
+ 'href':'/integration-connectors/docs/connectors/redis/configure',
+ 'name':'Redis',
+},
+{
+ 'logo':'/integration-connectors/images/logos/redshift.png',
+ 'href':'/integration-connectors/docs/connectors/redshift/configure',
+ 'name':'Redshift',
+},
+{
+  'logo':'/integration-connectors/images/logos/sageintacct.png',
+  'href':'/integration-connectors/docs/connectors/sageintacct/configure',
+  'name':'Sage Intacct',
+},
+{
+ 'logo':'/integration-connectors/images/logos/salesforce.png',
+ 'href':'/integration-connectors/docs/connectors/salesforce/configure',
+ 'name':'Salesforce',
+},
+  { 'logo':'/integration-connectors/images/logos/salesforce-marketing-cloud.png',
+'href':'/integration-connectors/docs/connectors/salesforcemarketingcloud/configure',
+'name':'Salesforce Marketing Cloud',
+  },
+{
+  'logo':'/integration-connectors/images/logos/saparibaprocurement.png',
+  'href':'/integration-connectors/docs/connectors/saparibaprocurement/configure',
+  'name':'SAP Ariba Procurement',
+},
+{
+  'logo':'/integration-connectors/images/logos/sapase.png',
+  'href':'/integration-connectors/docs/connectors/sybase/configure',
+  'name':'SAP ASE (Sybase)',
+},
+  {
+    'logo':'/integration-connectors/images/logos/sapbusinessone.png',
+    'href':'/integration-connectors/docs/connectors/sapbusinessone/configure',
+    'name':'SAP Business One',
+   },
+{
+ 'logo':'/integration-connectors/images/logos/saperp.png',
+ 'href':'/integration-connectors/docs/connectors/saperp/configure',
+ 'name':'SAP ERP',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sapgateway.png',
+ 'href':'/integration-connectors/docs/connectors/sapgateway/configure',
+ 'name':'SAP Gateway',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sap-hana.png',
+ 'href':'/integration-connectors/docs/connectors/saphana/configure',
+ 'name':'SAP HANA',
+},
+{
+  'logo':'/integration-connectors/images/logos/saphanaxsa.png',
+  'href':'/integration-connectors/docs/connectors/saphanaxsa/configure',
+  'name':'SAP HANA XS Advanced',
+},
+{
+  'logo':'/integration-connectors/images/logos/saphybrisc4c.png',
+  'href':'/integration-connectors/docs/connectors/saphybrisc4c/configure',
+  'name':'SAP Hybris C4C',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sap-success-factors.png',
+ 'href':'/integration-connectors/docs/connectors/sapsuccessfactors/configure',
+ 'name':'SAP SuccessFactors',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sendgrid.png',
+ 'href':'/integration-connectors/docs/connectors/sendgrid/configure',
+ 'name':'SendGrid',
+},
+{
+ 'logo':'/integration-connectors/images/logos/servicenow.png',
+ 'href':'/integration-connectors/docs/connectors/servicenow/configure',
+ 'name':'ServiceNow',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sftp.png',
+ 'href':'/integration-connectors/docs/connectors/sftp/configure',
+ 'name':'SFTP',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sharepoint.png',
+ 'href':'/integration-connectors/docs/connectors/sharepoint/configure',
+ 'name':'SharePoint',
+},
+{
+ 'logo':'/integration-connectors/images/logos/shopify.png',
+ 'href':'/integration-connectors/docs/connectors/shopify/configure',
+ 'name':'Shopify',
+},
+{
+ 'logo':'/integration-connectors/images/logos/singlestore.png',
+ 'href':'/integration-connectors/docs/connectors/singlestore/configure',
+ 'name':'SingleStore',
+},
+{
+  'logo':'/integration-connectors/images/logos/slack.png',
+  'href':'/integration-connectors/docs/connectors/slack/configure',
+  'name':'Slack',
+},
+{
+ 'logo':'/integration-connectors/images/logos/smartsheet.png',
+ 'href':'/integration-connectors/docs/connectors/smartsheet/configure',
+ 'name':'Smartsheet',
+},
+{
+ 'logo':'/integration-connectors/images/logos/snowflake.png',
+ 'href':'/integration-connectors/docs/connectors/snowflake/configure',
+ 'name':'Snowflake',
+},
+{
+  'logo':'/integration-connectors/images/logos/solace.png',
+  'href':'/integration-connectors/docs/connectors/solace/configure',
+  'name':'Solace',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/splunk.png',
+ 'href':'/integration-connectors/docs/connectors/splunk/configure',
+ 'name':'Splunk',
+},
+{
+ 'logo':'/integration-connectors/images/logos/sqlserver.png',
+ 'href':'/integration-connectors/docs/connectors/sqlserver/configure',
+ 'name':'SQL Server',
+},
+{
+ 'logo':'/integration-connectors/images/logos/square.png',
+ 'href':'/integration-connectors/docs/connectors/square/configure',
+ 'name':'Square',
+},
+{
+ 'logo':'/integration-connectors/images/logos/streak.png',
+ 'href':'/integration-connectors/docs/connectors/streak/configure',
+ 'name':'Streak',
+},
+{
+ 'logo':'/integration-connectors/images/logos/stripe.png',
+ 'href':'/integration-connectors/docs/connectors/stripe/configure',
+ 'name':'Stripe',
+},
+{
+ 'logo':'/integration-connectors/images/logos/taxjar.png',
+ 'href':'/integration-connectors/docs/connectors/taxjar/configure',
+ 'name':'TaxJar',
+},
+{
+  'logo':'/integration-connectors/images/logos/teradata.png',
+  'href':'/integration-connectors/docs/connectors/teradata/configure',
+  'name':'Teradata',
+},
+{
+ 'logo':'/integration-connectors/images/logos/tibco.png',
+ 'href':'/integration-connectors/docs/connectors/tibcoems/configure',
+ 'name':'Tibco EMS',
+},
+{
+ 'logo':'/integration-connectors/images/logos/trello.png',
+ 'href':'/integration-connectors/docs/connectors/trello/configure',
+ 'name':'Trello',
+},
+{
+ 'logo':'/integration-connectors/images/logos/twilio.png',
+ 'href':'/integration-connectors/docs/connectors/twilio/configure',
+ 'name':'Twilio',
+},
+{
+  'logo':'/integration-connectors/images/logos/ukg.png',
+  'href':'/integration-connectors/docs/connectors/ukg/configure',
+  'name':'UKG',
+},
+{
+ 'logo':'/integration-connectors/images/logos/blank.png',
+ 'href':'/integration-connectors/docs/connectors/webhook/configure',
+ 'name':'Webhook',
+},
+{
+  'logo':'/integration-connectors/images/logos/woocommerce.png',
+  'href':'/integration-connectors/docs/connectors/woocommerce/configure',
+  'name':'WooCommerce',
+ },
+{
+  'logo':'/integration-connectors/images/logos/wordpress.png',
+  'href':'/integration-connectors/docs/connectors/wordpress/configure',
+  'name':'WordPress',
+ },
+{
+ 'logo':'/integration-connectors/images/logos/workday.png',
+ 'href':'/integration-connectors/docs/connectors/workday/configure',
+ 'name':'Workday',
+},
+{
+ 'logo':'/integration-connectors/images/logos/xero.png',
+ 'href':'/integration-connectors/docs/connectors/xero/configure',
+ 'name':'Xero',
+},
+{
+ 'logo':'/integration-connectors/images/logos/zendesk.png',
+ 'href':'/integration-connectors/docs/connectors/zendesk/configure',
+ 'name':'Zendesk',
+},
+{
+ 'logo':'/integration-connectors/images/logos/zohobooks.png',
+ 'href':'/integration-connectors/docs/connectors/zohobooks/configure',
+ 'name':'Zoho Books',
+},
+{
+ 'logo':'/integration-connectors/images/logos/zuora.png',
+ 'href':'/integration-connectors/docs/connectors/zuora/configure',
+ 'name':'Zuora',
+}
+]
+%}
+{{ macros3.ConnectorLogoTable(cards) }}

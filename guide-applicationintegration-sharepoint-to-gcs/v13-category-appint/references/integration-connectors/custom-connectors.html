@@ -1,0 +1,141 @@
+{% extends "integration-connectors/_base.html" %}
+{% block page_title %}Custom connectors{% endblock %}
+{% block body %}
+
+<p>This page provides an overview of the custom connectors feature
+  in {{product_name}}, and assumes that you are familiar with the following concepts:</p>
+
+<ul>
+  <li><a href="/integration-connectors/docs/overview">{{product_name}}</a></li>
+  <li><a href="/integration-connectors/docs/connectorvsconnection">Connector versus connection</a></li>
+  <li><a href="https://swagger.io/specification/">Open API specifications</a></li>
+</ul>
+
+<p>The custom connectors feature lets you use connectors that aren't a part of
+  the standard connectors provided by {{product_name}}. For example, you might have an in-house
+  Human Resource Management System (HRMS) with a proprietary connectivity protocol that you want to
+  expose to <a href="/application-integration/docs/overview">Application Integration</a> through a connector.
+  The custom connector feature is useful in the following scenarios:</p>
+<ul>
+  <li>Built-in connectors aren't available in {{product_name}} for a data source or service that you want to connect.</li>
+  <li>Built-in connectors are available in {{product_name}}, but they don't meet your requirements.</li>
+</ul>
+
+<h2>How {{product_name}} supports a custom connector?</h2>
+<p>{{product_name}} supports custom connectors through Open API specification
+  (version 3.0.0 and all its minor versions). You can expose your backend as
+  a public endpoint, and then use your endpoint's Open API specification to create a new
+  connector that connects to your endpoint (backend).</p>
+  <p>An endpoint's Open API specification defines the contract between
+    {{product_name}} and the endpoint.
+  {{product_name}} uses the API specification to generate the connector's
+    <a href="/integration-connectors/docs/entities-operation-action">actions and entities</a>.
+    The API specification can be a JSON or a YAML. The following is an excerpt from a sample
+    Open API specification of a backend service:</p>
+
+<pre class="pretty-print lang-json">{
+  "openapi":"3.0.2",
+  "info":{
+    "title":"Swagger Petstore - OpenAPI 3.0",
+    "description":"This is a sample Pet Store Server based on the OpenAPI 3.0 specification.
+  You can find out more about\nSwagger at [
+    http://swagger.io](http://swagger.io). In the third iteration of the pet store,
+    we've switched to the design first approach! You can now help us improve the API whether
+  it's by making changes to the definition itself or to the code.\nThat way,
+    with time, we can improve the API in general, and expose some of the new
+  features in OAS3.\n\nSome useful links:\n-
+  [
+       The Pet Store repository
+  ]
+  .....
+  .....
+    },
+  "paths":{
+    "/pet/{petId}/uploadImage":{
+      "post":{
+        "tags":[
+        ]
+      }
+    },
+    .....
+    .....
+    "/pet/findByStatus":{
+      "get":{
+        "tags":[
+          "pet"
+        ],
+        .....
+        .....
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "api_key":{
+        "type":"apiKey",
+        "name":"api_key",
+        "in":"header"
+      }
+    }
+  }
+}
+</pre>
+
+<p>To view the complete sample specification, see <a href="https://petstore3.swagger.io/api/v3/openapi.json">Sample pet store repository</a>.
+Suppose you use this sample specification to create a custom connector, {{product_name}} will generate a separate action for each
+  element in <code>path</code>. For example, <code>uploadImage</code> and <code>findByStatus</code> would be listed as supported actions by the custom connector. 
+</p>
+
+<h2 id="backend-conn-scenarios">Backend connectivity scenarios</h2>
+<p>{{product_name}} supports custom connectors for the following backend connectivity scenarios:</p>
+
+<ul>
+  <li>Direct backend connectivity</li>
+  <li>Indirect backend connectivity</li>
+</ul>
+
+<aside class="note"><b>Note: </b>Irrespective of any connectivity
+   scenarios, {{product_name}} can only connect to endpoints that
+  are Open API compliant.</aside>
+
+<h3>Scenario - Direct backend connectivity</h3>
+<p>In this scenario, the {{product_name}} runtime directly establishes connectivity to your
+  Open API compliant backend. The following illustration shows the connector connectivity in this scenario:
+</p>
+
+<img src="/integration-connectors/images/custom-connectors-scenario-1.png" alt="direct backend connectivity"/>
+
+
+<h3>Scenario - Indirect backend connectivity</h3>
+<p>In this scenario, the {{product_name}} runtime establishes connectivity
+  to your backend through an intermediary (facade) service that is Open API compliant. The
+  intermediary service in turn connects to your backend. The following illustration shows the
+  connector connectivity in this scenario:</p>
+
+<img src="/integration-connectors/images/custom-connectors-scenario-2.png" alt="indirect backend connectivity"/>
+
+<aside class="note">
+  <ul>
+    <li>{{product_name}} doesn't manage the connectivity between the intermediary service and your backend. Therefore,
+      delays that occur because of connectivity issues between the intermediary service and the backend are outside the scope
+      of {{product_name}} SLA.</li>
+    <li>{{product_name}} doesn't support OAuth 2.0 authentication type between the intermediary service and the backend.</li>
+  </ul>
+</aside>
+
+<h2>Custom connector versions</h2>
+<p>With the versioning feature, you can create multiple versions of a custom connector. Each
+  version can have a different OpenAPI specification, authentication method, and backend variables.
+  This provides the flexibility to create a connector with various configurations.</p>
+
+<p>When you create a new connector, the first version of the connector is created automatically
+  for you, and the version details are displayed in the <b>Versions</b> tab of the <a href="{{console_url}}connectors/custom-connectors">custom connector's details page</a>.
+  To understand how to create a new version of a connector, see <a href="manage-custom-connector-versions">Manage custom connector versions</a>.
+</p>
+
+
+<h2>What's next</h2>
+<p>Understand how to <a href="/integration-connectors/docs/create-custom-connector">create a custom connector</a>.</p>
+
+
+{% endblock %}

@@ -1,0 +1,71 @@
+<p>When creating this connection by using Terraform, you must set the following variables in your Terraform configuration file:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter name</th>
+<th>Data type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tr>
+<td>cluster_name</td>
+<td>STRING</td>
+<td>False</td>
+<td>The name of the cluster of your Azure HDInsight. </td>
+</tr>
+<tr>
+<td>enable_schemas</td>
+<td>BOOLEAN</td>
+<td>False</td>
+<td>Set to true if the Apache Phoenix instance you are authenticating against support multiple schemas. </td>
+</tr>
+<tr>
+<td>browsable_schemas</td>
+<td>STRING</td>
+<td>False</td>
+<td>This property restricts the schemas reported to a subset of the available schemas. For example, BrowsableSchemas=SchemaA,SchemaB,SchemaC. </td>
+</tr>
+<tr>
+<td>impersonation_user</td>
+<td>STRING</td>
+<td>False</td>
+<td>The user to impersonate while sending requests to the Phoenix Query Server. </td>
+</tr>
+<tr>
+<td>server_configurations</td>
+<td>STRING</td>
+<td>False</td>
+<td>A list of server configuration variables to override the server defaults. </td>
+</tr>
+<tr>
+<td>proxy_enabled</td>
+<td>BOOLEAN</td>
+<td>False</td>
+<td>Select this checkbox to configure a proxy server for the connection. </td>
+</tr>
+<tr>
+<td>proxy_auth_scheme</td>
+<td>ENUM</td>
+<td>False</td>
+<td>The authentication type to use to authenticate to the ProxyServer proxy. Supported values are: BASIC, DIGEST, NONE</td>
+</tr>
+<tr>
+<td>proxy_user</td>
+<td>STRING</td>
+<td>False</td>
+<td>A user name to be used to authenticate to the ProxyServer proxy. </td>
+</tr>
+<tr>
+<td>proxy_password</td>
+<td>SECRET</td>
+<td>False</td>
+<td>A password to be used to authenticate to the ProxyServer proxy. </td>
+</tr>
+<tr>
+<td>proxy_ssltype</td>
+<td>ENUM</td>
+<td>False</td>
+<td>The SSL type to use when connecting to the ProxyServer proxy. Supported values are: AUTO, ALWAYS, NEVER, TUNNEL</td>
+</tr>
+</table>

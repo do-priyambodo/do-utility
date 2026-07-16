@@ -1,0 +1,243 @@
+<h2>Configure the connector</h2>
+{{about_connection}}
+
+
+<ol>
+ {{connectors_integration_steps}} {{connectors_apigee_steps}}
+
+  <li>Click <b>+ CREATE NEW</b> to open the <b>Create Connection</b> page.</li>
+
+    <li>In the <b>Location</b> section, choose the location for the connection.
+      <ol>
+        <li><b>Region</b>: Select a location from the drop-down list.
+        
+          {{connector_regions}}
+        </li>
+        <li>Click <b>NEXT</b>.</li>
+      </ol>
+    </li>
+
+    <li>In the <b>Connection Details</b> section, complete the following:
+      <ol>
+        <li><b>Connector</b>: Select <b>Neo4J</b> from the drop down list of available Connectors.</li>
+        <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+        </li>
+        <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+          <p>Connection names must meet the following criteria:
+          <ul>
+            <li>Connection names can use letters, numbers, or hyphens.</li>
+            <li>Letters must be lower-case.</li>
+            <li>Connection names must begin with a letter and end with a letter or number.</li>
+            <li>Connection names cannot exceed 49 characters.</li>
+          </ul>
+
+        </li>
+        <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+{{connector_cloud_logging}}
+        <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+{{connector_node_config}}
+
+          <li>
+            <b>User Defined Views</b>: A filepath pointing to the JSON configuration file containing your custom views.
+          </li>
+
+        {{connector_proxy_config}}
+<li>Optionally, click <b>+ ADD LABEL</b> to add a label to the Connection in the form of a key/value pair.</li>
+        <li>Click <b>NEXT</b>.</li>
+      </ol>
+    </li>
+
+      <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to.
+        <ol>
+          <li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+            {{connector_dest_type_config}}
+            
+            <p>To enter additional destinations, click <b>+ADD DESTINATION</b>.</p>
+          </li>
+          <li>Click <b>NEXT</b>.</li>
+        </ol>
+      </li>
+ 
+    <li>
+      In the <b>Authentication</b> section, enter the authentication details. 
+      <ol>
+          <li>Select an <b>Authentication type</b> and enter the relevant details.
+            <p>The following authentication types are supported by the Neo4J connection:</p>
+                <ul>
+                  <li>    Username and password
+</li>
+                </ul> 
+          </li>
+          <p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+        <li>Click <b>NEXT</b>.</li>
+      </ol>
+    </li> 
+    <li><b>Review</b>: Review your connection and authentication details.</li>
+  <li>Click <b>Create</b>.</li>
+</ol>
+<h2 id="configure-auth">Configure authentication</h2>
+<p>Enter the details based on the authentication you want to use.</p>
+    <ul>
+      <li>
+        <b>    Username and password
+</b>
+            <ul>
+              <li><b>Username</b>: Username for connector</li>
+              <li><b>Password</b>: Secret Manager Secret containing the password associated with the connector.</li>
+            </ul>
+      </li>
+    </ul>
+<h3 id="neo4j-config">Neo4j configuration</h3>
+    <p>To configure authentication for Neo4J, do the following:</p>
+<ul>
+  <li>Install Java</li>
+  <li>Install Neo4j Community Edition</li>
+  <li>Access the Neo4j browser</li>
+  <li>Enable HTTPS</li>
+</ul>
+<h4>Install Java</h4>
+<ol>
+  <li>Download the Java SE Development Kit (JDK) 17.0.10.</li>
+  <li>Install the adapter using the following command: <code>sudo yum install https://neo4j.com/docs/operations-manual/current/installation/linux/rpm/</code></li>
+  <li>To verify the installation, run the following command from the terminal:
+    <pre class="lang-sh prettyprint notranslate">
+    java --version
+    </pre>
+  </li>
+</ol>
+
+<h4>Install Neo4j Community Edition</h4>
+<ol>
+  <li>Install Neo4j as root using the following command: <code>zypper install neo4j-5.18.0</code>.</li>
+  <li>Verify the installation status with the following command: <code>sudo service neo4j status</code> after installation.</li>
+  <li>Before you start the database for the first time, set the password for the initial user using the following command: <code>bin/neo4j-admin dbms set-initial-password</code>.<p>If you don't set the initial password, a default password is set for Neo4j.</p></li>
+  
+  <li>Change the default password at first login.</li>
+  <li>Start the Neo4j with the following command: <code>systemctl start neo4j</code></li>
+  <li>Check the status of Neo4j by running the command <code>systemctl status neo4j</code></li>
+</ol>
+<h4>Access the Neo4j browser</h4>
+<ol>
+  <li>Open the following URL from the Neo4j browser: <code>http://<span class="code-red">your-vm-name</span>:7474</code></li>
+  <li>Enter the username and password as <code>neo4j/neo4j</code>.</li>
+  <li>Click the <b>+</b> button and select <b>Create</b>.</li>
+  <li>Select <b>Relationship</b> and click <b>Create</b>.</li>
+  <li>Specify <b>KNOWS</b> for the relationship name.</li>
+  </ol>
+<h4>Enable HTTPS</h4>
+<ol>
+  <li>Open the terminal and run the command to generate the self-signed certificate.</li>
+  <li>Run the following command to start the server with HTTPS enabled:
+    <pre class="lang-sh prettyprint notranslate">
+    sudo /opt/neo4j/bin/neo4j start --enable-browser --alsologtostderr --dbms-options=dbms.security.https_port=7473
+    </pre>
+
+<p>For more information, see <a href="https://neo4j.com/docs/operations-manual/current/security/ssl-framework/">SSL Framework</a>.</p>
+</li>
+</ol>
+
+
+<h3 id="set-up-host-address">Set up a host address</h3>
+<p>Access the following URL in the Neo4j browser: <code>https://<span class="code-red">your-vm-name</span>:7473</code></p><p>Host address is a combination of IP address and port, such as <code>https://{IP_ADDRESS}:7473</code>. The 
+  port address depends on the specific service you want to access.</p>
+<p>The following tables lists the port details:</p>
+<table>
+  <tr>
+    <th>Service</th>
+    <th>Default port</th>
+    <th>Configuration setting</th>
+    <th>Example</th>
+  </tr>
+  <tr>
+    <td>Bolt Protocol (for database connections)</td>
+    <td>7687</td>
+    <td>server.bolt.listen_address</td>
+    <td>bolt://127.0.0.1:7687</td>
+  </tr>
+  <tr>
+    <td>HTTP (for web interface)</td>
+    <td>7474</td>
+    <td>server.http.listen_address</td>
+    <td>http://127.0.0.1:7474</td>
+  </tr>
+  <tr>
+    <td>HTTPS (secure web interface)</td>
+    <td>7473</td>
+    <td>server.https.listen_address</td>
+    <td>https://127.0.0.1:7473</td>
+  </tr>
+</table>
+<p>For more information, see <a href="https://neo4j.com/docs/operations-manual/current/configuration/ports/">Port details</a>.</p>
+
+<h2 id="conn-conf-samples">Connection configuration samples</h2>
+<p>This section lists the sample values for the various fields that you configure when creating the Neo4J connection.</p>
+<h4> SSL connection type</h4>
+<table>
+<tr>
+<th>Fieldname</th>
+<th>Details</th>
+</tr>
+<tbody>
+<tr>
+<td>Location</td>
+<td>europe-west1</td>
+</tr>
+<tr>
+<td>Connector</td>
+<td>neo4j</td>
+</tr>
+<tr>
+<td>Connector version</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Connection Name</td>
+<td>google-cloud-neo4j-conn</td>
+</tr>
+<tr>
+<td>Service Account</td>
+<td>my-service-account@my-project.{% dynamic print variables.domains.sa_iam_domain %}</td>
+</tr>
+<tr>
+<td>Minimum number of nodes</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Maximum number of nodes</td>
+<td>50</td>
+</tr>
+<tr>
+<td>Custom Trust Store</td>
+<td>neo4j_Private_Cert</td>
+</tr>
+<tr>
+<td>Secret version</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Destination Type</td>
+<td>Host Address</td>
+</tr>
+<tr>
+<td>host</td>
+<td>https://192.0.2.0/td>
+</tr>
+<tr>
+<td>port</td>
+<td>PORT</td>
+</tr>
+<tr>
+<td>Username</td>
+<td>USERNAME</td>
+</tr>
+<tr>
+<td>Password</td>
+<td>PASSWORD</td>
+</tr>
+<tr>
+<td>Secret Version</td>
+<td>3</td>
+</tr>
+<tr>
+</tbody>
+</table>

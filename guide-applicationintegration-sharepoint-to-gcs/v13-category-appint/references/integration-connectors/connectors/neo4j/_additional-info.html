@@ -1,0 +1,301 @@
+<h2>System limitations</h2>
+<p>The Neo4j connector can process 5 transactions per second,
+  per <a href="/integration-connectors/docs/pricing#payg">node</a>,
+   and <a href="/integration-connectors/docs/rate-limiting">throttles</a> any transactions
+    beyond this limit. {{connectors_default_node_message}}</p>
+
+    {{connector_node_scaling}}
+
+<devsite-expandable expanded id="actions-exp">  
+  <h2 class="showalways">Actions</h2>
+  <p>This section lists the actions supported by the connector. To understand how to configure the
+  actions, see <a href="#actionexamples-exp">Action examples</a>.</p>
+
+  <aside class="note"><b>Note:</b> The results of all the actions will be available as a
+JSON response in the <code>Connectors</code> task's <code>connectorOutputPayload</code>
+response parameter after you run your integration.</aside>
+
+{{connector_execute_custom_query_action}}
+
+<h2 id="examp">Action examples</h2>
+<p>This section describes how to perform some of the actions in this connector.</p>
+
+<h3>Example - Create a node</h3>
+<p>This example shows how to create a new node.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection, and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">CREATE (:Movie {title: 'Hey', release_year: 2010})</pre>
+</li>
+<p>If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Update a node</h3>
+<p>This example shows how to update a node.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">match(m:Movie{title: 'Inception'}) set m.release_year=2011 return m</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response
+parameter value is similar to the following:</p>
+<pre class="prettyprint lang-json">[{ "m": "{\"release_year\":2011,\"title\":\"Inception\"}" }]</pre>
+</ol>
+
+<h3>Example - Delete a node</h3>
+<p>This example shows how to delete a node.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">match(m:Movie{title: 'hey'}) delete m</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Create a relationship</h3>
+<p>This example shows how to create a relationship.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">CREATE(movie:Movie {title: 'bcon'}), (actor:Actor {name: 'leo'})
+CREATE(actor)-[:ACTED_IN]->(movie)
+</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Update a relationship</h3>
+<p>This example shows how to update a relationship.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">match(movie:Movie {title: 'demo'}), (actor:Actor {name: 'first'})
+match(actor)-[r:ACTED_IN]->(movie) set actor.name='second',r.year=2024 return actor,r,movie
+</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response
+parameter value is similar to the following:</p>
+<pre class="prettyprint lang-json">[{   "actor": "{\"name\":\"second\"}",   "r": "{\"year\":2024}",   "movie": "{\"title\":\"demo\"}" }]</pre>
+</ol>
+
+<h3>Example - Delete a relationship</h3>
+<p>This example shows how to delete a relationship.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">MATCH(movie:Movie {title: 'bcon44'}), (actor:Actor {name: 'jacky'})
+MATCH(actor)-[r:ACTED_IN]->(movie) delete r
+</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Update a node label</h3>
+<p>This example shows how to update a node label.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">MATCH (n:Person) where id(n)=18 set n:Actor RETURN n</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response
+parameter value is similar to the following:</p>
+<pre class="prettyprint lang-json">[{ "n": "{\"born\":1962,\"name\":\"Demi Moore\"}" }]</pre>
+</ol>
+
+<h3>Example - Update relationship type</h3>
+<p>This example shows how to update a relationship type.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">MATCH (n:Person) where id(n)=18 set n.born=1963 RETURN n</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response
+parameter value is similar to the following:</p>
+<pre class="prettyprint lang-json">[{ "n": "{\"born\":1963,\"name\":\"Demi Moore\"}" }]</pre>
+</ol>
+
+
+
+<h3>Example - Create a datatype</h3>
+<p>This example shows how to create a datatype.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">CREATE (:Product {unitPrice: 109.50,
+unitsInStock: 390,
+supplierID: "1",
+productID: "dumy-2",
+discontinued: false,
+quantityPerUnit: "10 boxes x 20 bags",
+productName: "productName-1",
+unitsOnOrder: 0,
+reorderLevel: 10,
+supplier: ["1"],
+expiry: Duration("P14DT18H12M"),
+categoryID: "1",
+updatedAt: DateTime("1984-11-11T12:31:14Z")})</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Update a datatype</h3>
+<p>This example shows how to update a datatype.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">match(p:Product{productID: "dumy-1"}) set p.duration = Duration("P15DT19H12M"), p.updatedAt=DateTime("1984-11-12T12:31:14Z") return p</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response
+parameter value is similar to the following:</p>
+<pre class="prettyprint lang-json">[{ "p": "{\"unitPrice\":109.5,
+\"unitsInStock\":390,
+\"supplierID\":\"1\",
+\"productID\":\"dumy-1\",
+\"discontinued\":false,
+\"quantityPerUnit\":\"10 boxes x 20 bags\",
+\"productName\":\"productName-1\",
+\"unitsOnOrder\":0,
+\"duration\":\"P15DT19H12M\",
+\"reorderLevel\":10,
+\"supplier\":[\"1\"],
+\"expiry\":\"P14DT18H12M\",
+\"categoryID\":\"1\",
+\"updatedAt\":\"1984-11-12T12:31:14Z\"}" }, 
+{ "p":"{\"unitPrice\":109.5,
+\"unitsInStock\":390,
+\"supplierID\":\"1\",
+\"productID\":\"dumy-1\",
+\"discontinued\":false,
+\"quantityPerUnit\":\"10 boxes x 20 bags\",
+\"productName\":\"productName-1\",
+\"unitsOnOrder\":0,
+\"duration\":\"P15DT19H12M\",
+\"reorderLevel\":10,
+\"supplier\":[\"1\"],
+\"expiry\":\"P14DT18H12M\",
+\"categoryID\":\"1\",
+\"updatedAt\":\"1984-11-12T12:31:14Z\"}" }]</pre>
+</ol>
+
+<h3>Example - Delete a datatype</h3>
+<p>This example shows how to delete a datatype.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">match(p:Product{productID: "dumy-2"}) delete p</pre>
+</li>
+<p>This example shows how to delete a datatype.
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives a blank payload [ ].
+</ol>
+
+<h3>Example - Get the count of nodes</h3>
+<p>This example shows how to get the count of nodes.</p>
+<ol>
+<li>In the <code>Configure Connector</code> dialog, select <code>Region, Connection and Actions</code>.</li>
+<li>Select <code>Execute Custom Query</code>  from the actions, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of <b>Connector</b>, click on
+<code>Edit Custom Script</code> and then enter a value similar to the following in the
+<code>Custom Query</code> field:
+<pre class="prettyprint lang-json">MATCH ()  
+RETURN count(*) AS numNodes</pre>
+</li>
+<p>
+If the action is successful, the
+<code>Execute Custom Query</code> task's <code>connectorOutputPayload</code> response parameter gives the payload which is similar to the following:</p>
+<pre class="prettyprint lang-json">
+[{
+  "numNodes": 6267.0
+}]
+</pre>
+</ol>
+</devsite-expandable>
+<devsite-expandable  expanded id="entityexamples-exp">
+  <h2 id="entityexamples-exp" class="showalways">Entity operation examples</h2>
+  <p>This section shows how to perform some of the entity operations in this connector.</p>
+
+  <h3>Example - List all languages</h3>
+  <p>This example shows how to list all languages.</p>
+  <ol>
+  <li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+  <li>Select multilanguage_table from the <code>Entity</code> list.</li>
+  <li>Select the <code>List</code> operation, and then click
+  <b>Done</b>.</li>
+  <li>In the <b>Data Mapper</b> section click on <b>Open Data Mapping Editor</b> and, there you can set the
+  <b>filterClause</b> as per your requirement.</p></li>
+  </ol>
+  <aside class="note"><b>Note:</b> 
+  The value for the filter clause must always be passed within single quotes (') whenever there is a string. You can skip the singles quotes (') whenever there is a number, such as, "Id_= 58.0". Here "Id_" is the column name and "58.0" is the value.</aside>
+  
+  <h3>Example - Get a language</h3>
+  <p>This example shows how to get a language.</p>
+  <ol>
+  <li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+  <li>Select multilanguage_table from the <code>Entity</code> list.</li>
+  <li>Select the <code>Get</code> operation, and then click
+  <b>Done</b>.</li>
+  <li>Set the entity ID to Get single Language. To set the entity ID, in
+  the <b>Data Mapper </b>section, click on <b>Open Data Mapping Editor</b>, and
+  then enter <code>58.0</code> in the <b>Input Value</b> field and choose the <b>entityId</b> as Local variable.
+  </ol>
+  <aside class="note"><b>Note:</b>
+  <ul>
+  <li>You must pass the value for the Entity Id,such as, 58.0. Here 58.0 is the unique primary key value, which you must pass.</li>
+  <li>You might encounter an error if you pass an Entity Id because of Composite Business or Primary Keys.<br>
+  In such cases, you can use a filter clause and pass a value, such as,
+  Id_= 58.0 AND name = "Alex Noam" using LIST operation on the given entity.</li></ul></aside>
+</devsite-expandable>
+{% include "integration-connectors/docs/_terraform-create-connection.html" %}
+{% include "integration-connectors/docs/connectors/neo4j/_config_vars_terraform.html" %}

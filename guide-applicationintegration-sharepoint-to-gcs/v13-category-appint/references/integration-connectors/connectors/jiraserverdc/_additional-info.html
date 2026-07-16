@@ -1,0 +1,353 @@
+<h2>System limitations</h2>
+<p>The Jira Server (Data Center) connector can process a maximum of 15 transactions per second,
+  per <a href="/integration-connectors/docs/pricing#payg">node</a>, and <a href="/integration-connectors/docs/rate-limiting">throttles</a> any transactions beyond this limit. {{connectors_default_node_message}}</p>
+{{connector_node_scaling}}
+
+<devsite-expandable id="exp5"> 
+<h2 class="showalways" id="useintegr">Use the Jira Server (Data Center) connection in an integration</h2>
+
+<p>After you create the connection, it becomes available in both
+{{apigee_integration_name}} and {{application_integration_name}}. You can use the connection
+in an integration through the Connectors task.</p>
+<ul>
+<li>To understand how to create and use the Connectors task in {{apigee_integration_name}}, see <a href="/apigee/docs/api-platform/integration/connectors-task#configure-the-connectors-task">Connectors task</a>.</li>
+<li>To understand how to create and use the Connectors task in {{application_integration_name}}, see <a href="/application-integration/docs/configure-connectors-task">Connectors task</a>.</li>
+</ul>
+</devsite-expandable>
+
+
+ <h2 id="entityexamples-exp" class="showalways">Entity operation examples</h2>
+  <p>This section provides examples of how to perform the <a href="/integration-connectors/docs/entities-operation-action">entity operations</a> in this connector.</p>
+
+<h3>Example - List Issues</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Issues from the <code>Entity</code> list.</li>
+<li>Select the <code>LIST</code> operation, and then click
+<b>Done</b>.</li>
+<li><b>Task Input</b> section of the <b>Connectors</b> task, you can set the
+<b>filterClause</b> as per the customer requirement.</p></li>
+<p>You must use single quotes (') to enclose the value for a filter clause. You can use the filter clause to filter records based on the columns.</p>
+<p>You can use the filter clause to filter records based on the columns.
+  For example, to filter records, use the following <b>filterClause</b>: <code>Location='US'</code> and <code>region='us-east1'</code>.</p>
+You can also use <b>filterClause</b> in entities where passing only an entity ID causes error.</p>
+</ol>
+
+
+<h3>Example - Get Issues</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Issues from the <code>Entity</code> list.</li>
+<li>Select the <code>GET</code> operation, and then click
+<b>Done</b>.</li>
+<li>Set the entity ID to 10000 which is the Key ID to be passed for Issues. To set the entity ID, in
+the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>EntityId</b> and
+then enter <code>10000</code> in the <b>Default Value</b> field.
+<p>The value of the entity ID should be passed directly. Such as, 10000. Here, 10000 is the unique primary key value, which is passed.</p>
+<p>To use the Get operation the entity must have a unique primary key else the Get operation can not be performed.</p>
+</ol>
+
+
+<h3>Example - Delete Issues</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Issues from the <code>Entity</code> list.</li>
+<li>Select the <code>DELETE</code> operation, and then click
+<b>Done</b>.</li>
+<li>Set the entity ID to 10000 which is the Key to be passed.. To set the entity ID, in
+the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>EntityId</b> and
+then enter <code>10000</code> in the <b>Default Value</b> field.
+</ol>
+
+
+<h3>Example - Create IssueTypes</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select IssueTypes from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "Name": "task123456",
+  "Description": "New description is added."
+}</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": "10041"
+}  </pre>
+</li>
+</ol>
+
+
+<h3>Example - Create Issues</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Issues from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+    "IssueTypeName": "Subtask", 
+    "ProjectName": "kanban4", 
+    "Summary": "Summary Added", 
+    "ParentKey": "KN-6" 
+}
+</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": 10071.0
+}
+</pre>
+</li>
+</ol>
+
+
+
+<h3>Example - Create Sprints</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Sprints from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "Name": "PROJ Sprint Googlecloud",
+  "State": "future",
+  "Goal": null,
+  "OriginBoardId": 2.0,
+  "StartDate": "2023-06-27 07:06:08",
+  "EndDate": "2023-07-27 07:06:08"
+}
+</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": 23.0
+}   </pre>
+</li>
+</ol>
+
+
+<h3>Example - Create Comments</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Comments from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "IssueId": 10001.0,
+  "Body": "Adding comments to above ID by editing it"
+}
+</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": 10023.0,
+  "IssueId": null
+}
+</pre>
+</li>
+</ol>
+
+
+<h3>Example - Create Users</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Users from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "GroupName": null,
+  "DisplayName": "Sample",
+  "EmailAddress": "sample@gmail.com",
+  "Active": true,
+  "TimeZone": null,
+  "Locale": "en_US",
+  "AccountType": "atlassian"
+}</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "AccountId": "557058:0a04612c-746d-4d47-a909-71ba797fe228"
+}
+</pre>
+</li>
+</ol>
+
+
+
+<h3>Example - Create Worklogs</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Worklogs from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "IssueKey": "GJCT-1",
+  "Started": "2023-06-10 08:08:08",
+  "TimeSpent": "2000"
+}
+</pre>
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": "41718",
+  "IssueId": 10000.0
+}
+</pre>
+</li>
+</ol>
+
+
+
+<h3>Example - Update IssueTypes</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select IssueTypes from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "Name": "NEW_TASK",
+  "Description": "New Description"
+} 
+</pre>
+</li>
+<li>Set the entity ID to  the entity of the IssueTypes . To set the entity ID,
+click <b>entityId</b> and then enter <code> 10038 </code> in the <b>Default Value</b>
+field.
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "Id": "10038"
+}
+</pre>
+</li>
+</ol>
+
+
+<h3>Example - Update Issues</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Issues from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "AssigneeAccountId": "61d572aa7c6f9800705289a1",
+  "AssigneeName": "Charlie b"
+}
+</pre>
+</li>
+<li>Set the entity ID to  the entity of the Issues . To set the entity ID,
+click <b>entityId</b> and then enter <code> 10024 </code> in the <b>Default Value</b>
+field.
+<p>If the integration is successful, the connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+  "AssigneeDisplayName": "Charlie b"
+}
+</pre>
+</li>
+</ol>
+
+
+
+
+<h3>Example - Update Sprints</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Sprints from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "Name": "PROJ Sprint Googlecloud_Updated",
+  "State": "future",
+  "StartDate": "2023-06-27 07:06:08",
+  "EndDate": "2023-07-27 07:06:08"
+}
+</pre>
+</li>
+<li>Set the entity ID to  the entity of the Sprints . To set the entity ID,
+click <b>entityId</b> and then enter <code> 2 </code> in the <b>Default Value</b>
+field.
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+}
+</pre>
+</li>
+</ol>
+
+
+<h3>Example - Update Comments</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select Comments from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre>
+{
+  "Name": "PROJ Sprint Googlecloud_Updated",
+  "State": "future",
+  "StartDate": "2023-06-27 07:06:08",
+  "EndDate": "2023-07-27 07:06:08"
+}
+</pre>
+</li>
+<li>Set the entity ID to  the entity of the Comments . To set the entity ID,
+click <b>entityId</b> and then enter <code> 2 </code> in the <b>Default Value</b>
+field.
+<p>If the integration is successful, the
+connector task's <code>connectorOutputPayload</code> response
+parameter will have a value similar to the following:</p>
+<pre>
+{
+}
+</pre>
+</li>
+</ol>
+

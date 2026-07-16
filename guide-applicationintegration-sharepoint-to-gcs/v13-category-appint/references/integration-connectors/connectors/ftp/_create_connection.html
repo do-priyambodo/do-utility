@@ -1,0 +1,106 @@
+<h2>Configure the connector</h2>
+{{about_connection}}
+
+
+<ol>
+ {{connectors_integration_steps}} {{connectors_apigee_steps}}
+
+  <li>Click <b>+ Create new</b> to open the <b>Create Connection</b> page.</li>
+
+    <li>In the <b>Location</b> section, choose the location for the connection.
+      <ol>
+        <li><b>Region</b>: Select a location from the drop-down list.
+        
+          {{connector_regions}}
+        </li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+
+    <li>In the <b>Connection Details</b> section, complete the following:
+      <ol>
+        <li><b>Connector</b>: Select <b>FTP</b> from the drop down list of available Connectors.</li>
+        <li><b>Connector version</b>:  Select the Connector version from the drop down list of available versions.
+        </li>
+        <li>In the <b>Connection Name</b> field, enter a name for the Connection instance.
+          <p>Connection names must meet the following criteria:
+          <ul>
+            <li>Connection names can use letters, numbers, or hyphens.</li>
+            <li>Letters must be lower-case.</li>
+            <li>Connection names must begin with a letter and end with a letter or number.</li>
+            <li>Connection names cannot exceed 49 characters.</li>
+          </ul>
+
+        </li>
+        <li>Optionally, enter a <b>Description</b> for the connection instance.</li>
+{{connector_cloud_logging}}
+        <li><b>Service Account</b>: Select a service account that has the <a href="#before-you-begin">required roles</a>.</li>
+{{connector_node_config}}
+
+          <li>
+            <b>File Retrieval Depth</b>: Specify the depth level of folders you want to query from the Root table.
+          </li>
+          <li>
+            <b>Passive</b>: Controls whether to direct the server into passive mode. Recommended if behind a firewall.
+          </li>
+          <li>
+            <b>Remote Path</b>: The current path in the FTP server.
+          </li>
+          <li>
+            <b>SSL Mode</b>: The authentication mechanism to be used when connecting to the FTP server.
+          </li>
+          <li>
+            <b>Table Depth</b>: The depth level to display subfolders as views.
+          </li>
+          <li>
+            <b>Use MLSD</b>: Uses listings for machine processing. Used only for FTP servers.
+          </li>
+
+        <li>Optionally, click <b>+ Add label</b> to add a label to the Connection in the form of a key/value pair.</li>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li>
+
+      <li> In the <b>Destinations</b> section, enter details of the remote host (backend system) you want to connect to.
+        <ol>
+          <li><b>Destination Type</b>: Select a <b>Destination Type</b>.
+            {{connector_dest_type_config}}
+            
+            <p>To enter additional destinations, click <b>+Add Destination</b>.</p>
+          </li>
+          <li>Click <b>Next</b>.</li>
+        </ol>
+      </li>
+ 
+    <li>
+      In the <b>Authentication</b> section, enter the authentication details. 
+      <ol>
+          <li>Select an <b>Authentication type</b> and enter the relevant details.
+            <p>The following authentication types are supported by the FTP connection:</p>
+                <ul>
+                  <li>    Username and password
+</li>
+                </ul> 
+          </li>
+          <p> To understand how to configure these authentication types, see <a href="#configure-auth">Configure authentication</a>.</p>
+        <li>Click <b>Next</b>.</li>
+      </ol>
+    </li> 
+
+    <li><b>Review</b>: Review your connection and authentication details.</li>
+  <li>Click <b>Create</b>.</li>
+</ol>
+
+<h3 id="configure-auth">Configure authentication</h3>
+<p>Enter the details based on the authentication you want to use.</p>
+    <ul>
+      <li>
+        <b>    Username and password
+</b>
+            <ul>
+              <li><b>Username</b>: The FTP username to use for the connection.</li>
+              <li><b>Password</b>: Secret Manager Secret containing the password associated with the FTP username.</li>
+            </ul>
+      </li>
+    </ul>
+

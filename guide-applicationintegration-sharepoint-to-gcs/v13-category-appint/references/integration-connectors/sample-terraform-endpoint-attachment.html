@@ -1,0 +1,15 @@
+{% extends "integration-connectors/_base_non_preview.html" %}
+{% block page_title %}Sample terraform template for endpoint attachment creation{% endblock %}
+{% block body %}
+{% block pagedescription %}
+{% endblock %}
+
+<p>The following is a sample terraform template for endpoint attachment creation.</p>
+
+<aside class="note"><b>Note: </b>This sample is not specific to any connector. It just shows how an endpoint attachment creation terraform
+   template looks like. You must repurpose this sample based on your requirements.</aside>
+
+
+{% include "_shared/widgets/_github_include.html" with lang="terraform" account="terraform-google-modules" project="terraform-docs-samples"   file="integrationconnectors/endpointattachment/main.tf" region_tag="integrationconnectors_endpoint_attachment_example" noprettyprint=true %}
+
+{% endblock %}

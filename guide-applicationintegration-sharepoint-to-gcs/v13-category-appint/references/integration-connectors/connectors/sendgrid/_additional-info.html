@@ -1,0 +1,309 @@
+<h2>System limitations</h2>
+<p>The SendGrid connector can process 8 transaction per second,
+  per <a href="/integration-connectors/docs/pricing#payg">node</a>,
+   and <a href="/integration-connectors/docs/rate-limiting">throttles</a> any transactions
+    beyond this limit. {{connectors_default_node_message}}</p>
+
+{{connector_node_scaling}}
+
+<devsite-expandable id="actions-exp">  
+  <h2 class="showalways">Actions</h2>
+  <p>This section lists some of the actions supported by the connector. To understand how to configure the
+     actions, see <a href="#actionexamples-exp">Action examples</a>.</p>
+
+     <aside class="note"><b>Note:</b> The results of all the actions will be available as a
+      JSON response in the <code>Connectors</code> task's <code>connectorOutputPayload</code>
+      response parameter after you run your integration.</aside>
+
+<h3>SendMail2 action</h3>
+<p>This action sends an email along with attachment.</p>
+<h4>Input parameters of the send an email action</h4>
+
+<table>
+<tr>
+<th>Parameter name</th>
+<th>Data type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+<tbody class="list">
+<tr>
+<td>Subject</td>
+<td>String</td>
+<td>Yes</td>
+<td>The subject of the email to be sent.</td>
+</tr>
+<tr>
+<td>ContentValue</td>
+<td>String</td>
+<td>No</td>
+<td>The content of the email to be sent.</td>
+</tr>
+<tr>
+<td>ContentType</td>
+<td>String</td>
+<td>No</td>
+<td>The type of content to be sent. supported values are text/plain and text/html.</td>
+</tr>
+<tr>
+<td>Content</td>
+<td>String</td>
+<td>Yes</td>
+<td>The aggregate for Content object.</td>
+</tr>
+<tr>
+<td>SendAt</td>
+<td>String</td>
+<td>No</td>
+<td>The date and time when you want your email to be delivered. Scheduling more than 72 hours in advance is forbidden.</td>
+</tr>
+<tr>
+<td>FromEmail</td>
+<td>String</td>
+<td>Yes</td>
+<td>The email address of the sender.</td>
+</tr>
+<tr>
+<td>FromName</td>
+<td>String</td>
+<td>No</td>
+<td>The name of the sender.</td>
+</tr>
+<tr>
+<td>ToEmail</td>
+<td>String</td>
+<td>No</td>
+<td>Email address to send the email to.</td>
+</tr>
+<tr>
+<td>ToName</td>
+<td>String</td>
+<td>No</td>
+<td>Email's respective names to send the email to.</td>
+</tr>
+<tr>
+<td>To</td>
+<td>String</td>
+<td>No</td>
+<td>The aggregate for To recipients.</td>
+</tr>
+<tr>
+<td>ToCCEmail</td>
+<td>String</td>
+<td>No</td>
+<td>Email address of the recipients who will receive a copy of your email.</td>
+</tr>
+<tr>
+<td>ToCCName</td>
+<td>String</td>
+<td>No</td>
+<td>Name of the recipients who will receive a copy of your email.</td>
+</tr>
+<tr>
+<td>ToBCCName</td>
+<td>String</td>
+<td>No</td>
+<td>Name of the recipients who will receive a blind carbon copy of your email.</td>
+</tr>
+<tr>
+<td>ToBCC</td>
+<td>String</td>
+<td>No</td>
+<td>The aggregate for ToBCC recipients.</td>
+</tr>
+<tr>
+<td>ReplyToEmail</td>
+<td>String</td>
+<td>No</td>
+<td>The email address of the person to whom you are replying to.</td>
+</tr>
+<tr>
+<td>ReplyToName</td>
+<td>String</td>
+<td>No</td>
+<td>The name of the person to whom you are replying to.</td>
+</tr>
+<tr>
+<td>AttachmentPaths</td>
+<td>String</td>
+<td>No</td>
+<td>Path of the file to attach to the email to be sent.</td>
+</tr>
+<tr>
+<td>TemplateId</td>
+<td>String</td>
+<td>Yes</td>
+<td>The ID of the template that you may want to send.</td>
+</tr>
+<tr>
+<td>DynamicTemplateData</td>
+<td>String</td>
+<td>No</td>
+<td>The data of the dynamic template.</td>
+</tr>
+<tr>
+<td>Personalizations</td>
+<td>String</td>
+<td>Yes</td>
+<td>An array of messages and their metadata. Each object within personalizations can be thought of as an envelope - it defines who should receive an individual message and how that message should be handled.
+</td>
+</tr>
+</tbody>
+</table>
+
+<h4>Output parameters of the send an email action</h4>
+<p>This action returns confirmation message whether or not the mail was sent successfully.</p>
+
+</devsite-expandable>
+
+<devsite-expandable id="actionexamples-exp">
+  <h2 class="showalways">Action examples</h2>
+  <p>This section describes how to perform some of the actions in this connector.</p>
+
+<h3>Example - Send an email</h3>
+<ol>
+
+<li>In the <code>Configure connector task</code> dialog, click <code>Actions</code>.</li>
+<li>Select the <code>SendMail2</code> action, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+    "FromName": "Name",
+    "FromEmail": "cloudysanfrancisco@gmail.com",
+    "Subject": "[{\"value\": \"cymbalgroup.com\",\"type\": \"text/plain\"}]",
+    "TemplateId": "d-c4bc730a0b094a3a9d9cabb7347b5edc",
+    "Personalizations": "[{\"subject\": \"Test Subject3\",\"send_at\": 1698659820,\"from\": {\"name\": \"hi\",\"email\": \"email@gmail\"},\"to\":      
+    [{\"email\": \"email@gmail.com\",\"name\": \"test\"}\n ]}]",
+    "Content": "[{\"value\": \"abc@cdata.com\",\"type\": \"text/plain\"}]"
+}</pre>
+</li>
+
+<p>This action returns confirmation message. If the action is successful,
+  the task's <code>connectorOutputPayload</code> response parameter will have a value similar to the following:</p>
+<pre class="prettyprint lang-json">[{
+"Success": "True"
+}]</pre>
+</ol>
+</devsite-expandable>
+
+
+
+<devsite-expandable id="entityexamples-exp">
+  <h2 id="entityexamples-exp" class="showalways">Entity operation examples</h2>
+  <p>This section shows how to perform some of the entity operations in this connector.</p>
+
+  <h3>Example - List all contacts</h3>
+  <p>This example lists all the contacts in the <code>NMCContacts</code> entity.</p>
+
+  <ol>
+  <li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+  <li>Select <code>NMCContacts</code> from the <code>Entity</code> list.</li>
+  <li>Select the <code>List</code> operation, and then click <b>Done</b>.</li>
+  <li>Optionally, in <b>Task Input</b> section of the <b>Connectors</b> task, you can 
+    filter your result set by specifying a <a href="/application-integration/docs/configure-connectors-task#filter">filter clause</a>.
+     For example, <code>City='Bangalore'</code>. You
+    can also specify multiple filter conditions by using the logic operators. For example, <code>City='Bangalore' and region='asia-south2'</code>.
+  </li>
+</ol>
+
+
+<h3>Example - Get a record</h3>
+<p>This example gets a record with the specified ID from the <code>NMCSegments</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>NMCSegments</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Get</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>EntityId</b> and
+  then enter <code>0d44bb3f-d28e-4bcf-aba2-c77be831ad46</code> in the <b>Default Value</b> field.
+ <p>Here, <code>0d44bb3f-d28e-4bcf-aba2-c77be831ad46</code> is a primary key value in the <code>NMCSegments</code> entity.</p>
+</li>
+</ol>
+
+<h3>Example - Create a record</h3>
+<p>This example creates a record in the <code>NMCSenders</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>NMCSenders</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+"Nickname": "Test",
+"FromEmail": "test1@examplepetstore.com",
+"FromName": "testuser",   
+"ReplytoEmail": "test1@examplepetstore.com",  
+"Address": "NA", 
+"City": "NA", 
+"Country": "India"}</pre>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> field will have a
+  value similar to the following:</p>
+<pre class="prettyprint lang-json">{
+"Id": 5360940.0
+}</pre>
+</li>
+</ol>
+
+<h3>Example - Create a record</h3>
+<p>This example creates a record in the <code>NMCLists</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>NMCLists</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+"Name": "TEST_CON_LIST1699262238224",
+"ContactCount": 3.0}</pre>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> field will have a
+  value similar to the following:</p>
+<pre class="prettyprint lang-json">{
+"Id": "d927f128-b718-447a-affe-417f1a8b3abd"}</pre>
+</li>
+</ol>
+
+
+<h3>Example - Update a record</h3>
+<p>This example updates a record in the <code>NMCSenders</code> entity.</p>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>NMCSenders</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click
+<code>connectorInputPayload</code> and then enter a value similar to the following in the
+<code>Default Value</code> field:
+<pre class="prettyprint lang-json">{
+"Nickname": "Test",
+"FromEmail": "test2@examplepetstore.com",
+"FromName": "testuser",   
+"ReplytoEmail": "test2@examplepetstore.com",  
+"Address": "NA", 
+"City": "NA", 
+"Country": "India"}</pre></li>
+<li>Click <b>entityId</b>, and then enter <code>5360940.0</code> in the <b>Default Value</b> field.
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> field will have a
+    value similar to the following:</p>
+<pre class="prettyprint lang-json">{
+"Id":"5360940.0"
+}</pre>
+  
+</li>
+</ol>
+
+<h3>Example - Delete a record</h3>
+<p>This example deletes the record with the specified ID in the <code>NMCSegments</code> entity.</p>
+<ol>
+  <li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+  <li>Select <code>NMCSegments</code> from the <code>Entity</code> list.</li>
+  <li>Select the <code>Delete</code> operation, and then click <b>Done</b>.</li>
+  <li>In the <b>Task Input</b> section of the <b>Connectors</b> task, click <b>entityId</b> and
+    then enter <code>c58b9151-7279-428a-bac2-12b4bf2b48b0</code> in the <b>Default Value</b> field.
+  </li>
+</ol>
+<aside class="note"><b>Note: </b>If your entity has a composite primary key, you can specify
+ a <a href="/application-integration/docs/configure-connectors-task#filter">filter clause</a>.</aside>
+</devsite-expandable>
+{% include "integration-connectors/docs/_terraform-create-connection.html" %}
+{% include "integration-connectors/docs/connectors/sendgrid/_config_vars_terraform.html" %}

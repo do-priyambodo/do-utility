@@ -1,0 +1,50 @@
+<h2 id="before-you-begin">Before you begin</h2>
+<p>Before using the SendGrid connector, do the following tasks:</p>
+
+<ul>
+
+  <li>In your Google Cloud project:
+    <ul>
+	<li>Ensure that network connectivity is set up. For information about network patterns, see <a href="/integration-connectors/docs/network-connectivity-private">Network connectivity</a>.
+</li>
+<li>Grant the <a href="/integration-connectors/docs/connectors-access-permissions#iam-roles-for-integration-connectors">roles/connectors.admin</a> IAM role to the user
+        configuring the connector.</li>
+			
+        <li>Grant the following IAM roles to the service account that you want to use for the connector:
+          <ul>
+            <li><code>roles/secretmanager.viewer</code></li>
+            <li><code>roles/secretmanager.secretAccessor</code></li>
+          </ul>
+           <p>A service account is a special type of Google account intended to represent a non-human
+              user that needs to authenticate and be authorized to access data in Google APIs.
+              If you don't have a service account, you must create a service account. The connector and the service account must belong to the same project. For more
+              information, see
+              <a href="/iam/docs/creating-managing-service-accounts#creating">Creating a service account</a>.
+            </p>
+        </li>
+      <li>Enable the following services:
+        <ul>
+          {% include "_shared/integration-connectors/_common-enable-services.html" %}
+        </ul>
+        <p>To understand how to enable services, see <a href="/service-usage/docs/enable-disable#enabling">Enabling services</a>.</p>
+      </li>
+    </ul>
+    <p>
+      If these services or permissions have not been enabled for your project previously, you are prompted to enable them
+      when configuring the connector.
+    </p>
+  </li>
+</ul>
+<h3 id="set-up-auth-using-api-key">Set up authentication using API key</h3>
+<ol>
+  <li>Go to to <b>Settings</b> and select <b>API Keys</b>.</li>
+  <li>Click <b>Create API Key</b></li>
+  <li>Enter a name for your API key</li>
+  <li>Select from <b>Full Access</b>, <b>Restricted Access</b>, or <b>Billing Access</b> options</li>
+  <li>Select <b>Restricted Access</b>, or <b>Billing Access</b>, and select the specific permissions for each category.</li>
+  <li>Click <b>Create and View</b>.</li>
+  <li>Copy the APi key and save it for later use.</li>
+</ol>
+
+
+

@@ -1,0 +1,27 @@
+{% extends "integration-connectors/_base_non_preview.html" %}
+{% block page_title %}IAM roles and permissions for {{product_name}}{% endblock %}
+
+{% block body %}
+
+
+<p>
+  Predefined roles give granular access to specific Google Cloud resources.
+  These roles are created and maintained by Google. Google automatically updates their permissions
+  as necessary, such as when Google Cloud adds new features or services.
+</p>
+
+  The following table lists all the predefined IAM roles for {{product_name}}:
+</p>
+
+<table class="fixed">
+<tbody class="list">
+{% dynamic include /iam/shared/roles/groups/___connectors.html %}
+</tbody>
+</table>
+
+<p>
+  For more information about predefined roles, see <a href="/iam/docs/roles-overview">Roles and permissions</a>. For help choosing the most appropriate predefined roles, see <a href="/iam/docs/choose-predefined-roles">Choose predefined roles</a>.
+</p>
+
+
+{% endblock %}

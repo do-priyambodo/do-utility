@@ -1,0 +1,241 @@
+<h2>System limitations</h2>
+<p>The Airtable connector can process a maximum of 3 transactions per second,
+  per <a href="/integration-connectors/docs/pricing#payg">node</a>, and <a href="/integration-connectors/docs/rate-limiting">throttles</a> any transactions beyond this limit. {{connectors_default_node_message}}</p>
+{{connector_node_scaling}}
+
+<h2>Use the Airtable connection in an integration</h2>
+
+<p>After you create the connection, it becomes available in both
+{{apigee_integration_name}} and {{application_integration_name}}. You can use the connection
+in an integration through the Connectors task.</p>
+
+<ul>
+<li>To understand how to create and use the Connectors task in {{apigee_integration_name}}, see <a href="/apigee/docs/api-platform/integration/connectors-task#configure-the-connectors-task">Connectors task</a>.</li>
+<li>To understand how to create and use the Connectors task in {{application_integration_name}}, see <a href="/application-integration/docs/configure-connectors-task">Connectors task</a>.</li>
+</ul>
+
+{{entities_operations_actions}}
+
+<devsite-expandable expanded id="entityexamples-exp">
+  <h2 id="entityexamples-exp" class="showalways">Entity operation examples</h2>
+  <p>This section shows how to perform some of the entity operations in this connector.</p>
+
+<h3>Example - List operation for the Contact Data (Records) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>List</code> operation, and then click
+<b>Done</b>.</li>
+<li><b>Task Input</b> section of the <b>Connectors</b> task, you can set the
+<b>filterClause</b> as per the customer requirement.</li>
+<p>Always specify the filter clause value within the single quotes (').</p>
+</ol>
+<p>You can perform list operation on the following entities as well:<br>
+Contacts Data.Main View, Contacts Data.Calendar, Contacts Data.Kanban, Contacts Data.Gallery, Contacts Data.List, and Contacts Data_Collaborators</p>
+</aside>
+
+<h3>Example - Get record for the Contact Data (Records) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>GET</code> operation, and then click
+<b>Done</b>.</li>
+<li>Set the entity ID to "recg7qjPRMa7DBwIb"  which is the Key to be passed. To set the entity ID, in
+the <b>Data Mapper</b> section of the <b>Data Mapping</b>, click <b>Open Data Mapping Editor</b> and
+then enter <code>"recg7qjPRMa7DBwIb"</code> in the <b>Input Value</b> field and choose the EntityId as local variable.
+<p>Here, Entity Id: "recg7qjPRMa7DBwIb" is the unique primary key value and it must be passed directly.</p>
+</li>
+</ol>
+<p>If the entity has a composite primary key, you can specify
+  a <a href="/application-integration/docs/configure-connectors-task#filter">filter clause</a>.</p> 
+  <p>You can perform the get operation on the following entities as well:
+    Contacts Data.Main View, Contacts Data.Calendar, Contacts Data.Kanban, Contacts Data.Gallery, Contacts Data.List, and Contacts Data_Collaborators.
+</p>
+
+<h3>Example - Delete a record of the Contact Data (Records) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Delete</code> operation, and then click
+<b>Done</b>.</li>
+<li>Set the entity ID to "recg7qjPRMa7DBwIb" which is the Key to be passed.To set the entity ID, in
+the <b>Data Mapper</b> section of the <b>Data Mapping</b>, click <b>Open Data Mapping Editor</b> and
+then enter <code>"recg7qjPRMa7DBwIb"</code> in the <b>Input Value</b> field and choose the EntityId as Local variable.</li>
+</ol>
+<p>
+If the entity has a composite primary key, you can specify
+  a <a href="/application-integration/docs/configure-connectors-task#filter">filter clause</a>.</p>
+
+<h3>Example - Create operation for the Contact Data (Records) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Create</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload as Local variable.
+<pre>{
+"First Name": "Demo4",
+"Last Name": "Alex",
+"Email": "cloudysanfrancisco@gmail.com",
+"DOB": "2000-04-14",
+"Office": "Denver",
+"Phone Number": "1-175-432-1437",
+"Current Brand": "Mercedes"
+}
+</pre>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> response
+ parameter will have a value similar to the following:</p>
+<pre>{
+"Internal_Id": "recg7qjPRMa7DBwIb"
+}
+  
+{% htmlescape %}<pre>
+  function helloWorld() {
+    alert('Hello, world! This sentence is so long that it wraps onto a second
+      line.');
+  }
+  
+  /n
+  <h3>Example title</h3>
+  </pre>{% endhtmlescape %}
+</pre>
+</li>
+</ol>
+
+
+<h3>Example - Update operation for the Contact Data (Records) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>ContactData</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"Phone Number": "1-175-432-4312",
+"Current Brand": "Honda"
+}
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+  <b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+</li>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "reckqGnFusjDlnmvs"
+}
+</pre>
+</li>
+</ol>
+
+<h3>Example - Update operation for the Contact Data (Attachment) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"Attachment": "[{\"url\":\"https://media.istockphoto.com/id/2086323995/photo/global-communication-east-asia.jpg?s=2048x2048&w=is&k=20&c=Z50lesspQQzxWug0m11QrPZMOUzMeTufgnLHh_3COy4=\",\"filename\":\"BMW\"}]"
+}
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+<b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "recoGHHp8y11aSx0E"
+}
+</pre>
+</li>
+</ol>
+
+<h3>Example - Update operation for the Contact Data (Checkbox) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>Contact Data</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"Checkbox": true
+}
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+<b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "recoGHHp8y11aSx0E"
+}
+</pre>
+</li>
+</ol>
+
+<h3>Example - Update operation for the Contact Data (Number) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>ContactData</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"Number": 1001.0
+} 
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+<b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "recoGHHp8y11aSx0E"
+} 
+</pre>
+</li>
+</ol>
+
+<h3>Example - Update operation for the Contact Data (DateField) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>ContactData</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"DOB": "2000-04-14"
+} 
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+<b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "recoGHHp8y11aSx0E"
+}
+</pre>
+</li>
+</ol>
+
+<h3>Example - Update operation for the Contact Data (Text) entity</h3>
+<ol>
+<li>In the <code>Configure connector task</code> dialog, click <code>Entities</code>.</li>
+<li>Select <code>ContactData</code> from the <code>Entity</code> list.</li>
+<li>Select the <code>Update</code> operation, and then click <b>Done</b>.</li>
+<li>In the <b>Data Mapper</b> section of the <b>Data Mapping</b> task, click
+<code>Open Data Mapping Editor</code> and then enter a value similar to the following in the
+<code>Input Value</code> field and choose the EntityId/ConnectorInputPayload/FilterClause as Local variable.
+<pre>{
+"Singlelinetext": "Airtable Application",
+"Long text": "Airtable is a cloud-based collaboration platform that combines the features of a spreadsheet with the capabilities of a database. "
+}
+</pre>
+<p>Instead of specifying the <b>entityId</b>, you can also set the
+<b>filterClause</b> to <code>Internal_Id='reckqGnFusjDlnmvs'</code>.</p>
+<p>If the integration is successful, your connector task's <code>connectorOutputPayload</code> output variable:</p>
+<pre>{
+"Internal_Id": "recoGHHp8y11aSx0E"
+}
+</pre>
+</li>
+</ol>
+</devsite-expandable>

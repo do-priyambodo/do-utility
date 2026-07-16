@@ -1,0 +1,16 @@
+{% extends "integration-connectors/_base_non_preview.html" %}
+{% block page_title %}Airtable{% endblock %}
+{% block body %}
+
+{% block pagedescription %}
+
+{% endblock %}
+<p>The Airtable connector lets you perform insert, delete, update, and read operations on Airtable data.</p>
+
+{% include "/integration-connectors/docs/connectors/airtable/_before_you_begin.html" %}
+{% include "/integration-connectors/docs/connectors/airtable/_create_connection.html"  %}
+{% include "/integration-connectors/docs/connectors/airtable/_additional-info.html" %}
+
+{{get_community_help}}
+
+{% endblock %}

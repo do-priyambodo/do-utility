@@ -1,0 +1,32 @@
+{% extends "integration-connectors/_base_non_preview.html" %}
+{% block page_title %}Neo4j{% endblock %}
+
+{% block body %}  
+
+{% block pagedescription %}
+
+{% endblock %}
+
+<p>The Neo4j connector lets you perform insert, delete, update, and read operations on Neo4j database.</p>
+ 
+{% include "/integration-connectors/docs/connectors/neo4j/_before_you_begin.html" %}
+{% include "/integration-connectors/docs/connectors/neo4j/_create_connection.html"  %}
+
+{{entities_operations_actions}}
+
+{% include "/integration-connectors/docs/connectors/neo4j/_additional-info.html"  %}
+
+
+<h2>Use the Neo4J connection in an integration</h2>
+
+<p>After you create the connection, it becomes available in both
+{{apigee_integration_name}} and {{application_integration_name}}. You can use the connection
+in an integration through the Connectors task.</p>
+
+<ul>
+<li>To understand how to create and use the Connectors task in {{apigee_integration_name}}, see <a href="/apigee/docs/api-platform/integration/connectors-task#configure-the-connectors-task">Connectors task</a>.</li>
+<li>To understand how to create and use the Connectors task in {{application_integration_name}}, see <a href="/application-integration/docs/configure-connectors-task">Connectors task</a>.</li>
+</ul>
+{{get_community_help}}
+
+{% endblock %}

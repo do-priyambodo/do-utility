@@ -1,0 +1,9 @@
+<h2>System limitations</h2>
+<p>The Snowflake connector can process a maximum of 7 transactions per second,
+  per <a href="/integration-connectors/docs/pricing#payg">node</a>, and
+   <a href="/integration-connectors/docs/rate-limiting">throttles</a> any transactions beyond this limit. {{connectors_default_node_message}}</p>
+{{connector_node_scaling}}
+
+
+{% include "integration-connectors/docs/_terraform-create-connection.html" %}
+{% include "integration-connectors/docs/connectors/snowflake/_config_vars_terraform.html" %}
