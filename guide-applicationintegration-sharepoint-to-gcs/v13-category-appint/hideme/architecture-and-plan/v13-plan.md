@@ -128,6 +128,33 @@ gantt
 
 ---
 
+### 🏛️ 3.1. Master Checklist: 10 Real-World Production Traps That V13 Must Enforce
+
+To ensure we never repeat any of the hard-won troubleshooting errors encountered with the customer during June and July 2026 across Cloud Functions, Cloud Run, Application Integration, and Microsoft Graph, **every engineer and AI agent must verify that all 10 of these authoritative lockdown rules are actively enforced inside V13 before writing or deploying any workflow code:**
+
+1. **Microsoft Graph API 429 Throttling & WAF Rejections:**  
+   *Lockdown Rule:* Hard-cap horizontal Cloud Run concurrency to **exactly 5 parallel container instances (`max-instances = 5`)** during Day 1 bulk crawls, and enforce strict **`Retry-After` HTTP header compliance** (`status_forcelist=[429, 503, 504]`) across all Graph API requests inside `graph_client.py`.
+2. **The 10 MB Application Integration Variable Payload Limit:**  
+   *Lockdown Rule:* Enforce **Option 1 Pipelined Chunking**: regular files are sliced into **100-item chunks (~150 KB)** and Modern Site Pages into **5-item chunks (~15 KB)**, guaranteeing every execution variable stays >98% below the 10 MB payload ceiling.
+3. **The 5,000-Step Application Integration Loop Ceiling:**  
+   *Lockdown Rule:* Dispatch each 100-item file chunk to its own independent Parent Workflow execution ID. A `ForEach / Loop Task` iterating over 100 items generates only **~400 internal step transitions (`92% below the 5,000-step ceiling`)**.
+4. **The Linux `/dev/shm` Shared-Memory Wall (`Signal 7 SIGBUS / Signal 9 SIGKILL`):**  
+   *Lockdown Rule:* Enforce the **Inverted Micro-Renderer Pattern (`POST /v13/render_page`)** where each container instance processes at most 1 to 5 pages per invocation (`~10 to 15 seconds`), allowing the OS kernel to destroy the container and reclaim 100.0% of `/dev/shm` shared memory after every micro-batch.
+5. **String-Safe Jsonnet Parsing in Application Integration:**  
+   *Lockdown Rule:* Every child/parent workflow Jsonnet data mapping task must strictly use defensive lookup syntax (`std.extVar('upload_request')['objectName']`), completely avoiding direct dot-notation on external keys or unescaped string concatenation.
+6. **Primary Key (`doc_id`) & Path Collision Overwrites across Libraries:**  
+   *Lockdown Rule:* Natively bake in **V11 Option 2 (`SHA-256 Hashed Suffixing`)** into all GCS paths (`files/.../{BaseName}_{Hash[:8]}.{ext}` and `pages/.../{BaseName}_{Hash[:8]}.pdf`) and `metadata.jsonl` IDs while preserving unhashed titles (`structData.title`) for clean Vertex AI Search chat citations.
+7. **Orphaned File Cleanup Circuit Breakers (`The Step 7b Cascade Trap`):**  
+   *Lockdown Rule:* Keep orphan cleanup **DISABLED by default** (`CONFIG_Enable_Orphan_Cleanup: false`). If enabled, enforce the **80% Inventory Circuit Breaker** AND **Partition-Scoped Deletion** (`only comparing and deleting objects whose paths match the active subsite prefix so categories never wipe out each other's files`).
+8. **OAuth Access Token Expiration during Multi-Hour Crawls:**  
+   *Lockdown Rule:* Pass every Graph API request through a **Dynamic Token Refresh Interceptor (`get_valid_access_token()`)** that automatically re-authenticates 5 minutes before the 60-minute token expiration window (`or instantly upon receiving an HTTP 401`).
+9. **Greenlet & Thread-Pool Event Loop Collisions (`Signal 5 SIGTRAP`):**  
+   *Lockdown Rule:* Enforce strict **Thread-Local Greenlet Isolation** (`_THREAD_LOCAL = threading.local()`) inside all Playwright and asyncio routines so worker threads never cross-contaminate greenlet loops.
+10. **The Fast Delta Check Gate (`97% Traffic Reduction`):**  
+    *Lockdown Rule:* Always check `lastModifiedDateTime` via `/v13/check_delta_batch` (`or local cache`) before launching Chromium or downloading files. Unchanged items (~97%) return `SKIPPED_DELTA_HIT` in **0.05 seconds** with ZERO requests to SharePoint and ZERO Chromium instances launched.
+
+---
+
 ## 4. Code & Architecture Repository Alignment (`Mandatory Mirroring`)
 
 Per our strict project rules (`AGENTS.md`), all V13 architectural designs, execution plans, reference docs, and upcoming source code files MUST remain **100% identical and bidirectional mirrored** between:
