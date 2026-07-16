@@ -13,7 +13,7 @@ PROJECT_ID=$(python3 -c "import json; print(json.load(open('config-parameters.js
 LOCATION=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Location', ''))")
 SERVICE_ACCOUNT=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Service_Account', ''))")
 JOB_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_CloudFunction_Name', 'yourorg-sharepoint-list-files'))")
-SCHEDULER_NAME="${JOB_NAME}-daily-master"
+SCHEDULER_NAME=$(python3 -c "import json; print(json.load(open('config-parameters.json')).get('CONFIG_Scheduler_Job_Name', '${JOB_NAME}-daily-master'))")
 
 echo "================================================================================"
 echo "⏰ V11 CLOUD SCHEDULER DEPLOYMENT (OPTION 1 MASTER SEQUENTIAL LOOP)"
