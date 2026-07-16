@@ -1,14 +1,5 @@
 # 🚀 Version 11 (`v11-17Jul2026`) Enterprise Complete SharePoint Synchronization Guide (`DO-SYNC-ALL-SHAREPOINT.md`)
 
-> [!IMPORTANT]
-> **Version 11 Production Milestone: Option 2 Universal Collision-Proofing & Flattened Hashed Suffixing (`July 2026`)**
-> This exact release (`v11-17Jul2026`) is the hardened, production-verified version deployed and running live in enterprise production environments (`<YOUR-PROJECT-ID>` in `<YOUR-REGION>`). It permanently resolves and cures all earlier historical issues:
-> * **Option 2 Universal Collision-Proofing (`_hash[:8]`):** Automatically applies deterministic SHA-256 8-character hashed suffixes to all Modern Site Pages and regular file object paths inside GCS (`pages/Page_a8f3b2c1.pdf` and `files/Report_a8f3b2c1.pdf`). This completely eliminates the 235+ exact ID/filename overwrite collisions observed when flattening legacy multi-library paths, while guaranteeing 0% slashes inside GCS `ObjectName` (preventing silent GCS connector subfolder drops in Application Integration).
-> * **Human-Readable Metadata & Breadcrumb Preservation:** While underlying storage in GCS remains strictly flattened and collision-proof, `config/metadata.jsonl` preserves the clean, unhashed human-readable `structData.title` (`"Annual_Revenue_Report.xlsx"`) and explicit original SharePoint folder breadcrumbs (`structData.sharepoint_folder_path: "Shared Documents/Finance/Reports/2026"`).
-> * **Thread-Local Greenlet Isolation (`_THREAD_LOCAL = threading.local()`):** Eliminates `greenlet.error: cannot switch to a different thread` across concurrent Playwright workers (`Signal 5 SIGTRAP`).
-> * **VPC-SC Immune Asynchronous Build Loop (`--async`):** Bypasses all VPC Service Controls data exfiltration checks when deploying from Cloud Shell (`deploy/deploy_cloud_run.sh`).
-> * **24-Hour Continuous Cloud Run Job (`--task-timeout=86400s --tasks=1`):** Replaces the 60-minute Web Service ceiling with a continuous 24-hour job API that auto-recovers and restores all missing or pruned `.aspx` files back into Google Cloud Storage (`gs://<YOUR-GCS-BUCKET>`).
-
 This comprehensive copy-paste production runbook covers the end-to-end workflow: authenticating your account to GCP, validating your IAM credentials and `parameters.json`, deploying our hardened Playwright Cloud Run backend (`16 GiB / 4 vCPUs / 24-Hour timeout`), deploying Google Cloud Application Integration workflows, deploying the automated Cloud Scheduler job, running read-only pre-flight verification, and executing a full SharePoint-to-GCS synchronization (`100,000+ assets`).
 
 ---
