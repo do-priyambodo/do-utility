@@ -1,12 +1,12 @@
-# 🚀 Version 11 (`v11-percategory`) Enterprise Per-Category Synchronization Guide (`DO-SYNC-CATEGORY.md`)
+# 🚀 Version 12 (`v12-category-cloudrun`) Enterprise Per-Category Cloud Run Synchronization Guide (`DO-SYNC-CATEGORY.md`)
 
 ## Step 1: Authenticate Your Account to GCP (`Pre-Requirement`)
 
 Before running deployment or verification scripts, ensure your local terminal session is cleanly authenticated to Google Cloud SDK (`gcloud`) and Application Default Credentials (`ADC`):
 
 ```bash
-# 1. Navigate to Version 11 working directory
-# cd /path/to/your/repo/app/v11-percategory/by-doddi
+# 1. Navigate to Version 12 working directory
+# cd /path/to/your/repo/app/v12-category-cloudrun/by-doddi
 
 # 2. Ensure service account impersonation is disabled so commands run directly as your user:
 gcloud config unset auth/impersonate_service_account 2>/dev/null || true
@@ -39,39 +39,103 @@ echo "Testing Access Token  : $(gcloud auth print-access-token | cut -c1-20)...�
 ./util/prereq/sa-roles.sh
 ```
 
-### Step 2.2: Validate Configuration Syntax (`config-parameters.json` & `config-category.json`)
+### Step 2.2: Validate Configuration Structure & Syntax (`config-parameters.json` & `config-category.json`)
 
-Verify that all required infrastructure keys and M365 credentials inside `config-parameters.json` and your category matrix inside `config-category.json` are structurally valid:
+To guarantee that your infrastructure keys and category matrix have zero structural errors, duplicate IDs, or out-of-bounds execution limits before launching to Cloud Run, run our dedicated structural verification diagnostics:
 
 ```bash
-python3 -m json.tool config-parameters.json > /dev/null && echo "✅ config-parameters.json valid"
-python3 -m json.tool config-category.json > /dev/null && echo "✅ config-category.json valid"
+# 1. Basic JSON syntax checks
+python3 -m json.tool config-parameters.json > /dev/null && echo "✅ config-parameters.json JSON syntax valid"
+python3 -m json.tool config-category.json > /dev/null && echo "✅ config-category.json JSON syntax valid"
+
+# 2. Comprehensive structural & safety checks
+python3 check/check_parameters_structure.py
+python3 check/check_category_structure.py
 ```
 
-#### Controlling Category Toggles & Execution Sequence inside `config-category.json`
-To manage complex enterprise deployments without deleting JSON blocks (since standard JSON does not support comments), every category object inside `config-category.json` supports two built-in control properties:
+---
+
+### 📝 Anonymized Reference Templates for Configuration Files
+
+#### 1. Reference Template: `config-parameters.json` (`Infrastructure Profile`)
+```json
+{
+  "CONFIG_ProjectId": "<YOUR-GCP-PROJECT-ID>",
+  "CONFIG_Location": "asia-southeast1",
+  "CONFIG_Service_Account": "sa-sharepoint-sync@<YOUR-GCP-PROJECT-ID>.iam.gserviceaccount.com",
+  "CONFIG_Child_Integration_Name": "sharepoint-gcs-child-v12",
+  "CONFIG_Parent_Integration_Name": "sharepoint-gcs-parent-v12",
+  "CONFIG_SharePoint_Connection": "projects/<YOUR-GCP-PROJECT-ID>/locations/asia-southeast1/connections/sharepoint-sync-conn",
+  "CONFIG_GCS_Connection": "projects/<YOUR-GCP-PROJECT-ID>/locations/asia-southeast1/connections/gcs-sync-conn",
+  "CONFIG_GCS_Bucket": "<YOUR-DESTINATION-GCS-BUCKET>",
+  "CONFIG_CloudFunction_Name": "sharepoint-list-files-v12",
+  "CONFIG_M365_Tenant_Id": "<YOUR-M365-TENANT-UUID>",
+  "CONFIG_M365_Client_Id": "<YOUR-M365-APP-CLIENT-UUID>",
+  "CONFIG_M365_Secret_Name": "projects/<YOUR-GCP-PROJECT-ID>/secrets/sharepoint-credentials/versions/latest",
+  "CONFIG_SharePoint_Hostname": "<YOUR-TENANT>.sharepoint.com",
+  "CONFIG_Scheduler_Job_Name": "sharepoint-sync-hourly-v12",
+  "CONFIG_Batch_Size": 5,
+  "CONFIG_File_Batch_Size": 100,
+  "CONFIG_Page_Batch_Size": 5,
+  "CONFIG_Max_Parallel_Workers": 5,
+  "CONFIG_Sync_SharePoint_Files": true,
+  "CONFIG_Sync_SharePoint_Pages": true,
+  "CONFIG_Scheduler_Cron_Schedule": "0 */12 * * *",
+  "CONFIG_Developer_Group_Or_User": "user:operator@<YOUR-ORG>.com",
+  "CONFIG_PDF_Conversion_Engine": "playwright",
+  "CONFIG_Max_Execution_Seconds": 86400,
+  "CONFIG_Max_Discovery_Seconds": 86400
+}
+```
+
+#### 2. Reference Template: `config-category.json` (`Dynamic Category Sharding Matrix`)
+To manage complex enterprise deployments cleanly without needing to delete JSON blocks, every category object inside `config-category.json` supports two built-in control properties:
 1. **Dynamic Activation Toggle (`"active": "yes" | "no"` or `true | false`):**
    * `"active": "yes"` (default) enables the category for synchronization during the Master Serial Loop (`Step 9 Option A`) and pre/post-flight audits (`Step 8`).
    * `"active": "no"` cleanly skips the category with an informative log (`⏭️ Skipping inactive category...`). This allows you to test or re-run a single department while keeping your full category matrix intact.
 2. **Execution Sequencing (`"order_to_sync": 1..X`):**
    * Assign an integer (`1, 2, 3...`) to control exact execution order across all tools (`main.py`, `check_syncall_before.py`, `check_syncall_after.py`).
-   * Assign `1` to your smallest/fastest department to get immediate verification within seconds before the pipeline progresses to larger, multi-hour department crawls (`order_to_sync: 7`).
+   * Assign `1` to your smallest/fastest department to get immediate verification within minutes before the pipeline progresses to larger department crawls (`order_to_sync: 7`).
+
+> [!IMPORTANT]
+> **Duplicate Prevention Rule (`include_subsites: false` vs `true`)**  
+> If your root portal site (`e.g., sites/DEN`) contains both direct root files AND child department folders (`Business`, `Consumer`), you MUST set `"include_subsites": false` on the root category entry so it only ingests root files. Set `"include_subsites": true` on the specific child departments so each department syncs cleanly into its assigned sharded prefix without duplicate overlaps!
 
 ```json
 {
-  "category_id": "tier1-den-root-only",
-  "display_name": "DEN Root Portal Documents & Guides ONLY",
-  "sharepoint_site": "sites/DEN",
-  "include_subsites": false,
-  "active": "yes",
-  "order_to_sync": 1
-},
-{
-  "category_id": "tier3-specialized-teams",
-  "display_name": "Specialized Teams (Long Crawl)",
-  "sharepoint_site": [ "sites/DEN/MEPS", ... ],
-  "active": "no",
-  "order_to_sync": 7
+  "root_portal_site": "sites/<YOUR-PORTAL-ROOT>",
+  "categories": [
+    {
+      "category_id": "tier1-quicklinks-faq",
+      "display_name": "Quicklinks & FAQ Subsites (Fast Check)",
+      "sharepoint_site": ["sites/<YOUR-PORTAL-ROOT>/Quicklinks", "sites/<YOUR-PORTAL-ROOT>/FAQ"],
+      "include_subsites": true,
+      "sharepoint_library": "all",
+      "gcs_destination_prefix": "categories/quicklinks-faq/",
+      "active": "yes",
+      "order_to_sync": 1
+    },
+    {
+      "category_id": "tier1-root-only",
+      "display_name": "Root Portal Documents & Guides ONLY",
+      "sharepoint_site": "sites/<YOUR-PORTAL-ROOT>",
+      "include_subsites": false,
+      "sharepoint_library": "all",
+      "gcs_destination_prefix": "categories/root/",
+      "active": "yes",
+      "order_to_sync": 2
+    },
+    {
+      "category_id": "tier2-heavy-department-a",
+      "display_name": "Heavy Department A (With Child Teams)",
+      "sharepoint_site": "sites/<YOUR-PORTAL-ROOT>/DepartmentA",
+      "include_subsites": true,
+      "sharepoint_library": "all",
+      "gcs_destination_prefix": "categories/department-a/",
+      "active": "yes",
+      "order_to_sync": 3
+    }
+  ]
 }
 ```
 
