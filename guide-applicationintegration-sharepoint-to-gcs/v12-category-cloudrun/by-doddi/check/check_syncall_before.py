@@ -321,10 +321,17 @@ def run_category_check(category, params, token, headers, gcs_cache):
                     pdf_name = fname[:-5] + ".pdf"
                     m_time = p.get("lastModifiedDateTime")
                     gcs_key = f"{category_prefix}/pages/{s_name}/{pdf_name}" if category_prefix else f"pages/{s_name}/{pdf_name}"
+                    gcs_key_root = f"{category_prefix}/pages/{pdf_name}" if category_prefix else f"pages/{pdf_name}"
                     gcs_key = gcs_key.replace("//", "/")
+                    gcs_key_root = gcs_key_root.replace("//", "/")
                     item_info = {"id": p.get("id", ""), "Name": pdf_name, "Subsite": s_name, "IsPage": True, "Path": gcs_key}
                     items_found.append(item_info)
-                    cached_time = gcs_cache.get(gcs_key)
+                    cached_time = gcs_cache.get(gcs_key) or gcs_cache.get(gcs_key_root)
+                    if not cached_time:
+                        # check if any key ending with /{pdf_name} or == pages/{pdf_name} is in cache
+                        matched_ts = [v for k, v in gcs_cache.items() if k.endswith(f"/{pdf_name}") or k == f"pages/{pdf_name}"]
+                        cached_time = max(matched_ts) if matched_ts else None
+
                     if not cached_time:
                         sync_found.append(item_info)
                     elif m_time:

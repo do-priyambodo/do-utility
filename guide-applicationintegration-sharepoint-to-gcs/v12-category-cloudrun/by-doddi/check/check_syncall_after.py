@@ -273,11 +273,15 @@ def run_category_after_check(category, params, token, headers, gcs_cache):
                 if fname.lower().endswith(".aspx"):
                     pdf_name = fname[:-5] + ".pdf"
                     gcs_key = f"{category_prefix}/pages/{s_name}/{pdf_name}" if category_prefix else f"pages/{s_name}/{pdf_name}"
+                    gcs_key_root = f"{category_prefix}/pages/{pdf_name}" if category_prefix else f"pages/{pdf_name}"
                     gcs_key = gcs_key.replace("//", "/")
+                    gcs_key_root = gcs_key_root.replace("//", "/")
                     item_info = {"id": p.get("id", ""), "Name": pdf_name, "Subsite": s_name, "Path": gcs_key}
                     items_found.append(item_info)
-                    if gcs_key not in gcs_cache:
-                        missing_found.append(item_info)
+                    if gcs_key not in gcs_cache and gcs_key_root not in gcs_cache:
+                        # also check if any file ending with /{pdf_name} or == pages/{pdf_name} is in cache
+                        if not any(k.endswith(f"/{pdf_name}") or k == f"pages/{pdf_name}" for k in gcs_cache):
+                            missing_found.append(item_info)
             return items_found, missing_found
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
