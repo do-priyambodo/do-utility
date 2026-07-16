@@ -43,6 +43,22 @@ graph TD
 
 ---
 
+### 🎯 1.2. Master 7-Tier Category Strategy Reference (`38,895 Tenant Items`)
+To run smoothly at 1:00 PM without OOM memory crashes (`Signal 9/7`) or 86,400-second timeouts across the 38,895-item enterprise inventory (`crawling_subsite_13june.txt`), V12 references our newly authored **7-Tier Balanced Sharding Strategy**:
+* **Configuration JSON Source:** [`hideme/maxis-config-category.json`](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v12-category-cloudrun/by-doddi/hideme/maxis-config-category.json)
+* **Detailed Strategy & Execution Guide:** [`hideme/maxis_7tier_category_strategy.md`](file:///usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v12-category-cloudrun/by-doddi/hideme/maxis_7tier_category_strategy.md)
+
+**The 7-Tier Sharding Summary Table (`order_to_sync: 1..7`):**
+1. **Tier 1 (`Quicklinks & FAQ`):** 606 items (`6 Files + 600 Pages`) — **~3 min** *(Fast Morning Verification)*
+2. **Tier 1 (`DEN Root Portal Only - include_subsites: false`):** 4,081 items (`4,067 Files + 14 Pages`) — **~10 min** *(Zero duplicate files)*
+3. **Tier 2 (`System-Procedure & Channels`):** 6,219 items (`5,977 Files + 242 Pages`) — **~18 min**
+4. **Tier 2 (`Customer-Support All 9 Sub-teams`):** 7,361 items (`6,856 Files + 505 Pages`) — **~25 min**
+5. **Tier 3 (`Hotlink`):** 5,277 items (`4,093 Files + 1,184 Pages`) — **~32 min**
+6. **Tier 3 (`Business`):** 9,602 items (`8,456 Files + 1,146 Pages`) — **~40 min**
+7. **Tier 3 (`Consumer`):** 8,269 items (`6,371 Files + 1,898 Pages`) — **~48 min** *(Peak RAM - Capped Standalone)*
+
+---
+
 ## 2. User Review Required & Design Guardrails
 
 > [!IMPORTANT]
