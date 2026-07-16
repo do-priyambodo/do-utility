@@ -75,10 +75,6 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Scheduler
 
 ## Step 4: Deploy Cloud Run High-Fidelity Playwright Job (`16 GiB / 4 vCPUs / 24-Hour Timeout`)
 
-> [!IMPORTANT]
-> **Revision 00033 Architectural Sizing (`VPC-SC Immune Async Build & Thread-Local Greenlet Isolation`)**
-> Our backend runs as a **Google Cloud Run Job** (`batch processing engine`) rather than a Web Service, completely bypassing Google's 60-minute HTTP timeout ceiling so that large-scale enterprise traversals (**100,000+ assets**) can run continuously inside a single container for up to **24 hours (`86,400s`)** straight. Furthermore, it enforces **Thread-Local Greenlet Isolation (`_THREAD_LOCAL = threading.local()`)** across all 10 worker threads (`ThreadPoolExecutor`), eliminating `greenlet.error: cannot switch to a different thread` and keeping Chromium contexts 100% stable across thousands of `.aspx` pages without any PID wraparound (`SIGTRAP`) or cross-thread collisions. The deployment script also uses **asynchronous Cloud Build (`--async`)** to completely bypass VPC-SC GCS log streaming blocks.
-
 Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service as a 24-hour Cloud Run Job with Enterprise Hardware Sizing (**16 GiB RAM**, **4 vCPUs**, **86,400s timeout**). 
 
 You can execute this either via our automated deployment script or by running the exact underlying `gcloud` commands directly:
