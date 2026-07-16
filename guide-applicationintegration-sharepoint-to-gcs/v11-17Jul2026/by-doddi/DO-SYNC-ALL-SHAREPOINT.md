@@ -9,8 +9,7 @@ This comprehensive copy-paste production runbook covers the end-to-end workflow:
 Before running deployment or verification scripts, ensure your local terminal session is cleanly authenticated to Google Cloud SDK (`gcloud`) and Application Default Credentials (`ADC`):
 
 ```bash
-# 1. Navigate to Version 11 working directory
-cd /path/to/your/repo/v11-17Jul2026/by-doddi
+pwd
 
 # 2. Ensure service account impersonation is disabled so commands run directly as your user:
 gcloud config unset auth/impersonate_service_account 2>/dev/null || true
