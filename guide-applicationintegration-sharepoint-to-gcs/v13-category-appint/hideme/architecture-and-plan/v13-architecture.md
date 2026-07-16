@@ -227,9 +227,32 @@ V13 organizes its Application Integration parent workflow to invoke specialized 
 * If a 429 leaks down to the Cloud Run Playwright worker during DOM loading, the worker's internal Python `graph_client.py` captures the response, sleeps for `Retry-After + 1` seconds, and retries up to 5 times before raising a controlled `GraphRateLimitError`.
 
 ### 6.2. Worker Crash Isolation & Dead-Letter Queue (`DLQ`)
-* If a malformed or super-heavy `.aspx` page causes Chromium to hang or crash (`Signal 9` inside one container instance), **only that specific 10-second REST request terminates**.
+* If a malformed or super-heavy `.aspx` page causes Chromium to hang or crash (`Signal 7 / Signal 9` inside one container instance), **only that specific 10-second REST request terminates**.
 * AppInt's `Error Catcher` catches the non-200 HTTP response (`HTTP 500 / 504`), retries the request exactly 2 times with exponential backoff (`10s, 30s`), and if still failing, writes the item payload to `gs://{bucket}/errors/dlq/failed_item_{id}_{timestamp}.json`.
 * **Zero Crawl Collapses:** The parent For-Each loop immediately proceeds to item #34,103 without missing a beat, ensuring the 38,895-item tenant crawl finishes at 99.99% completion while isolating exact problematic items for quick engineering triage.
+
+### 6.3. Day 1 Bulk Crawl Paced Cluster Concurrency Limit (`max-instances = 5`)
+* **The SharePoint WAF Trap:** Unthrottled horizontal concurrency (`e.g., 20+ parallel containers opening 40+ Chromium sessions simultaneously against maxis.sharepoint.com`) triggers Microsoft SharePoint's Web Application Firewall (WAF) and Graph API rate-limiting algorithms (`HTTP 429 Too Many Requests` or WAF challenge blocks).
+* **The V13 Paced Cluster Cap:** During initial Day 1 bulk crawls (`when all 1,000+ pages in a subsite must be rendered for the very first time because the delta cache is empty`), Application Integration's `ForEach / Loop Task` parallelism or Cloud Run Service horizontal scaling must be hard-capped at **exactly 5 parallel container instances (`max-instances = 5`)**. This behaves like 5 standard employees browsing the intranet simultaneously, staying 100% underneath Microsoft's WAF threshold while completing 1,000 pages in ~10 minutes.
+
+### 6.4. Dynamic OAuth Token Refresh & Session Persistence
+* **The 60-Minute Token Trap:** Microsoft 365 OAuth Bearer access tokens expire precisely 60 minutes after issuance. If an execution loop or worker crawl runs past 60 minutes using a static token, subsequent Graph API calls fail with `HTTP 401 Unauthorized / Token Expired`.
+* **The V13 Token Interceptor:** Every HTTP request inside V13's `graph_client.py` passes through a **Dynamic Token Refresh Interceptor (`get_valid_access_token()`)**. The interceptor inspects the cached token's expiration timestamp and automatically re-authenticates 5 minutes before expiration (`or instantly upon catching an HTTP 401 response`), guaranteeing 24-hour continuous crawling without token dropouts.
+
+### 6.5. Thread-Local Greenlet Isolation & Chromium Context Cleanup
+* **The Greenlet & Shared-Memory Trap:** Sharing a single Playwright `asyncio/greenlet` event loop across multiple Python thread-pool workers causes coroutine switching crashes (`Signal 5 SIGTRAP`). Furthermore, unclosed Chromium child processes leak `/dev/shm` shared memory maps until the container dies (`Signal 7 SIGBUS / Signal 9 SIGKILL`).
+* **The V13 Greenlet Lockdown:** All Playwright browser contexts and event loops are strictly isolated per worker thread using `_THREAD_LOCAL = threading.local()`. Every `/v13/render_page` endpoint invocation wraps Chromium context creation in a strict `try...finally` block that executes `browser.close()` and `p.stop()`, ensuring zero greenlet collisions and forcing the OS kernel to reclaim 100% of `/dev/shm` upon micro-batch completion.
+
+### 6.6. Defensive String-Safe Jsonnet Data Mapping (`Task 3 -> Task 4`)
+* **The Jsonnet Undefined Variable Trap:** When payload variables injected from external workflow inputs (`item_metadata` / `upload_request`) are accessed via direct dot-notation (`objectName: item.objectName`) and the payload structure lacks that top-level key or contains special folder characters, Application Integration data mapping tasks crash with `RUNTIME ERROR: undefined variable: objectName`.
+* **The V13 Jsonnet Lockdown:** All Jsonnet mapping expressions across V13 parent and child workflows must strictly use defensive lookup syntax: `objectName: std.extVar('upload_request')['objectName']` (`or extracting relative paths safely via std.extVar`).
+
+### 6.7. Circuit Breaker & Partition-Scoped Orphaned File Cleanup
+* **The Step 7b Cascade Trap:** If Graph API returns a partial discovery scan due to network timeouts (`e.g., 1,544 items discovered vs 5,412 in GCS inventory`), an unprotected orphan cleanup step assumes the missing items were deleted from SharePoint and wipes thousands of valid PDFs out of GCS (`stale_blob.delete()`).
+* **The V13 Double Safety Lock:**
+  1. Orphaned cleanup is **DISABLED by default** (`CONFIG_Enable_Orphan_Cleanup: false`).
+  2. If explicitly enabled by the user, it must pass the **80% Inventory Circuit Breaker** (`if len(discovered) < len(gcs_cache) * 0.8 -> abort deletion immediately`).
+  3. **Partition-Scoped Deletion:** A category worker (`e.g., DEN/Consumer`) must **only** compare and clean up GCS objects whose relative paths match its assigned subsite prefix (`pages/Consumer/` or `files/Consumer/`), guaranteeing that one category worker never accidentally deletes another category's files from a shared GCS bucket.
 
 ---
 
