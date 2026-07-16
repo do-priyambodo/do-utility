@@ -586,18 +586,71 @@ def main():
     from collections import defaultdict
     sub_f = defaultdict(int)
     sub_p = defaultdict(int)
+    parent_map = {
+        "Self_Serve": "Channels",
+        "Self-Serve": "Channels",
+        "Assisted": "Channels",
+        "ChannelMarketing": "Customer-Support",
+        "Enterprise-Solutions": "Customer-Support",
+        "Quality-Assurance": "Customer-Support",
+        "Retail": "Customer-Support",
+        "Credit-Operations": "Customer-Support",
+        "Customer_First": "Customer-Support",
+        "DistributionMgmt": "Customer-Support",
+        "Service-Insights": "Customer-Support"
+    }
+
     for x in all_items:
         sname = x.get("Subsite", "Home") or "Home"
+        rel = x.get("RelativePath", "") or x.get("Url", "")
+        
+        if "Channels/Self_Serve" in rel or "Channels/Self-Serve" in rel:
+            sname = "Self_Serve"
+        elif "Channels/Assisted" in rel:
+            sname = "Assisted"
+        elif "Customer-Support/Retail" in rel:
+            sname = "Retail"
+        elif "Customer-Support/Credit-Operations" in rel:
+            sname = "Credit-Operations"
+        elif "Customer-Support/Quality-Assurance" in rel:
+            sname = "Quality-Assurance"
+        elif "Customer-Support/ChannelMarketing" in rel:
+            sname = "ChannelMarketing"
+        elif "Customer-Support/Enterprise-Solutions" in rel:
+            sname = "Enterprise-Solutions"
+
         if x.get("IsPage"):
             sub_p[sname] += 1
         else:
             sub_f[sname] += 1
             
     all_subs = sorted(list(set(list(sub_f.keys()) + list(sub_p.keys()))))
-    for idx, sname in enumerate(all_subs, 1):
-        fc = sub_f[sname]
-        pc = sub_p[sname]
-        print(f"{idx:<5}{sname[:38]:<40}{fc:<12}{pc:<12}{fc + pc:<10}")
+    tree = defaultdict(list)
+    for sname in all_subs:
+        parent = parent_map.get(sname, sname)
+        if parent != sname:
+            tree[parent].append(sname)
+        else:
+            if sname not in tree:
+                tree[sname] = []
+
+    idx = 1
+    for parent in sorted(tree.keys()):
+        fc = sub_f[parent]
+        pc = sub_p[parent]
+        children = sorted(tree[parent])
+        
+        if children:
+            print(f"{idx:<5}{parent[:38]:<40}{fc:<12}{pc:<12}{fc + pc:<10}")
+            idx += 1
+            for child in children:
+                cfc = sub_f[child]
+                cpc = sub_p[child]
+                child_label = f"  └── {child}"
+                print(f"{'':<5}{child_label[:38]:<40}{cfc:<12}{cpc:<12}{cfc + cpc:<10}")
+        else:
+            print(f"{idx:<5}{parent[:38]:<40}{fc:<12}{pc:<12}{fc + pc:<10}")
+            idx += 1
         
     print("-" * 80)
     print(f"{'':<5}{'TOTAL INVENTORY ACROSS SITE':<40}{total_sp_files:<12}{total_sp_pages:<12}{total_sp_items:<10}")
