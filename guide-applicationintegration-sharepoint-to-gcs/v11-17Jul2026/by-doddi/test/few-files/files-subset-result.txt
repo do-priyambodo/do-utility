@@ -1,0 +1,17 @@
+================================================================
+SHAREPOINT TO GCS - FAST SUBSET TEST REPORT (MAX 10)
+================================================================
+Items Sampled from SharePoint : 10
+Items Requiring Sync          : 9
+================================================================
+
+1. [Document] 17June2026-by-YOURORG.txt (Path: 17June2026-by-YOURORG/17June2026-by-YOURORG.txt)
+2. [Document] Judges InfoPack.pdf (Path: 17June2026-by-YOURORG/Judges InfoPack.pdf)
+3. [Document] Judges Judging Criteria Final.pdf (Path: 17June2026-by-YOURORG/Judges Judging Criteria Final.pdf)
+4. [Document] Judging Criteria Prelim.pdf (Path: 17June2026-by-YOURORG/Judging Criteria Prelim.pdf)
+5. [Document] yourorg-is-speaking-optimized.webp (Path: Files by YourOrg/yourorg-is-speaking-optimized.webp)
+6. [Document] BidBot.png (Path: BidBot.png)
+7. [Document] bitbot-google.jpeg (Path: bitbot-google.jpeg)
+8. [Page] Culture.pdf (Path: pages/Culture.pdf)
+9. [Page] DepartmentHome.pdf (Path: pages/DepartmentHome.pdf)
+10. [Page] Home.pdf (Path: pages/Home.pdf)

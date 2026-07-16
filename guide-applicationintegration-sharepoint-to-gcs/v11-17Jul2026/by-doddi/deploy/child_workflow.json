@@ -1,0 +1,283 @@
+{
+  "origin": "UI",
+  "snapshotNumber": "1",
+  "triggerConfigs": [
+    {
+      "label": "API Trigger",
+      "triggerType": "API",
+      "triggerNumber": "1",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-trigger",
+      "startTaskId": "6"
+    }
+  ],
+  "taskConfigs": [
+    {
+      "task": "DataMappingTask",
+      "taskNumber": "6",
+      "label": "Check Page Routing",
+      "parameters": {
+        "mapConfig": {
+          "stringValue": "local item = std.extVar(\"INPUT_Loop_Item\");\n{\n  \"`Is_Page_Flow`\": if \"IsPage\" in item then item[\"IsPage\"] == true else false\n}"
+        }
+      },
+      "nextTasks": [
+        {
+          "taskNumber": "1",
+          "condition": "$`Is_Page_Flow`$ = false"
+        },
+        {
+          "taskNumber": "5",
+          "condition": "$`Is_Page_Flow`$ = true"
+        }
+      ]
+    },
+    {
+      "task": "DataMappingTask",
+      "taskNumber": "1",
+      "label": "Download file request mapping",
+      "parameters": {
+        "mapConfig": {
+          "stringValue": "local inputs = {\n  \"`CONFIG_SharePoint_Hostname`\": std.extVar(\"`CONFIG_SharePoint_Hostname`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal rawUrl = fileObject[\"Url\"];\nlocal sharepointHost = inputs[\"`CONFIG_SharePoint_Hostname`\"];\nlocal urlWithPort = std.strReplace(rawUrl, \"https://\" + sharepointHost + \"/\", \"https://\" + sharepointHost + \":443/\");\n{\n  \"`Task_2_connectorInputPayload`\": {\n    \"Library\": \"Shared Documents\",\n    \"RemoteFile\": urlWithPort,\n    \"HasBytes\": true\n  }\n}"
+        }
+      },
+      "nextTasks": [
+        {
+          "taskNumber": "2",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "task": "GenericConnectorTask",
+      "taskNumber": "2",
+      "label": "Download file sharepoint",
+      "parameters": {
+        "connectionName": {
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
+        },
+        "connectorVersion": {
+          "stringValue": "projects/your-project-id/locations/global/providers/microsoft/connectors/sharepoint/versions/2"
+        },
+        "actionName": {
+          "stringValue": "DownloadDocument"
+        }
+      },
+      "nextTasks": [
+        {
+          "taskNumber": "3",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "task": "DataMappingTask",
+      "taskNumber": "3",
+      "label": "Upload file request mapping",
+      "parameters": {
+        "mapConfig": {
+          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\"),\n  \"`Task_2_connectorOutputPayload`\": std.extVar(\"`Task_2_connectorOutputPayload`\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = fileObject[\"Name\"];\nlocal relativePath = fileObject[\"RelativePath\"];\nlocal folderPath = if std.endsWith(relativePath, \"/\" + fileName) then std.substr(relativePath, 0, std.length(relativePath) - std.length(\"/\" + fileName)) else if std.endsWith(relativePath, fileName) && relativePath != fileName then std.substr(relativePath, 0, std.length(relativePath) - std.length(fileName)) else \"\";\nlocal isPdf = std.endsWith(fileName, \".pdf\") || std.endsWith(fileName, \".PDF\");\nlocal isDocx = std.endsWith(fileName, \".docx\") || std.endsWith(fileName, \".DOCX\");\nlocal isDoc = std.endsWith(fileName, \".doc\") || std.endsWith(fileName, \".DOC\");\nlocal isPptx = std.endsWith(fileName, \".pptx\") || std.endsWith(fileName, \".PPTX\");\nlocal isPpt = std.endsWith(fileName, \".ppt\") || std.endsWith(fileName, \".PPT\");\nlocal isXlsx = std.endsWith(fileName, \".xlsx\") || std.endsWith(fileName, \".XLSX\");\nlocal isXls = std.endsWith(fileName, \".xls\") || std.endsWith(fileName, \".XLS\");\nlocal isTxt = std.endsWith(fileName, \".txt\") || std.endsWith(fileName, \".TXT\");\nlocal isHtml = std.endsWith(fileName, \".html\") || std.endsWith(fileName, \".HTML\") || std.endsWith(fileName, \".htm\") || std.endsWith(fileName, \".aspx\");\nlocal contentType = if isPdf then \"application/pdf\" else if isDocx then \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\" else if isDoc then \"application/msword\" else if isPptx then \"application/vnd.openxmlformats-officedocument.presentationml.presentation\" else if isPpt then \"application/vnd.ms-powerpoint\" else if isXlsx then \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\" else if isXls then \"application/vnd.ms-excel\" else if isTxt then \"text/plain\" else if isHtml then \"text/html\" else \"application/octet-stream\";\n{\n  \"`Task_4_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": inputs[\"`Task_2_connectorOutputPayload`\"][0][\"ContentBytes\"],\n    \"ObjectName\": fileName,\n    [if folderPath != \"\" then \"FolderPath\"]: \"files/\" + folderPath,\n    [if folderPath == \"\" then \"FolderPath\"]: \"files\",\n    \"ContentType\": contentType,\n    \"HasBytes\": true\n  }\n}"
+        }
+      },
+      "nextTasks": [
+        {
+          "taskNumber": "4",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "task": "DataMappingTask",
+      "taskNumber": "5",
+      "label": "Upload page request mapping",
+      "parameters": {
+        "mapConfig": {
+          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal pageObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = pageObject[\"Name\"];\nlocal pdfBase64 = pageObject[\"VirtualContent\"];\n{\n  \"`Task_7_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": pdfBase64,\n    \"ObjectName\": fileName,\n    \"FolderPath\": \"pages\",\n    \"ContentType\": \"application/pdf\",\n    \"HasBytes\": true\n  }\n}"
+        }
+      },
+      "nextTasks": [
+        {
+          "taskNumber": "7",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "task": "GenericConnectorTask",
+      "taskNumber": "4",
+      "label": "Upload file gcs",
+      "parameters": {
+        "connectionName": {
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
+        },
+        "connectorVersion": {
+          "stringValue": "projects/your-project-id/locations/global/providers/gcp/connectors/gcs/versions/1"
+        },
+        "actionName": {
+          "stringValue": "UploadObject"
+        }
+      }
+    },
+    {
+      "task": "GenericConnectorTask",
+      "taskNumber": "7",
+      "label": "Upload page gcs",
+      "parameters": {
+        "connectionName": {
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
+        },
+        "connectorVersion": {
+          "stringValue": "projects/your-project-id/locations/global/providers/gcp/connectors/gcs/versions/1"
+        },
+        "actionName": {
+          "stringValue": "UploadObject"
+        }
+      }
+    }
+  ],
+  "integrationParameters": [
+    {
+      "key": "`CONFIG_SharePoint_Hostname`",
+      "dataType": "STRING_VALUE",
+      "displayName": "`CONFIG_SharePoint_Hostname`",
+      "inputOutputType": "IN",
+      "defaultValue": {
+        "stringValue": "priyambodo.sharepoint.com"
+      }
+    },
+    {
+      "key": "`CONFIG_GCS_Bucket`",
+      "dataType": "STRING_VALUE",
+      "displayName": "`CONFIG_GCS_Bucket`",
+      "inputOutputType": "IN",
+      "defaultValue": {
+        "stringValue": "doddi-bucket-sharepoint-sync"
+      }
+    },
+    {
+      "key": "INPUT_Loop_Item",
+      "dataType": "JSON_VALUE",
+      "displayName": "INPUT_Loop_Item",
+      "inputOutputType": "IN",
+      "defaultValue": {
+        "jsonValue": "{}"
+      }
+    },
+    {
+      "key": "`Is_Page_Flow`",
+      "dataType": "BOOLEAN_VALUE",
+      "displayName": "`Is_Page_Flow`",
+      "inputOutputType": "NONE",
+      "defaultValue": {
+        "booleanValue": false
+      }
+    },
+    {
+      "key": "`Task_2_connectorInputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_2_connectorInputPayload`"
+    },
+    {
+      "key": "`Task_2_connectorOutputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_2_connectorOutputPayload`",
+      "isTransient": true
+    },
+    {
+      "key": "`Task_4_connectorInputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_4_connectorInputPayload`"
+    },
+    {
+      "key": "`Task_4_connectorOutputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_4_connectorOutputPayload`",
+      "isTransient": true
+    },
+    {
+      "key": "`Task_7_connectorInputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_7_connectorInputPayload`"
+    },
+    {
+      "key": "`Task_7_connectorOutputPayload`",
+      "dataType": "JSON_VALUE",
+      "defaultValue": {},
+      "displayName": "`Task_7_connectorOutputPayload`",
+      "isTransient": true
+    }
+  ],
+  "integrationConfigParameters": [
+    {
+      "parameter": {
+        "key": "`CONFIG_SharePoint_Hostname`",
+        "dataType": "STRING_VALUE",
+        "defaultValue": {
+          "stringValue": "priyambodo.sharepoint.com"
+        },
+        "displayName": "`CONFIG_SharePoint_Hostname`"
+      },
+      "value": {
+        "stringValue": "priyambodo.sharepoint.com"
+      }
+    },
+    {
+      "parameter": {
+        "key": "`CONFIG_GCS_Bucket`",
+        "dataType": "STRING_VALUE",
+        "defaultValue": {
+          "stringValue": "doddi-bucket-sharepoint-sync"
+        },
+        "displayName": "`CONFIG_GCS_Bucket`"
+      },
+      "value": {
+        "stringValue": "doddi-bucket-sharepoint-sync"
+      }
+    },
+    {
+      "parameter": {
+        "key": "`CONFIG_Sharepoint_Library`",
+        "dataType": "STRING_VALUE",
+        "defaultValue": {
+          "stringValue": "Documents"
+        },
+        "displayName": "`CONFIG_Sharepoint_Library`"
+      },
+      "value": {
+        "stringValue": "Documents"
+      }
+    },
+    {
+      "parameter": {
+        "key": "`CONFIG_GCS_Connection`",
+        "dataType": "STRING_VALUE",
+        "defaultValue": {
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
+        },
+        "displayName": "`CONFIG_GCS_Connection`"
+      },
+      "value": {
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-gcs-sync"
+      }
+    },
+    {
+      "parameter": {
+        "key": "`CONFIG_SharePoint_Connection`",
+        "dataType": "STRING_VALUE",
+        "defaultValue": {
+          "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
+        },
+        "displayName": "`CONFIG_SharePoint_Connection`"
+      },
+      "value": {
+        "stringValue": "projects/work-mylab-machinelearning/locations/asia-southeast1/connections/doddi-connection-sharepoint-sync"
+      }
+    }
+  ],
+  "description": "V4 child integration leveraging recursive Cloud Function and modern site page pre-renderer sync",
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
+}
