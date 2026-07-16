@@ -64,18 +64,18 @@ echo "✅ Active Project: ${PROJECT_ID} | Function: ${FUNCTION_NAME} | Location:
 
 ---
 
-## Step 4: Deploy Cloud Run High-Fidelity Playwright Backend (`8 GiB / 4 vCPUs`)
+## Step 4: Deploy Cloud Run High-Fidelity Playwright Backend (`16 GiB / 4 vCPUs`)
 
-Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service and apply Enterprise Hardware Sizing (**8 GiB RAM**, **4 vCPUs**, **900s timeout**):
+Deploy the containerized high-fidelity Playwright (`headless Chromium`) backend service and apply Enterprise Hardware Sizing (**16 GiB RAM**, **4 vCPUs**, **900s timeout**):
 
 ```bash
 # 1. Build & Deploy the high-fidelity Playwright container service
 ./deploy/deploy_cloud_run.sh
 
-# 2. Apply Enterprise 8 GiB Memory / 4 vCPUs / 15-Minute Timeout / Startup CPU Boost Sizing
+# 2. Apply Enterprise 16 GiB Memory / 4 vCPUs / 15-Minute Timeout / Startup CPU Boost Sizing
 gcloud run services update "${FUNCTION_NAME}" \
   --region="${LOCATION}" \
-  --memory=8192Mi \
+  --memory=16384Mi \
   --cpu=4 \
   --timeout=900 \
   --cpu-boost
