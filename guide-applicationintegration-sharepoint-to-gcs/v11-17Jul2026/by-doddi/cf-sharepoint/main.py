@@ -1,5 +1,6 @@
 # [REVISION CHECK]: 3-Strategy Site Pages Discovery Engine Active (v1.0 + beta + SitePages Drive)
 import os
+import sys
 import json
 import urllib.parse
 import datetime
@@ -494,7 +495,7 @@ def main(request):
                             pass
 
                     if not needs_sync:
-                        print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {pdf_name}")
+                        print(f"⏭️ Skipping unchanged Modern Site Page (Delta Cache hit): {hashed_pdf_name}")
                         all_list.append(page_obj)
                         continue
 
@@ -502,7 +503,7 @@ def main(request):
                     page_obj["_page_id"] = page_id
                     page_obj["_site_id"] = curr_site_id
                     page_obj["_raw_url"] = p.get("webUrl", "")
-                    page_obj["_filename"] = pdf_name
+                    page_obj["_filename"] = hashed_pdf_name
                     all_list.append(page_obj)
                     sync_list.append(page_obj)
             elif not sync_pages_flag:
