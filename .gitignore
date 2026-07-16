@@ -31,3 +31,8 @@ __pycache__/
 *.log
 *.log.*
 log/
+# Hidden working directories and temporary drafts
+hideme/
+*/hideme/
+**/hideme/
+*hideme*
