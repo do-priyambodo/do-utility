@@ -5,13 +5,13 @@
   `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/`
 - **Downstream Sync/Mirror Target Only (`do-utility`):**
   `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-utility/guide-applicationintegration-sharepoint-to-gcs/`
-- **DO NOT** perform direct feature edits or start tasks inside `do-utility`. Always work strictly inside `customer-maxis/.../v10-10Jul2026` or `customer-maxis/.../v11-percategory` and sync/mirror changes downstream to `do-utility`.
+- **DO NOT** perform direct feature edits or start tasks inside `do-utility`. Always work strictly inside `customer-maxis/.../v10-10Jul2026` or `customer-maxis/.../v12-percategory` and sync/mirror changes downstream to `do-utility`.
 
 ## Mandatory Bidirectional Code Mirroring & Auto-Push Rule
 For all modifications performed:
-Whenever any file is modified, added, or deleted inside EITHER of the following active version directories (`v10-10Jul2026` or `v11-percategory`):
-- **Location A (`customer-maxis` - Primary):** `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026` and `v11-percategory`
-- **Location B (`do-utility` - Mirror Target):** `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-utility/guide-applicationintegration-sharepoint-to-gcs/v10-10Jul2026` and `v11-percategory`
+Whenever any file is modified, added, or deleted inside EITHER of the following active version directories (`v10-10Jul2026` or `v12-percategory`):
+- **Location A (`customer-maxis` - Primary):** `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-CUSTOMERS/customer-maxis/do-applicationintegration/app/v10-10Jul2026` and `v12-percategory`
+- **Location B (`do-utility` - Mirror Target):** `/usr/local/google/home/priyambodo/Coding/DO-PRIYAMBODO/do-utility/guide-applicationintegration-sharepoint-to-gcs/v10-10Jul2026` and `v12-percategory`
 
 The exact same changes MUST be mirrored/copied to the corresponding version directory in the other repository so both remain identical. Furthermore, stage, commit, and `git push` to remote GitHub on every change.
 
