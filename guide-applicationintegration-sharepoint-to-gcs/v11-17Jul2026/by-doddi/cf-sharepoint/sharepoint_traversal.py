@@ -1,6 +1,7 @@
 import urllib.parse
 import datetime
 import base64
+import hashlib
 import html
 from graph_client import graph_get_paginated, http
 
@@ -85,17 +86,21 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                     if "folder" in item:
                         queue.append((child_id, f"{p_path}{item_name}/"))
                     else:
+                        item_id_to_hash = str(item.get("id") or item.get("webUrl") or item_name)
+                        path_hash = hashlib.sha256(item_id_to_hash.encode('utf-8')).hexdigest()[:8]
                         if item_name.lower().endswith(".aspx"):
-                            pdf_name = item_name.replace(".aspx", ".pdf")
-                            relative_path = f"pages/{p_path}{pdf_name}"
+                            page_base = item_name[:-5]
+                            pdf_name = f"{page_base}_{path_hash}.pdf"
+                            relative_path = f"pages/{pdf_name}"
                             page_item = {
-                                "Name": pdf_name,
+                                "Name": item_name.replace(".aspx", ".pdf"),
                                 "Url": item.get("webUrl", ""),
                                 "RelativePath": relative_path,
                                 "IsPage": True,
                                 "_page_id": item.get("id"),
                                 "_raw_url": item.get("webUrl", ""),
-                                "_filename": pdf_name
+                                "_filename": pdf_name,
+                                "_folder_path": p_path.rstrip("/")
                             }
                             needs_sync = True
                             if gcs_cache is not None and relative_path in gcs_cache:
@@ -125,15 +130,23 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                     if needs_sync:
                                         sync_results.append(page_item)
                         else:
-                            relative_path = f"{p_path}{item_name}"
-                            relative_path_encoded = "/".join([urllib.parse.quote(part) for part in relative_path.split("/")]) if "/" in relative_path else urllib.parse.quote(relative_path)
+                            if "." in item_name:
+                                file_base = item_name.rsplit(".", 1)[0]
+                                ext = item_name.rsplit(".", 1)[-1]
+                                hashed_filename = f"{file_base}_{path_hash}.{ext}"
+                            else:
+                                hashed_filename = f"{item_name}_{path_hash}"
+                            relative_path = hashed_filename
+                            sp_rel_path = f"{p_path}{item_name}"
+                            relative_path_encoded = "/".join([urllib.parse.quote(part) for part in sp_rel_path.split("/")]) if "/" in sp_rel_path else urllib.parse.quote(sp_rel_path)
                             direct_url = f"{base_file_url}{relative_path_encoded}"
                             
                             file_item = {
                                 "Name": item_name,
                                 "Url": direct_url,
                                 "RelativePath": relative_path,
-                                "IsPage": False
+                                "IsPage": False,
+                                "_folder_path": p_path.rstrip("/")
                             }
                             needs_sync = True
                             gcs_check_path = f"files/{relative_path}"

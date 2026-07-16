@@ -6,6 +6,7 @@ import datetime
 import re
 import time
 import gc
+import hashlib
 import concurrent.futures
 import functions_framework
 from google.cloud import storage
@@ -147,27 +148,40 @@ def main(request):
 
             for raw_url in target_urls:
                 clean_url = raw_url.split("?")[0].strip()
+                path_hash = hashlib.sha256(clean_url.lower().encode("utf-8")).hexdigest()[:8]
                 parsed = urllib.parse.urlparse(clean_url)
                 url_path = urllib.parse.unquote(parsed.path)
                 filename = os.path.basename(url_path)
                 is_page = False
-                if filename.lower().endswith(".aspx"):
-                    is_page = True
-                    filename = filename[:-5] + ".pdf"
-                
-                rel_path = f"pages/{filename}" if is_page else f"files/{filename}"
+                clean_name = filename
+                sub_folder = ""
                 if "/sites/" in url_path:
                     parts = [p for p in url_path.split("/") if p and p.lower() not in ["sites", "sitepages", "shared documents", "documents"]]
                     if len(parts) > 1:
                         sub_folder = "/".join(parts[1:-1])
-                        if sub_folder:
-                            rel_path = f"pages/{sub_folder}/{filename}" if is_page else f"files/{sub_folder}/{filename}"
+
+                if filename.lower().endswith(".aspx"):
+                    is_page = True
+                    clean_name = filename[:-5] + ".pdf"
+                    page_base = filename[:-5]
+                    hashed_filename = f"{page_base}_{path_hash}.pdf"
+                    rel_path = f"pages/{hashed_filename}"
+                else:
+                    if "." in filename:
+                        file_base = filename.rsplit(".", 1)[0]
+                        ext = filename.rsplit(".", 1)[-1]
+                        hashed_filename = f"{file_base}_{path_hash}.{ext}"
+                    else:
+                        hashed_filename = f"{filename}_{path_hash}"
+                    rel_path = hashed_filename
 
                 item_obj = {
-                    "Name": filename,
+                    "Name": clean_name,
                     "Url": raw_url,
                     "RelativePath": rel_path,
-                    "IsPage": is_page
+                    "IsPage": is_page,
+                    "_filename": hashed_filename,
+                    "_folder_path": sub_folder
                 }
                 
                 if is_page and not sync_pages_flag:
@@ -359,14 +373,20 @@ def main(request):
                         break
                     page_id = p.get("id")
                     page_name = p.get("name") or p.get("fields", {}).get("FileLeafRef") or "Page.aspx"
-                    pdf_name = page_name.replace(".aspx", ".pdf")
-                    rel_page_path = f"pages/{site_prefix}{pdf_name}"
+                    clean_pdf_name = page_name.replace(".aspx", ".pdf")
+                    page_id_to_hash = str(page_id or p.get("webUrl") or page_name)
+                    path_hash = hashlib.sha256(page_id_to_hash.encode('utf-8')).hexdigest()[:8]
+                    page_base = page_name[:-5] if page_name.lower().endswith(".aspx") else page_name
+                    hashed_pdf_name = f"{page_base}_{path_hash}.pdf"
+                    rel_page_path = f"pages/{hashed_pdf_name}"
                     
                     page_obj = {
-                        "Name": pdf_name,
+                        "Name": clean_pdf_name,
                         "Url": p.get("webUrl", ""),
                         "RelativePath": rel_page_path,
-                        "IsPage": True
+                        "IsPage": True,
+                        "_filename": hashed_pdf_name,
+                        "_folder_path": site_prefix.rstrip("/")
                     }
                     needs_sync = True
                     if gcs_cache is not None and rel_page_path in gcs_cache:
@@ -499,7 +519,8 @@ def main(request):
                         "structData": {
                             "sharepoint_url": item.get("Url", ""),
                             "title": raw_name,
-                            "relative_path": full_gcs_path
+                            "relative_path": full_gcs_path,
+                            "sharepoint_folder_path": item.get("_folder_path", "")
                         },
                         "content": {
                             "mimeType": mime_val,
