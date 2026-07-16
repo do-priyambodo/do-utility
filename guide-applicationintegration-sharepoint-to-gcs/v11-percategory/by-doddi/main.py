@@ -537,8 +537,8 @@ def main(request):
         file_batch_size = params.get("CONFIG_File_Batch_Size", 20 * raw_batch_size if raw_batch_size <= 10 else raw_batch_size)
         # Keep heavy Base64 PDF pages safely at raw_batch_size (5 items/batch ~1.0 MB payload)
         page_batch_size = params.get("CONFIG_Page_Batch_Size", raw_batch_size)
-        max_workers = max(10, raw_workers)
-        chunk_size = max(100, file_batch_size * max_workers)
+        max_workers = min(3, max(1, raw_workers))
+        chunk_size = min(30, max(20, file_batch_size * max_workers))
 
         def _render_lazy_page(item):
             if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):

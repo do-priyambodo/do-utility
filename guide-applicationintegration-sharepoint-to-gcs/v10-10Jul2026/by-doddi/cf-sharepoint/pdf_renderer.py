@@ -40,14 +40,14 @@ def get_persistent_browser(force_restart=False):
                 pass
             _THREAD_LOCAL.playwright = None
         # Clean up stale Chromium/Playwright tmp directories in RAM buffers and run gc.collect()
-        for tmp_dir in glob.glob("/tmp/.org.chromium.Chromium*") + glob.glob("/tmp/playwright_chromium*"):
+        for tmp_dir in glob.glob("/tmp/pw*") + glob.glob("/tmp/.org.chromium.Chromium*") + glob.glob("/tmp/playwright*") + glob.glob("/tmp/.com.google.Chrome*"):
             try:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
             except Exception:
                 pass
         gc.collect()
         # Clean up stale Chromium/Playwright tmp directories in RAM buffers and run gc.collect()
-        for tmp_dir in glob.glob("/tmp/.org.chromium.Chromium*") + glob.glob("/tmp/playwright_chromium*"):
+        for tmp_dir in glob.glob("/tmp/pw*") + glob.glob("/tmp/.org.chromium.Chromium*") + glob.glob("/tmp/playwright*") + glob.glob("/tmp/.com.google.Chrome*"):
             try:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
             except Exception:
