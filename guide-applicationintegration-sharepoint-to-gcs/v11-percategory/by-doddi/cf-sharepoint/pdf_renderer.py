@@ -4,6 +4,10 @@ import io
 import re
 import threading
 import time
+import os
+import gc
+import shutil
+import glob
 
 try:
     from bs4 import BeautifulSoup
@@ -35,6 +39,13 @@ def get_persistent_browser(force_restart=False):
             except Exception:
                 pass
             _THREAD_LOCAL.playwright = None
+        # Clean up stale Chromium/Playwright tmp directories in RAM buffers and run gc.collect()
+        for tmp_dir in glob.glob("/tmp/.org.chromium.Chromium*") + glob.glob("/tmp/playwright_chromium*"):
+            try:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            except Exception:
+                pass
+        gc.collect()
         _THREAD_LOCAL.page_count = 0
 
     if getattr(_THREAD_LOCAL, 'browser', None) is None or not getattr(_THREAD_LOCAL, 'browser').is_connected():
@@ -44,13 +55,16 @@ def get_persistent_browser(force_restart=False):
         _THREAD_LOCAL.browser = _THREAD_LOCAL.playwright.chromium.launch(
             headless=True,
             timeout=30000,
-            args=[
+                        args=[
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
                 "--no-zygote",
-                "--single-process",
+                "--disable-disk-cache",
+                "--disk-cache-size=1",
+                "--disable-application-cache",
+                "--js-flags=--max-old-space-size=512",
                 "--disable-extensions",
                 "--disable-background-networking",
                 "--disable-default-apps",
