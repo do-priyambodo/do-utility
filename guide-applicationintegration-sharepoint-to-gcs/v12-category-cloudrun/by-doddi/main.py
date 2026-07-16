@@ -247,35 +247,43 @@ def main(request):
                 print(f"Warning: Failed to list drives for site {curr_site_id}: {e}")
                 continue
                 
-            target_drive_id = None
-            target_drive_url = None
+            # 5 & 6. Traverse Document Libraries (Drives) and recursively list all files
+            drives_url = f"https://graph.microsoft.com/v1.0/sites/{curr_site_id}/drives"
+            try:
+                drives = graph_get_paginated(drives_url, headers)
+            except Exception as e:
+                print(f"Warning: Failed to list drives for site {curr_site_id}: {e}")
+                drives = []
+                
+            target_drives = []
             for d in drives:
                 d_name = d.get("name", "")
-                if d_name == library_name or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
-                    target_drive_id = d.get("id")
-                    target_drive_url = d.get("webUrl")
-                    break
+                if library_name == "all":
+                    if d.get("driveType") == "documentLibrary" and d_name not in ["Site Pages", "Style Library", "Form Templates", "Site Assets"]:
+                        target_drives.append(d)
+                elif d_name == library_name or (library_name in ["Shared Documents", "Documents"] and d_name in ["Shared Documents", "Documents"]):
+                    target_drives.append(d)
                     
-            if not target_drive_id and drives:
+            if not target_drives and drives and library_name != "all":
                 for d in drives:
                     if d.get("driveType") == "documentLibrary" and d.get("name") not in ["Site Pages", "Style Library", "Form Templates", "Site Assets"]:
-                        target_drive_id = d.get("id")
-                        target_drive_url = d.get("webUrl")
+                        target_drives.append(d)
                         break
-                if not target_drive_id:
-                    target_drive_id = drives[0].get("id")
-                    target_drive_url = drives[0].get("webUrl")
+                if not target_drives and drives:
+                    target_drives.append(drives[0])
                 
-            # 6. Recursively list all files inside the target Document Library
             max_items = req_data.get("max_items")
-            if target_drive_id and sync_files_flag:
-                if target_drive_url:
-                    base_file_url = f"{target_drive_url.rstrip('/')}/"
-                else:
-                    library_encoded = urllib.parse.quote(library_name)
-                    sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
-                    base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                list_drive_items_recursive(token, target_drive_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
+            if sync_files_flag and target_drives:
+                for d_info in target_drives:
+                    d_id = d_info.get("id")
+                    d_url = d_info.get("webUrl")
+                    if d_url:
+                        base_file_url = f"{d_url.rstrip('/')}/"
+                    else:
+                        lib_enc = urllib.parse.quote(d_info.get("name", library_name))
+                        sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
+                        base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{lib_enc}/"
+                    list_drive_items_recursive(token, d_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items)
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
                 
