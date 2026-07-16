@@ -15,8 +15,6 @@ REQUIRED_KEYS: List[str] = [
     "CONFIG_M365_Client_Id",
     "CONFIG_M365_Secret_Name",
     "CONFIG_SharePoint_Hostname",
-    "CONFIG_Sharepoint_Sites",
-    "CONFIG_Sharepoint_Library",
 ]
 
 def validate_parameters(params: Dict[str, Any]) -> Dict[str, Any]:

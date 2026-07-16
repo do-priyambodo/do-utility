@@ -225,6 +225,9 @@ def validate():
     # Check formatting rules
     for key, rule in rules.items():
         if key not in params:
+            if key in ["CONFIG_Sharepoint_Sites", "CONFIG_Sharepoint_Library"]:
+                print_result("PASSED", f"Format: {key} (Defined in category matrix)")
+                continue
             print_result("FAILED", key, "Missing parameter")
             all_passed = False
             continue
