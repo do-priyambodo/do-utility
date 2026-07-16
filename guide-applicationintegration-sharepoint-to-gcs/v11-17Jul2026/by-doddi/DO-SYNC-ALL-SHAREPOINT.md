@@ -160,13 +160,6 @@ python3 sync/sync_sharepoint_to_gcs.py
 > **💻 Laptop / Terminal Closure Safety: DO NOT CLOSE YOUR LAPTOP OR TERMINAL**  
 > Unlike Options A & B, Option C runs locally right inside your active shell session on your computer. **If you close your terminal window, lose Wi-Fi, or put your laptop to sleep, the process (`SIGHUP`) will be killed instantly and the sync will abort!** Use this only for local interactive debugging or when running inside a persistent screen/tmux session.
 
-> [!TIP]
-> **Realistic Enterprise Timeline Expectations (`38,000+ Items / 23 Subsites`)**:
-> * **Phase 1 (Discovery & Delta Classification)**: **~1 to 3 minutes** (Microsoft Graph API iterates through all 23 subsites and checks `$O(1)$` delta cache against 38,823 items. *No new files appear in GCS during this scan—watch `Processing Pipelined Chunk` in Logs Explorer.*)
-> * **Phase 2 (1st New Synced Asset Landed in GCS)**: **~2 to 4 minutes** from scheduler start.
-> * **Phase 3 (First 500 Pages/Files Completed)**: **~5 to 8 minutes**.
-> * **Phase 4 (Full Enterprise Traversal / 35,000+ Assets)**: Runs asynchronously over **~35 to 55 minutes** inside our hardened `3,600s` (1-hour) Cloud Run container. If a time budget ceiling is reached, the job cleanly saves all delta state and resumes automatically on the next hourly Cloud Scheduler cycle.
-
 ---
 
 ## Step 9: Active Real-Time Monitoring While Running (`During Step 8 Sync`)
