@@ -852,22 +852,21 @@ def main(request):
                 page_batches = [pages_in_chunk[i : i + page_batch_size] for i in range(0, len(pages_in_chunk), page_batch_size)]
                 all_batches = file_batches + page_batches
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    future_to_size = {executor.submit(_schedule_single_batch, b): len(b) for b in all_batches}
-                    for future in concurrent.futures.as_completed(future_to_size):
-                        batch_size = future_to_size[future]
-                        try:
-                            eid = future.result()
-                            if eid:
-                                execution_ids.append(eid)
-                                integration_triggered = True
-                                with progress_lock:
-                                    processed_items_count += batch_size
-                                    pct = (processed_items_count / total_items_to_sync) * 100
-                                    print(f"📊 Progress: Dispatched {processed_items_count} of {total_items_to_sync} items ({pct:.1f}%) for Category '{active_category_id}'...", flush=True)
-                                    print(f"   └─ ✅ Integration Triggered (ID: {eid})", flush=True)
-                        except Exception as ex_sched:
-                            print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
+                # Trigger batches sequentially with pacing to prevent SharePoint connector rate limiting (429)
+                for b in all_batches:
+                    try:
+                        eid = _schedule_single_batch(b)
+                        if eid:
+                            execution_ids.append(eid)
+                            integration_triggered = True
+                            with progress_lock:
+                                processed_items_count += len(b)
+                                pct = (processed_items_count / total_items_to_sync) * 100
+                                print(f"📊 Progress: Dispatched {processed_items_count} of {total_items_to_sync} items ({pct:.1f}%) for Category '{active_category_id}'...", flush=True)
+                                print(f"   └─ ✅ Integration Triggered (ID: {eid})", flush=True)
+                    except Exception as ex_sched:
+                        print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
+                    time.sleep(2.0)
 
                 # Immediate memory eviction after dispatching chunk + gentle pacing breather
                 for item in chunk:
