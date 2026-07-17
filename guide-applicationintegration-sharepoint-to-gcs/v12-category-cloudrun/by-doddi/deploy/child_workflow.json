@@ -6,7 +6,7 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-20260709-v2-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-v12category-trigger",
       "startTaskId": "6"
     }
   ],
@@ -17,7 +17,7 @@
       "label": "Check Page Routing",
       "parameters": {
         "mapConfig": {
-          "stringValue": "local item = std.extVar(\"INPUT_Loop_Item\");\n{\n  \"`Is_Page_Flow`\": if \"IsPage\" in item then item[\"IsPage\"] == true else false\n}"
+          "stringValue": "local item = std.extVar(\"INPUT_Loop_Item\");\n{\n  \"`Is_Page_Flow`\": std.objectHas(item, \"IsPage\") && item[\"IsPage\"] == true\n}"
         }
       },
       "nextTasks": [
@@ -75,7 +75,7 @@
       "label": "Upload file request mapping",
       "parameters": {
         "mapConfig": {
-          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\"),\n  \"`Task_2_connectorOutputPayload`\": std.extVar(\"`Task_2_connectorOutputPayload`\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = fileObject[\"Name\"];\nlocal relativePath = fileObject[\"RelativePath\"];\nlocal objectName = if std.objectHas(fileObject, \"_filename\") then fileObject[\"_filename\"] else if std.objectHas(fileObject, \"RelativePath\") && fileObject[\"RelativePath\"] != \"\" then (if std.startsWith(fileObject[\"RelativePath\"], \"files/\") then std.substr(fileObject[\"RelativePath\"], 6, std.length(fileObject[\"RelativePath\"]) - 6) else fileObject[\"RelativePath\"]) else fileName;\nlocal isPdf = std.endsWith(fileName, \".pdf\") || std.endsWith(fileName, \".PDF\");\nlocal isDocx = std.endsWith(fileName, \".docx\") || std.endsWith(fileName, \".DOCX\");\nlocal isDoc = std.endsWith(fileName, \".doc\") || std.endsWith(fileName, \".DOC\");\nlocal isPptx = std.endsWith(fileName, \".pptx\") || std.endsWith(fileName, \".PPTX\");\nlocal isPpt = std.endsWith(fileName, \".ppt\") || std.endsWith(fileName, \".PPT\");\nlocal isXlsx = std.endsWith(fileName, \".xlsx\") || std.endsWith(fileName, \".XLSX\");\nlocal isXls = std.endsWith(fileName, \".xls\") || std.endsWith(fileName, \".XLS\");\nlocal isTxt = std.endsWith(fileName, \".txt\") || std.endsWith(fileName, \".TXT\");\nlocal isHtml = std.endsWith(fileName, \".html\") || std.endsWith(fileName, \".HTML\") || std.endsWith(fileName, \".htm\") || std.endsWith(fileName, \".aspx\");\nlocal contentType = if isPdf then \"application/pdf\" else if isDocx then \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\" else if isDoc then \"application/msword\" else if isPptx then \"application/vnd.openxmlformats-officedocument.presentationml.presentation\" else if isPpt then \"application/vnd.ms-powerpoint\" else if isXlsx then \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\" else if isXls then \"application/vnd.ms-excel\" else if isTxt then \"text/plain\" else if isHtml then \"text/html\" else \"application/octet-stream\";\n{\n  \"`Task_4_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": inputs[\"`Task_2_connectorOutputPayload`\"][0][\"ContentBytes\"],\n    \"ObjectName\": objectName,\n    \"FolderPath\": \"files\",\n    \"ContentType\": contentType,\n    \"HasBytes\": true\n  }\n}"
+          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\"),\n  \"`Task_2_connectorOutputPayload`\": std.extVar(\"`Task_2_connectorOutputPayload`\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = fileObject[\"Name\"];\nlocal objectName = if std.objectHas(fileObject, \"RelativePath\") && fileObject[\"RelativePath\"] != \"\" then fileObject[\"RelativePath\"] else \"files/\" + fileName;\nlocal isPdf = std.endsWith(fileName, \".pdf\") || std.endsWith(fileName, \".PDF\");\nlocal isDocx = std.endsWith(fileName, \".docx\") || std.endsWith(fileName, \".DOCX\");\nlocal isDoc = std.endsWith(fileName, \".doc\") || std.endsWith(fileName, \".DOC\");\nlocal isPptx = std.endsWith(fileName, \".pptx\") || std.endsWith(fileName, \".PPTX\");\nlocal isPpt = std.endsWith(fileName, \".ppt\") || std.endsWith(fileName, \".PPT\");\nlocal isXlsx = std.endsWith(fileName, \".xlsx\") || std.endsWith(fileName, \".XLSX\");\nlocal isXls = std.endsWith(fileName, \".xls\") || std.endsWith(fileName, \".XLS\");\nlocal isTxt = std.endsWith(fileName, \".txt\") || std.endsWith(fileName, \".TXT\");\nlocal isHtml = std.endsWith(fileName, \".html\") || std.endsWith(fileName, \".HTML\") || std.endsWith(fileName, \".htm\") || std.endsWith(fileName, \".aspx\");\nlocal contentType = if isPdf then \"application/pdf\" else if isDocx then \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\" else if isDoc then \"application/msword\" else if isPptx then \"application/vnd.openxmlformats-officedocument.presentationml.presentation\" else if isPpt then \"application/vnd.ms-powerpoint\" else if isXlsx then \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\" else if isXls then \"application/vnd.ms-excel\" else if isTxt then \"text/plain\" else if isHtml then \"text/html\" else \"application/octet-stream\";\n{\n  \"`Task_4_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": inputs[\"`Task_2_connectorOutputPayload`\"][0][\"ContentBytes\"],\n    \"ObjectName\": objectName,\n    \"FolderPath\": \"\",\n    \"ContentType\": contentType,\n    \"HasBytes\": true\n  }\n}"
         }
       },
       "nextTasks": [
@@ -91,7 +91,7 @@
       "label": "Upload page request mapping",
       "parameters": {
         "mapConfig": {
-          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal pageObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = pageObject[\"Name\"];\nlocal objectName = if std.objectHas(pageObject, \"_filename\") then pageObject[\"_filename\"] else if std.objectHas(pageObject, \"RelativePath\") && std.startsWith(pageObject[\"RelativePath\"], \"pages/\") then std.substr(pageObject[\"RelativePath\"], 6, std.length(pageObject[\"RelativePath\"]) - 6) else fileName;\nlocal pdfBase64 = pageObject[\"VirtualContent\"];\n{\n  \"`Task_7_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": pdfBase64,\n    \"ObjectName\": objectName,\n    \"FolderPath\": \"pages\",\n    \"ContentType\": \"application/pdf\",\n    \"HasBytes\": true\n  }\n}"
+          "stringValue": "local inputs = {\n  \"`CONFIG_GCS_Bucket`\": std.extVar(\"`CONFIG_GCS_Bucket`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal pageObject = inputs[\"INPUT_Loop_Item\"];\nlocal fileName = pageObject[\"Name\"];\nlocal objectName = if std.objectHas(pageObject, \"RelativePath\") && pageObject[\"RelativePath\"] != \"\" then pageObject[\"RelativePath\"] else \"pages/\" + fileName;\nlocal pdfBase64 = pageObject[\"VirtualContent\"];\n{\n  \"`Task_7_connectorInputPayload`\": {\n    \"Bucket\": inputs[\"`CONFIG_GCS_Bucket`\"],\n    \"ContentBytes\": pdfBase64,\n    \"ObjectName\": objectName,\n    \"FolderPath\": \"\",\n    \"ContentType\": \"application/pdf\",\n    \"HasBytes\": true\n  }\n}"
         }
       },
       "nextTasks": [
@@ -150,7 +150,7 @@
       "displayName": "`CONFIG_GCS_Bucket`",
       "inputOutputType": "IN",
       "defaultValue": {
-        "stringValue": "doddi-bucket-sharepoint-sync-20260709-v2"
+        "stringValue": "doddi-bucket-sharepoint-sync-v12category"
       }
     },
     {
@@ -230,12 +230,12 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "doddi-bucket-sharepoint-sync-20260709-v2"
+          "stringValue": "doddi-bucket-sharepoint-sync-v12category"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       },
       "value": {
-        "stringValue": "doddi-bucket-sharepoint-sync-20260709-v2"
+        "stringValue": "doddi-bucket-sharepoint-sync-v12category"
       }
     },
     {
