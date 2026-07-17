@@ -67,7 +67,8 @@
           "taskNumber": "3",
           "condition": "true"
         }
-      ]
+      ],
+      "errorCatcherId": "ErrorCatcher_1"
     },
     {
       "task": "DataMappingTask",
@@ -115,7 +116,8 @@
         "actionName": {
           "stringValue": "UploadObject"
         }
-      }
+      },
+      "errorCatcherId": "ErrorCatcher_1"
     },
     {
       "task": "GenericConnectorTask",
@@ -130,6 +132,16 @@
         },
         "actionName": {
           "stringValue": "UploadObject"
+        }
+      }
+    },
+    {
+      "task": "DataMappingTask",
+      "taskNumber": "8",
+      "label": "Log Error Cleanly",
+      "parameters": {
+        "mapConfig": {
+          "stringValue": "local error = std.extVar(\"ErrorInfo\");\n{\n  \"`Child_Sync_Success`\": false,\n  \"`Child_Error_Message`\": error.message\n}"
         }
       }
     }
@@ -209,6 +221,24 @@
       "defaultValue": {},
       "displayName": "`Task_7_connectorOutputPayload`",
       "isTransient": true
+    },
+    {
+      "key": "`Child_Sync_Success`",
+      "dataType": "BOOLEAN_VALUE",
+      "displayName": "`Child_Sync_Success`",
+      "inputOutputType": "OUT",
+      "defaultValue": {
+        "booleanValue": true
+      }
+    },
+    {
+      "key": "`Child_Error_Message`",
+      "dataType": "STRING_VALUE",
+      "displayName": "`Child_Error_Message`",
+      "inputOutputType": "OUT",
+      "defaultValue": {
+        "stringValue": ""
+      }
     }
   ],
   "integrationConfigParameters": [
@@ -279,5 +309,17 @@
     }
   ],
   "description": "V4 child integration leveraging recursive Cloud Function and modern site page pre-renderer sync",
-  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com",
+  "errorCatcherConfigs": [
+    {
+      "label": "HandleTaskError",
+      "errorCatcherNumber": "1",
+      "startErrorTasks": [
+        {
+          "taskId": "8"
+        }
+      ],
+      "errorCatcherId": "ErrorCatcher_1"
+    }
+  ]
 }
