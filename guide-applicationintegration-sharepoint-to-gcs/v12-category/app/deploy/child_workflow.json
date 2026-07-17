@@ -68,7 +68,12 @@
           "condition": "true"
         }
       ],
-      "errorCatcherId": "ErrorCatcher_1"
+      "errorCatcherId": "ErrorCatcher_1",
+      "failurePolicy": {
+        "retryStrategy": "EXPONENTIAL_BACKOFF",
+        "maxRetries": 3,
+        "intervalTime": "3s"
+      }
     },
     {
       "task": "DataMappingTask",
@@ -117,7 +122,12 @@
           "stringValue": "UploadObject"
         }
       },
-      "errorCatcherId": "ErrorCatcher_1"
+      "errorCatcherId": "ErrorCatcher_1",
+      "failurePolicy": {
+        "retryStrategy": "EXPONENTIAL_BACKOFF",
+        "maxRetries": 3,
+        "intervalTime": "3s"
+      }
     },
     {
       "task": "GenericConnectorTask",
