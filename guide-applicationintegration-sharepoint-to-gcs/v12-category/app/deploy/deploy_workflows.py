@@ -119,7 +119,8 @@ def ui_to_rest_format(ui_json, service_account=None):
             nt.pop("position", None)
             # Keep taskExecutionStrategy to allow OR joins (WHEN_ANY_SUCCEED)
             # nt.pop("taskExecutionStrategy", None)
-            nt.pop("externalTaskType", None)
+            if nt.get("externalTaskType") != "ERROR_TASK":
+                nt.pop("externalTaskType", None)
             nt.pop("conditionalFailurePolicies", None)
             nt.pop("successPolicy", None)
             

@@ -18,7 +18,12 @@
           "INPUT_Loop_Item"
         ]
       },
-      "outputVariables": {}
+      "outputVariables": {
+        "names": [
+          "`Child_Sync_Success`",
+          "`Child_Error_Message`"
+        ]
+      }
     }
   ],
   "taskConfigs": [
@@ -114,6 +119,12 @@
           "taskId": "3"
         }
       ],
+      "errorCatcherId": "ErrorCatcher_1",
+      "failurePolicy": {
+        "retryStrategy": "EXPONENTIAL_BACKOFF",
+        "maxRetries": 3,
+        "intervalTime": "1970-01-01T00:00:03Z"
+      },
       "displayName": "Download file sharepoint",
       "taskId": "2"
     },
@@ -199,6 +210,12 @@
           }
         }
       },
+      "errorCatcherId": "ErrorCatcher_1",
+      "failurePolicy": {
+        "retryStrategy": "EXPONENTIAL_BACKOFF",
+        "maxRetries": 3,
+        "intervalTime": "1970-01-01T00:00:03Z"
+      },
       "displayName": "Upload file gcs",
       "taskId": "4"
     },
@@ -250,6 +267,20 @@
       },
       "displayName": "Upload page gcs",
       "taskId": "7"
+    },
+    {
+      "task": "JsonnetMapperTask",
+      "externalTaskType": "ERROR_TASK",
+      "parameters": {
+        "template": {
+          "key": "template",
+          "value": {
+            "stringValue": "local error = std.extVar(\"ErrorInfo\");\n{\n  \"`Child_Sync_Success`\": false,\n  \"`Child_Error_Message`\": error.message\n}"
+          }
+        }
+      },
+      "displayName": "Log Error Cleanly",
+      "taskId": "8"
     }
   ],
   "integrationParameters": [
@@ -308,6 +339,24 @@
       "defaultValue": {},
       "displayName": "`Task_7_connectorOutputPayload`",
       "isTransient": true
+    },
+    {
+      "key": "`Child_Sync_Success`",
+      "dataType": "BOOLEAN_VALUE",
+      "displayName": "`Child_Sync_Success`",
+      "inputOutputType": "OUT",
+      "defaultValue": {
+        "booleanValue": true
+      }
+    },
+    {
+      "key": "`Child_Error_Message`",
+      "dataType": "STRING_VALUE",
+      "displayName": "`Child_Error_Message`",
+      "inputOutputType": "OUT",
+      "defaultValue": {
+        "stringValue": ""
+      }
     }
   ],
   "integrationConfigParameters": [
@@ -363,5 +412,16 @@
     }
   ],
   "description": "V4 child integration leveraging recursive Cloud Function and modern site page pre-renderer sync",
-  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com"
+  "runAsServiceAccount": "doddi-sa-sharepoint-gcs@work-mylab-machinelearning.iam.gserviceaccount.com",
+  "errorCatcherConfigs": [
+    {
+      "label": "HandleTaskError",
+      "startErrorTasks": [
+        {
+          "taskId": "8"
+        }
+      ],
+      "errorCatcherId": "ErrorCatcher_1"
+    }
+  ]
 }
