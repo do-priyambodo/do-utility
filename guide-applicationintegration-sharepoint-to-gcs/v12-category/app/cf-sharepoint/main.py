@@ -844,13 +844,13 @@ def main(request):
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         list(executor.map(_render_lazy_page, pages_to_render))
 
-                # Separate chunk items into files vs pages for smart adaptive batching
+                # Separate chunk items into files vs pages for smart adaptive batching (Pages First!)
                 files_in_chunk = [item for item in chunk if not item.get("IsPage")]
                 pages_in_chunk = [item for item in chunk if item.get("IsPage")]
 
                 file_batches = [files_in_chunk[i : i + file_batch_size] for i in range(0, len(files_in_chunk), file_batch_size)]
                 page_batches = [pages_in_chunk[i : i + page_batch_size] for i in range(0, len(pages_in_chunk), page_batch_size)]
-                all_batches = file_batches + page_batches
+                all_batches = page_batches + file_batches
 
                 # Trigger batches sequentially with pacing to prevent SharePoint connector rate limiting (429)
                 for b in all_batches:
