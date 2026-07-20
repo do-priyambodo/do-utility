@@ -107,8 +107,12 @@ def graph_get_paginated(url, headers, max_retries=5, timeout=30):
                     print(f"⏳ Microsoft Graph API throttled/delayed (HTTP {response.status_code}). Backing off for {wait_time:.1f}s (Attempt {attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait_time)
                     continue
+                elif response.status_code == 400:
+                    raise ValueError(f"Graph API returned HTTP 400 (Non-retryable): {response.text}")
                 else:
                     raise Exception(f"Graph API returned fatal status {response.status_code} for url {url}: {response.text}")
+            except ValueError as e_val:
+                raise e_val
             except Exception as e_net:
                 if attempt + 1 >= max_retries:
                     raise e_net
