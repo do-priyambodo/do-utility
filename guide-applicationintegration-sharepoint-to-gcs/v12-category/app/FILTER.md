@@ -1,79 +1,113 @@
-# Guide: SharePoint Filtering Strategy for Active Files & Pages
+# 🎯 SharePoint Asset Filtering & Inventory Reconciliation Guide
 
-This document outlines the standard methodologies, Microsoft Graph properties, and logical rules used to restrict SharePoint synchronization to **active, published content**, filtering out drafts, templates, checked-out documents, and manual archives.
+## 📌 Executive Summary
 
----
+During full-tenant SharePoint crawling, the raw discovery scan detects **~38,823 total items**, whereas the production sync pipeline processes **~11,419 curated assets**.
 
-## 1. Overview & Objective
-In large enterprise SharePoint environments (e.g., Maxis DEN Portal), a significant percentage of files and pages consist of obsolete archives, draft versions, or page templates. 
-
-Filtering these out achieves:
-1. **Higher Relevance**: Vertex AI Search / Agent Assist indexes only true, active production material.
-2. **Reduced Sync Footprint**: Saves network bandwidth, container memory, and GCS storage costs.
-3. **API Safety**: Reduces the number of requests sent to the Microsoft Graph API, preventing rate throttling (HTTP 429).
+This document outlines the **filtering rules**, **inventory reconciliation logic**, **built-in vs. parameter configurations**, and **image handling policies** implemented in the SharePoint-to-GCS discovery engine (`cf-sharepoint/main.py`).
 
 ---
 
-## 2. Strategy for Regular Files (Document Libraries)
+## 📊 1. Raw Scan vs. Production Inventory Breakdown
 
-### A. Manual Archive / Temp Path Filtering
-Users frequently organize old or temporary files into manually named folders. 
-* **Filter Rule**: Exclude files if their relative path or URL contains any of the configured ignore keywords.
-* **Common Keywords**: `/Archive/`, `/Obsolete/`, `/Temp/`, `/Backup/`, `/Drafts/`, `/History/`.
-* **Example**: Skip `sites/DEN/Shared Documents/Finance/Archive/Invoice_2019.xlsx`.
-
-### B. Microsoft Graph API Publication Level Facet
-Microsoft Graph API returns a `publication` facet for files within drive items.
-* **Property**: `driveItem.publication`
-* **Values**:
-  * `"published"`: The item is a published major version. **(Keep)**
-  * `"draft"`: The item is currently a draft (minor version). **(Skip)**
-  * `"checkout"`: The item is checked out and locked for editing. **(Skip)**
-* **Filter Logic**:
-  ```python
-  publication = item.get("publication", {})
-  if publication.get("level") != "published":
-      # Skip draft or checked-out files
-      continue
-  ```
-
-### C. Checked-Out Status
-Files checked out by editors cannot be updated by other users.
-* **Property**: `driveItem.publication.level == "checkout"` or presence of `driveItem.checkoutUser`.
-* **Filter Logic**: Skip files where `checkoutUser` metadata is present.
+| Asset Category | Raw Pre-Sync Crawl | Filtered Production Manifest (`metadata.jsonl`) | Sync Ratio | Status |
+| :--- | :---: | :---: | :---: | :--- |
+| 📄 **Modern Site Pages** | **5,411 pages** | **5,465 pages** | **100%+** | **Full Coverage** (Includes dynamically discovered subsite pages) |
+| 📁 **Business Documents** | **33,412 files** | **5,954 files** | **17.8%** | **Noise Reduced** (UI graphics, icons & temp files removed) |
+| **TOTAL ASSETS** | **38,823 items** | **11,419 items** | **29.4%** | **Curated Production Knowledge Base** |
 
 ---
 
-## 3. Strategy for Modern Site Pages (Site Pages Library)
+## 🛡️ 2. The 4 Production Filtering Rules
 
-Modern SharePoint pages (aspx canvas pages) require separate filtering rules:
+To prevent flooding Google Cloud Storage (GCS) and Vertex AI Datastores with non-document UI noise, temporary lock files, and un-rendered site assets, four filter layers are applied:
 
-### A. Exclude Page Templates (Mandatory)
-SharePoint reserves a special hidden folder inside `Site Pages` to store layout templates:
-* **Excluded Path**: `/SitePages/Templates/`
-* **Filter Rule**: Always skip any page where the URL contains `/sitepages/templates/`.
+```
+                  ┌─────────────────────────────────────────┐
+                  │      Raw SharePoint Tenant Inventory    │
+                  │              (38,823 Assets)            │
+                  └────────────────────┬────────────────────┘
+                                       │
+           ┌───────────────────────────┴───────────────────────────┐
+           ▼                                                       ▼
+ 📁 DOCUMENT FILE TRAVERSAL                               📄 SITE PAGES ENGINE
+   [Excludes System Libraries:                              [Dedicated 4-Strategy Engine:
+    Site Assets, Style Library,                              Discovers .aspx SitePages,
+    Images, Form Templates]                                  Renders to PDF via Playwright]
+           │                                                       │
+           └───────────────────────────┬───────────────────────────┘
+                                       │
+                                       ▼
+                     ┌───────────────────────────────────┐
+                     │ 🔍 PATH & STATUS FILTERING CHECK  │
+                     │  - Ignore Path Keywords (JSON)    │
+                     │  - Active File Validation (~$)    │
+                     │  - Published Version Check (.0)   │
+                     └─────────────────┬─────────────────┘
+                                       │
+                                       ▼
+                  ┌─────────────────────────────────────────┐
+                  │     Filtered Production Knowledge Base  │
+                  │              (11,419 Assets)            │
+                  └─────────────────────────────────────────┘
+```
 
-### B. PromotedState Filtering (Pages vs Draft News)
-SharePoint classifies modern pages and news posts using the `PromotedState` field:
-* **`0`**: Standard content page (Home, Department portals, Wiki pages). **(Keep)**
-* **`1`**: Draft news article. **(Skip)**
-* **`2`**: Published news article. **(Keep)**
-* **Filter Logic**: Exclude any page where `PromotedState == 1`.
+### Rule 1: Exclusion of System & UI Asset Libraries (Built-in Code Rule)
+Raw scans traverse all 59+ SharePoint libraries, including internal intranet styling folders. The production pipeline explicitly ignores non-document system libraries in `cf-sharepoint/main.py`:
+* **Excluded System Libraries**: `Images`, `Images_Staging`, `Site Assets`, `Style Library`, `Form Templates`, `SpotLight`, `BulletinsImages`, `NewLandingPageImages`, `NewBulletinLandingImages`, `Video`, `DEN Audit Logs`, `Translation Packages`, `Site Collection Documents`, `Site Collection Images`, `DEN User Reports`.
+* **Reasoning**: Standard Microsoft SharePoint site collections automatically create these folders for website layout graphics, UI buttons, CSS themes, and page headers—not business documents. Hardcoding these standard Microsoft exclusions in code protects your sync out-of-the-box without requiring complex `parameters.json` edits.
 
-### C. Major Version Validation
-Site pages support minor draft versions (e.g., `0.2` or `2.1`).
-* **Property**: `OData__UIVersionString`
-* **Filter Rule**: Only process pages where version ends with `.0` (e.g., `1.0`, `3.0`). This guarantees the page is published and active.
+### Rule 2: Ignore Path Keyword Exclusions (User-Configurable in `parameters.json`)
+Folders matching operational keywords defined in `parameters.json` are skipped across **BOTH Pages and Files**:
+* **Ignored Keywords**: `temp`, `history`, `backup`, `archive`, `draft`, `checkout`, `obsolete`.
+* **Reasoning**: Prevents ingesting stale working drafts, historical backups, or temporary working folders.
+
+### Rule 3: Active File Validation (`CONFIG_Filter_Active_Files_Only: true`)
+* Automatically filters out temporary Microsoft Office lock files (files starting with `~$`), hidden system files (`.DS_Store`, `desktop.ini`), `.tmp`, `.bak`, and duplicate version control artifacts.
+
+### Rule 4: Published Site Pages Validation (`CONFIG_Filter_Published_Pages_Only: true`)
+* **Page Layout Templates**: Page canvas templates inside `/sitepages/templates/` are skipped automatically.
+* **Draft Versions**: Un-published page drafts (minor version numbers like `0.1`, `1.2`) are skipped. Only major published page versions (ending in `.0`, e.g., `1.0`, `2.0`) are rendered to PDF.
 
 ---
 
-## 4. Proposed Parameter-Driven Configuration Design
+## 🔍 3. Does Filtering Affect Pages or Files?
 
-To support this configuration dynamically without modifying the Python core code, we can define parameters inside parameters.json:
+| Filter Layer | Affects Document Files? | Affects SitePages (.aspx)? | Details |
+| :--- | :---: | :---: | :--- |
+| **System Asset Libraries** | **YES** | **N/A** *(Pages use dedicated engine)* | `Site Assets`, `Images`, `Style Library` skipped for files. Pages are discovered via Microsoft Graph SitePages API. |
+| **Path Keywords (`CONFIG_Ignore_Path_Keywords`)** | **YES** | **YES** | Any file OR page URL containing `temp`, `archive`, `backup`, `draft`, `checkout`, `obsolete` is skipped. |
+| **Active / Lock Files (`~$`)** | **YES** | **N/A** | Filters out temporary Office lock files and `.tmp` files. |
+| **Published Status / Templates** | **N/A** | **YES** | Skips `/sitepages/templates/` and minor draft page versions. |
+
+---
+
+## 🖼️ 4. Image Handling Policy
+
+A common question is whether image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`) are saved or skipped.
+
+### A. Embedded Images inside SitePages (`.aspx`) → **SAVED IN GCS**
+* **Mechanism**: When Playwright Chromium renders a SharePoint page to PDF (`pages/*.pdf`), it fetches all inline images (`<img src="...">`), charts, diagrams, and photos in real time over HTTPS.
+* **Result**: All visual graphics embedded on a page are **100% captured and visually baked directly into the rendered PDF** in GCS alongside their text context.
+
+### B. Standalone Image Documents in Document Libraries → **SAVED IN GCS**
+* **Mechanism**: If a user uploads a standalone image document (e.g., `architecture_diagram.png` or `floorplan.jpg`) into a standard SharePoint **Document Library** (e.g., `Documents`, `Guides`), it **IS processed and uploaded to GCS** (`files/<category>/...`).
+* **Supported Mime Types**: `image/png`, `image/jpeg`, `image/gif`, `image/bmp`, `image/tiff`.
+
+### C. Intranet UI Asset Libraries (`Images/`, `Site Assets/`) → **SKIPPED**
+* **Mechanism**: Loose image files inside SharePoint system UI folders (e.g., site icons, UI buttons, page background bullets) are skipped by default.
+* **Reasoning**: Syncing ~22,000 loose, uncontextualized UI icons into GCS wastes storage and creates search noise for Vertex AI Datastores without adding knowledge value.
+
+---
+
+## ⚙️ 5. Configuration Reference (`parameters.json`)
 
 ```json
 {
-  "CONFIG_Filter_Active_Only": true,
+  "CONFIG_Sync_SharePoint_Files": true,
+  "CONFIG_Sync_SharePoint_Pages": true,
+  "CONFIG_Filter_Active_Files_Only": true,
+  "CONFIG_Filter_Published_Pages_Only": true,
   "CONFIG_Ignore_Path_Keywords": [
     "temp",
     "history",
@@ -84,31 +118,4 @@ To support this configuration dynamically without modifying the Python core code
     "obsolete"
   ]
 }
-```
-
-### High-Level Traversal Logic Integration (Concept):
-```python
-def should_sync_item(item, is_page=False):
-    # 1. Path keyword checks (Files & Pages)
-    url_lower = item.get("webUrl", "").lower()
-    ignore_keywords = params.get("CONFIG_Ignore_Path_Keywords", [])
-    if any(kw in url_lower for kw in ignore_keywords):
-        return False
-        
-    if is_page:
-        # 2. Pages specific checks
-        if "/sitepages/templates/" in url_lower:
-            return False
-        if item.get("PromotedState") == 1:
-            return False
-        version = item.get("OData__UIVersionString", "")
-        if version and not version.endswith(".0"):
-            return False
-    else:
-        # 3. Files specific checks
-        publication = item.get("publication", {})
-        if publication and publication.get("level") != "published":
-            return False
-            
-    return True
 ```
