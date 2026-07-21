@@ -3,7 +3,21 @@ import datetime
 import base64
 import hashlib
 import html
+import os
+import json
 from graph_client import graph_get_paginated, http
+
+_params = {}
+_params_path = "parameters.json"
+if not os.path.exists(_params_path) and os.path.exists("../parameters.json"):
+    _params_path = "../parameters.json"
+if os.path.exists(_params_path):
+    try:
+        with open(_params_path, "r") as f:
+            _params = json.load(f)
+    except Exception:
+        pass
+
 
 try:
     from bs4 import BeautifulSoup
@@ -33,11 +47,13 @@ import threading
 import concurrent.futures
 
 # Iterative multi-threaded BFS file enumeration in a SharePoint folder (guarantees high-speed OData discovery and 0% stack overflow on >15,000 items)
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None):
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None, skipped_results=None, site_key=None):
     if all_results is None:
         all_results = []
     if sync_results is None:
         sync_results = []
+    if skipped_results is None:
+        skipped_results = []
     if max_items is not None and len(all_results) >= max_items:
         return all_results, sync_results
     
@@ -83,6 +99,23 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                     item_name = item.get("name", "")
                     child_id = item.get("id")
                     
+                    # 1. Path-based filter check (folder/file ignore keywords)
+                    item_url = item.get("webUrl", "")
+                    item_url_lower = item_url.lower()
+                    ignore_keywords = _params.get("CONFIG_Ignore_Path_Keywords", ["temp", "history", "backup", "archive", "draft", "checkout", "obsolete"])
+                    matched_kws = [kw for kw in ignore_keywords if kw in item_url_lower]
+                    if "/sitepages/templates/" in item_url_lower or matched_kws:
+                        reason = f"Matches ignore keyword '{matched_kws[0]}'" if matched_kws else "Template or internal system path"
+                        with lock:
+                            skipped_results.append({
+                                "name": item_name,
+                                "url": item_url,
+                                "type": "page" if item_name.lower().endswith(".aspx") else "file",
+                                "reason": reason,
+                                "site_key": site_key or p_path.rstrip("/") or "root"
+                            })
+                        continue
+
                     if "folder" in item:
                         queue.append((child_id, f"{p_path}{item_name}/"))
                     else:
@@ -100,7 +133,8 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                 "_page_id": item.get("id"),
                                 "_raw_url": item.get("webUrl", ""),
                                 "_filename": pdf_name,
-                                "_folder_path": p_path.rstrip("/")
+                                "_folder_path": p_path.rstrip("/"),
+                                "_site_key": site_key or p_path.rstrip("/") or "root"
                             }
                             needs_sync = True
                             if gcs_cache is not None and relative_path in gcs_cache:
@@ -130,6 +164,13 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                     if needs_sync:
                                         sync_results.append(page_item)
                         else:
+                            # 2. Regular File Active Status filter check
+                            filter_active = _params.get("CONFIG_Filter_Active_Files_Only", True)
+                            if filter_active:
+                                publication = item.get("publication", {})
+                                if publication and publication.get("level") != "published":
+                                    continue
+
                             if "." in item_name:
                                 file_base = item_name.rsplit(".", 1)[0]
                                 ext = item_name.rsplit(".", 1)[-1]
@@ -146,7 +187,8 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                 "Url": direct_url,
                                 "RelativePath": relative_path,
                                 "IsPage": False,
-                                "_folder_path": p_path.rstrip("/")
+                                "_folder_path": p_path.rstrip("/"),
+                                "_site_key": site_key or p_path.rstrip("/") or "root"
                             }
                             needs_sync = True
                             gcs_check_path = f"files/{relative_path}"

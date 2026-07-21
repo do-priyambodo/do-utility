@@ -411,5 +411,20 @@ python3 check/check_all_logging.py --tz "Asia/Singapore" --since "30m" --limit 1
 python3 check/check_all_logging.py --tz "LOCAL" --start-time "2026-07-07T05:00:00Z" --limit 15
 ```
 
+```
+
 ---
-*Generated for YourOrg Enterprise Support — Application Integration V9.0 Pipeline.*
+
+## 7. Subsite 404 Resolution & Audit Log Reconciliation (V12 Updates)
+
+### 7.1 SharePoint Subsite 404 (`itemNotFound`) Automatic Parent Fallback
+If Graph API returns `HTTP 404 Item Not Found` for nested subsite path queries (e.g., `sites/DEN/Enterprise-Solutions` or `sites/DEN/Customer_First`):
+- **Behavior**: The resolution engine automatically extracts the root site collection (`sites/DEN`), resolves `DEN`'s root Site ID, and queries the `/sites` subsite endpoint to match subsite paths dynamically.
+- **Verification**: Check Cloud Run logs for: `🌐 Resolving SharePoint Site ID...` -> `✅ Resolved site ID via root collection subsite fallback`.
+
+### 7.2 Audit Parity & Skipped Item Visibility
+- **Subsite Report Parity**: Reconciliation reports (`report/check_files_category_*.txt` and `report/check_pages_category_*.txt`) group inventory strictly by subsite paths (e.g. `sites/DEN/Channels`) rather than defaulting to `root`.
+- **Skipped Item Auditing**: Filtered pages (e.g. matching `CONFIG_Ignore_Path_Keywords` or draft version states) are captured in `report/skipped_category_*.txt` with their exact trigger reason (`Matches ignore keyword 'temp'`, `Draft News Post`, etc.).
+
+---
+*Generated for Enterprise Support — Application Integration V12 Pipeline.*

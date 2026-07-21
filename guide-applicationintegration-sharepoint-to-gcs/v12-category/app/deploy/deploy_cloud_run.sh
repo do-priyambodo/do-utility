@@ -32,7 +32,9 @@ gcloud config set project "${PROJECT_ID}"
 
 echo "📦 Copying parameters.json and dependencies to cf-sharepoint for Docker build context..."
 cp parameters.json cf-sharepoint/
+[ -f main.py ] && cp main.py cf-sharepoint/main.py || true
 [ -f config_schema.py ] && cp config_schema.py cf-sharepoint/ || true
+[ -f sharepoint_traversal.py ] && cp sharepoint_traversal.py cf-sharepoint/ || true
 [ -d sharepoint_engine ] && cp -r sharepoint_engine cf-sharepoint/ || true
 
 echo "🐳 Building and Deploying Custom Docker Cloud Run Job: ${SERVICE_NAME}..."
