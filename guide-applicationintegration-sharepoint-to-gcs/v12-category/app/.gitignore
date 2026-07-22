@@ -4,3 +4,4 @@ __pycache__/
 *.log
 report/
 .DS_Store
+hideme/
