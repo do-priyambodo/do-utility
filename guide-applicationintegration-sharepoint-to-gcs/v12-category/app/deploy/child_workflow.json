@@ -37,7 +37,7 @@
       "label": "Download file request mapping",
       "parameters": {
         "mapConfig": {
-          "stringValue": "local inputs = {\n  \"`CONFIG_SharePoint_Hostname`\": std.extVar(\"`CONFIG_SharePoint_Hostname`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal rawUrl = fileObject[\"Url\"];\nlocal sharepointHost = inputs[\"`CONFIG_SharePoint_Hostname`\"];\nlocal urlWithPort = std.strReplace(rawUrl, \"https://\" + sharepointHost + \"/\", \"https://\" + sharepointHost + \":443/\");\n{\n  \"`Task_2_connectorInputPayload`\": {\n    \"Library\": \"Shared Documents\",\n    \"RemoteFile\": urlWithPort,\n    \"HasBytes\": true\n  }\n}"
+          "stringValue": "local inputs = {\n  \"`CONFIG_SharePoint_Hostname`\": std.extVar(\"`CONFIG_SharePoint_Hostname`\"),\n  \"INPUT_Loop_Item\": std.extVar(\"INPUT_Loop_Item\")\n};\nlocal fileObject = inputs[\"INPUT_Loop_Item\"];\nlocal rawUrl = fileObject[\"Url\"];\nlocal sharepointHost = inputs[\"`CONFIG_SharePoint_Hostname`\"];\nlocal urlWithPort = std.strReplace(rawUrl, \"https://\" + sharepointHost + \"/\", \"https://\" + sharepointHost + \":443/\");\n{\n  \"`Task_2_connectorInputPayload`\": {\n    \"Library\": if std.objectHas(fileObject, \"LibraryName\") then fileObject[\"LibraryName\"] else \"Shared Documents\",\n    \"RemoteFile\": urlWithPort,\n    \"HasBytes\": true\n  }\n}"
         }
       },
       "nextTasks": [

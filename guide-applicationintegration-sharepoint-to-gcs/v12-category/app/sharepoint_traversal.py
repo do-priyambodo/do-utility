@@ -47,7 +47,7 @@ import threading
 import concurrent.futures
 
 # Iterative multi-threaded BFS file enumeration in a SharePoint folder (guarantees high-speed OData discovery and 0% stack overflow on >15,000 items)
-def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None, skipped_results=None, site_key=None):
+def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", all_results=None, sync_results=None, base_file_url="", bucket_obj=None, gcs_cache=None, max_items=None, skipped_results=None, site_key=None, library_name="Shared Documents"):
     if all_results is None:
         all_results = []
     if sync_results is None:
@@ -187,6 +187,7 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                 "Url": direct_url,
                                 "RelativePath": relative_path,
                                 "IsPage": False,
+                                "LibraryName": library_name,
                                 "_folder_path": p_path.rstrip("/"),
                                 "_site_key": site_key or p_path.rstrip("/") or "root"
                             }

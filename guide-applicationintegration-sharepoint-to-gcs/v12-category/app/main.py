@@ -510,7 +510,7 @@ def main(request):
                         library_encoded = urllib.parse.quote(target_drive.get("name", library_name))
                         sub_path = f"{site_url_path}/{site_prefix}" if site_prefix else site_url_path
                         base_file_url = f"https://{site_hostname}/{sub_path.rstrip('/')}/{library_encoded}/"
-                    list_drive_items_recursive(token, td_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items, skipped_results=skipped_items, site_key=site_label)
+                    list_drive_items_recursive(token, td_id, "root", site_prefix, all_list, sync_list, base_file_url, bucket_obj, gcs_cache, max_items, skipped_results=skipped_items, site_key=site_label, library_name=target_drive.get("name", "Shared Documents"))
             elif not sync_files_flag:
                 print(f"⏭️ CONFIG_Sync_SharePoint_Files disabled. Skipping Document Library traversal for site.")
 
