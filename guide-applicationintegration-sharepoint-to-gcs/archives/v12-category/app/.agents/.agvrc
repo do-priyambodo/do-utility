@@ -1,0 +1,13 @@
+{
+  "version": "3.6.0",
+  "mode": "default",
+  "stacks": [
+    "python",
+    "sql"
+  ],
+  "deselected_rules": [],
+  "deselected_core_skills": [],
+  "deselected_agents": [],
+  "deselected_workflows": [],
+  "installed_at": "2026-07-10T11:08:11.647Z"
+}
