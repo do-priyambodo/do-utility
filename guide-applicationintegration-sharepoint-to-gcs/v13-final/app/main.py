@@ -1051,7 +1051,7 @@ def main(request):
         max_workers = min(3, max(1, raw_workers))
         chunk_size = min(30, max(20, file_batch_size * max_workers))
 
-        def _stream_file_to_gcs(item, session, bucket, access_token, max_retries=5):
+        def _stream_file_to_gcs(item, session, bucket, graph_token, max_retries=5):
             drive_id = item.get("_drive_id")
             item_id = item.get("_item_id")
             gcs_path = f"files/{item['RelativePath']}"
@@ -1064,7 +1064,7 @@ def main(request):
             for attempt in range(max_retries + 1):
                 try:
                     headers = {
-                        "Authorization": f"Bearer {access_token}",
+                        "Authorization": f"Bearer {graph_token}",
                         "User-Agent": "MaxisSharePointSyncEngine/13.0"
                     }
                     
@@ -1214,6 +1214,7 @@ def main(request):
                     time.sleep(2.0)
 
                 if files_in_chunk:
+                    graph_token = get_graph_token(tenant_id, client_id, client_secret)
                     print(f"🌊 Streaming {len(files_in_chunk)} Files directly to GCS...", flush=True)
                     stream_session = requests.Session()
                     adapter = HTTPAdapter(pool_connections=max_workers, pool_maxsize=max_workers * 2)
@@ -1222,7 +1223,7 @@ def main(request):
                     gcs_bucket = bucket_obj or storage.Client().bucket(bucket_name)
 
                     def _process_file_worker(f_item):
-                        success, reason = _stream_file_to_gcs(f_item, stream_session, gcs_bucket, access_token)
+                        success, reason = _stream_file_to_gcs(f_item, stream_session, gcs_bucket, graph_token)
                         return success, reason, f_item
 
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as file_executor:
