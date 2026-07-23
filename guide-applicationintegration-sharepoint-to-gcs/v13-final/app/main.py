@@ -1051,6 +1051,61 @@ def main(request):
         max_workers = min(3, max(1, raw_workers))
         chunk_size = min(30, max(20, file_batch_size * max_workers))
 
+        def _stream_file_to_gcs(item, session, bucket, access_token, max_retries=5):
+            drive_id = item.get("_drive_id")
+            item_id = item.get("_item_id")
+            gcs_path = f"files/{item['RelativePath']}"
+            file_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/content"
+            
+            if not drive_id or not item_id:
+                print(f"❌ Missing Drive/Item IDs for streaming {item['Name']}.", flush=True)
+                return False, "Missing Graph API Identifiers"
+
+            for attempt in range(max_retries + 1):
+                try:
+                    headers = {
+                        "Authorization": f"Bearer {access_token}",
+                        "User-Agent": "MaxisSharePointSyncEngine/13.0"
+                    }
+                    
+                    with session.get(file_url, headers=headers, stream=True, timeout=60) as resp:
+                        if resp.status_code == 200:
+                            blob = bucket.blob(gcs_path)
+                            content_type = "application/octet-stream"
+                            
+                            blob.upload_from_file(
+                                resp.raw, 
+                                content_type=content_type, 
+                                rewind=False
+                            )
+                            return True, None
+                        
+                        elif resp.status_code == 429:
+                            retry_after = resp.headers.get("Retry-After")
+                            sleep_time = int(retry_after) if retry_after and retry_after.isdigit() else (2 ** attempt) + random.uniform(0, 1)
+                            print(f"⚠️ Throttled (429) on {item['Name']}. Thread sleeping for {sleep_time}s...", flush=True)
+                            time.sleep(sleep_time)
+                            continue
+                        
+                        elif resp.status_code in [500, 502, 503, 504]:
+                            sleep_time = (2 ** attempt) + random.uniform(0, 1)
+                            time.sleep(sleep_time)
+                            continue
+                            
+                        else:
+                            print(f"❌ Permanent failure ({resp.status_code}) on {item['Name']}.", flush=True)
+                            return False, f"HTTP {resp.status_code}"
+                            
+                except requests.exceptions.RequestException as req_ex:
+                    if attempt == max_retries:
+                        return False, f"Network Error: {type(req_ex).__name__}"
+                    sleep_time = (2 ** attempt) + random.uniform(0, 1)
+                    time.sleep(sleep_time)
+                except Exception as ex:
+                    return False, f"Unexpected error: {str(ex)}"
+                    
+            return False, "Exceeded Max Retries"
+
         def _render_lazy_page(item):
             if not item.get("IsPage") or item.get("VirtualContent") or not item.get("_page_id"):
                 return item
@@ -1139,11 +1194,10 @@ def main(request):
                 files_in_chunk = [item for item in chunk if not item.get("IsPage")]
                 pages_in_chunk = [item for item in chunk if item.get("IsPage")]
 
-                file_batches = [files_in_chunk[i : i + file_batch_size] for i in range(0, len(files_in_chunk), file_batch_size)]
                 page_batches = [pages_in_chunk[i : i + page_batch_size] for i in range(0, len(pages_in_chunk), page_batch_size)]
-                all_batches = file_batches + page_batches
+                all_batches = page_batches
 
-                # Trigger batches sequentially with pacing to prevent SharePoint connector rate limiting (429)
+                # Trigger Pages batches sequentially with pacing to prevent Application Integration rate limiting
                 for b in all_batches:
                     try:
                         eid = _schedule_single_batch(b)
@@ -1158,6 +1212,57 @@ def main(request):
                     except Exception as ex_sched:
                         print(f"❌ Batch scheduling error: {ex_sched}", flush=True)
                     time.sleep(2.0)
+
+                if files_in_chunk:
+                    print(f"🌊 Streaming {len(files_in_chunk)} Files directly to GCS...", flush=True)
+                    stream_session = requests.Session()
+                    adapter = HTTPAdapter(pool_connections=max_workers, pool_maxsize=max_workers * 2)
+                    stream_session.mount("https://", adapter)
+                    
+                    gcs_bucket = bucket_obj or storage.Client().bucket(bucket_name)
+
+                    def _process_file_worker(f_item):
+                        success, reason = _stream_file_to_gcs(f_item, stream_session, gcs_bucket, access_token)
+                        return success, reason, f_item
+
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as file_executor:
+                        file_results = list(file_executor.map(_process_file_worker, files_in_chunk))
+
+                    failed_files = [res for res in file_results if not res[0]]
+                    if failed_files:
+                        with progress_lock:
+                            for success, reason, failed_item in failed_files:
+                                skipped_items.append({
+                                    "name": failed_item.get("Name"),
+                                    "url": failed_item.get("Url"),
+                                    "type": "file",
+                                    "reason": f"Streaming Failure: {reason}",
+                                    "site_key": failed_item.get("_site_key")
+                                })
+                            print(f"⚠️ Finished Chunk with {len(failed_files)} file failures (added to skipped list).", flush=True)
+                            
+                        # Re-upload the true skipped list including streaming failures
+                        rep_skipped = [
+                            "=" * 95,
+                            "⚡ DETAILED SKIPPED & FILTERED ITEMS AUDIT LOG (AUTOMATIC CLOUD RUN)",
+                            "=" * 95,
+                            f"• Category ID                    : {active_category_id}",
+                            f"• Target GCS Bucket              : gs://{bucket_name}",
+                            "-" * 95
+                        ]
+                        if skipped_items:
+                            rep_skipped.append(f"Total Skipped Items: {len(skipped_items)}\n")
+                            for idx, sk in enumerate(skipped_items, 1):
+                                rep_skipped.append(f"{idx}. Name   : {sk.get('name')}\n   URL    : {sk.get('url')}\n   Type   : {sk.get('type')}\n   Reason : {sk.get('reason')}\n")
+                        else:
+                            rep_skipped.append("✅ Zero items skipped or filtered during this synchronization run.")
+                        rep_skipped.append("=" * 95)
+                        bucket_obj.blob(f"report/skipped_category_{active_category_id}.txt").upload_from_string("\n".join(rep_skipped), content_type="text/plain")
+                        
+                    with progress_lock:
+                        processed_items_count += len(files_in_chunk)
+                        pct = (processed_items_count / total_items_to_sync) * 100
+                        print(f"📊 Progress: Streamed files in chunk. Synced {processed_items_count} of {total_items_to_sync} total items ({pct:.1f}%)...", flush=True)
 
                 # Immediate memory eviction after dispatching chunk + gentle pacing breather
                 for item in chunk:
