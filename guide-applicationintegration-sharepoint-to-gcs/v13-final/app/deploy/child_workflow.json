@@ -6,7 +6,7 @@
       "label": "API Trigger",
       "triggerType": "API",
       "triggerNumber": "1",
-      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-v12category-trigger",
+      "triggerId": "api_trigger/doddi-sharepoint-gcs-child-v13final-trigger",
       "startTaskId": "6"
     }
   ],
@@ -173,7 +173,7 @@
       "displayName": "`CONFIG_GCS_Bucket`",
       "inputOutputType": "IN",
       "defaultValue": {
-        "stringValue": "doddi-bucket-sharepoint-sync-v12category"
+        "stringValue": "doddi-bucket-sharepoint-sync-v13final"
       }
     },
     {
@@ -271,12 +271,12 @@
         "key": "`CONFIG_GCS_Bucket`",
         "dataType": "STRING_VALUE",
         "defaultValue": {
-          "stringValue": "doddi-bucket-sharepoint-sync-v12category"
+          "stringValue": "doddi-bucket-sharepoint-sync-v13final"
         },
         "displayName": "`CONFIG_GCS_Bucket`"
       },
       "value": {
-        "stringValue": "doddi-bucket-sharepoint-sync-v12category"
+        "stringValue": "doddi-bucket-sharepoint-sync-v13final"
       }
     },
     {
