@@ -30,28 +30,13 @@
     "archive",
     "draft",
     "checkout",
-    "obsolete",
-    "Garis-Panduan-Pengadaptasian-AI-Sektor-Awam"
+    "obsolete"
   ],
   "CONFIG_Categories": [
-    {
-      "category_id": "doddi-sharepoint-to-gcs",
-      "display_name": "doddi-sharepoint-to-gcs",
-      "sharepoint_site": "sites/doddi-sharepoint-to-gcs",
-      "include_subsites": false,
-      "sharepoint_library": "all"
-    },
     {
       "category_id": "ai-sektor-awam",
       "display_name": "ai-sektor-awam",
       "sharepoint_site": "sites/aisetorawam",
-      "include_subsites": true,
-      "sharepoint_library": "all"
-    },
-    {
-      "category_id": "subsite1-priyambodo",
-      "display_name": "Subsite 1 - Priyambodo",
-      "sharepoint_site": "sites/doddi-sharepoint-to-gcs/subsite1-priyambodo",
       "include_subsites": true,
       "sharepoint_library": "all"
     }
