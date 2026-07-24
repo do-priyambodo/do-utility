@@ -1,1 +1,0 @@
-deploy/pull_check_version.sh

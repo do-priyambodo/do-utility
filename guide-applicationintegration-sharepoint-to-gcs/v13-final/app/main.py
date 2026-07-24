@@ -12,6 +12,7 @@ from collections import deque, defaultdict
 import threading
 import concurrent.futures
 import traceback
+import random
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -98,6 +99,46 @@ def merge_metadata_internal(bucket_name):
             master_skipped_content = "\n\n".join(combined_skipped)
             bucket_obj.blob("report/skipped_files.txt").upload_from_string(master_skipped_content, content_type="text/plain")
             print(f"✅ Skipped Files Merger: Successfully consolidated skipped audit logs into gs://{bucket_name}/report/skipped_files.txt", flush=True)
+
+        # 5. Consolidate Delta Category manifests into human-readable datetime files/pages reports
+        try:
+            dt_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            delta_blobs = bucket_obj.list_blobs(prefix="config/delta_category_")
+            delta_files = []
+            delta_pages = []
+            for db in delta_blobs:
+                if db.name.endswith(".jsonl"):
+                    try:
+                        content_str = db.download_as_text()
+                        for line in content_str.split("\n"):
+                            if line.strip():
+                                rec = json.loads(line.strip())
+                                rel = rec.get("relative_path", "")
+                                url = rec.get("sharepoint_url", "")
+                                if rel.startswith("pages/"):
+                                    delta_pages.append(f"{rel} | {url}")
+                                else:
+                                    delta_files.append(f"{rel} | {url}")
+                    except Exception:
+                        pass
+            
+            if delta_files:
+                files_content = "\n".join(sorted(delta_files))
+                f_blob = bucket_obj.blob(f"delta/{dt_str}-files.txt")
+                f_blob.upload_from_string(files_content + "\n", content_type="text/plain")
+                print(f"✅ Delta Auditing: Successfully generated delta report gs://{bucket_name}/delta/{dt_str}-files.txt with {len(delta_files)} records.", flush=True)
+            
+            if delta_pages:
+                pages_content = "\n".join(sorted(delta_pages))
+                p_blob = bucket_obj.blob(f"delta/{dt_str}-pages.txt")
+                p_blob.upload_from_string(pages_content + "\n", content_type="text/plain")
+                print(f"✅ Delta Auditing: Successfully generated delta report gs://{bucket_name}/delta/{dt_str}-pages.txt with {len(delta_pages)} records.", flush=True)
+            
+            if not delta_files and not delta_pages:
+                print("ℹ️ Delta Auditing: No new or modified delta files/pages were synced in this execution.", flush=True)
+                
+        except Exception as ex_delta_merge:
+            print(f"⚠️ Warning: Delta Consolidation failed to generate combined reports: {ex_delta_merge}", flush=True)
 
         return {"status": "success", "consolidated_records": len(combined_records)}
     except Exception as ex_merge:
@@ -861,6 +902,30 @@ def main(request):
                 meta_blob = bucket_obj.blob(sharded_meta_path)
                 meta_blob.upload_from_string(jsonl_content, content_type="application/x-ndjson")
                 print(f"✅ Successfully uploaded {len(jsonl_lines)} records to gs://{bucket_name}/{sharded_meta_path}")
+
+                # Step 4a.2: Auditing / Delta Manifest Generation for Incremental Traceability
+                try:
+                    sync_list = locals().get("sync_list", [])
+                    delta_jsonl_lines = []
+                    for item in sync_list:
+                        raw_name = item.get("Name", "doc")
+                        rel_path = item.get("RelativePath", "")
+                        if item.get("IsPage") or rel_path.startswith("pages/") or rel_path.startswith("files/"):
+                            full_gcs_path = rel_path
+                        else:
+                            full_gcs_path = f"files/{rel_path}"
+                        delta_record = {
+                            "relative_path": full_gcs_path,
+                            "sharepoint_url": item.get("Url", "")
+                        }
+                        delta_jsonl_lines.append(json.dumps(delta_record))
+                    
+                    sharded_delta_path = f"config/delta_category_{active_category_id}.jsonl"
+                    delta_blob = bucket_obj.blob(sharded_delta_path)
+                    delta_blob.upload_from_string("\n".join(delta_jsonl_lines) + "\n", content_type="application/x-ndjson")
+                    print(f"✅ Successfully uploaded {len(delta_jsonl_lines)} delta records to gs://{bucket_name}/{sharded_delta_path}")
+                except Exception as ex_delta:
+                    print(f"⚠️ Warning: Skipping delta auditing category manifest due to non-blocking hiccup: {ex_delta}")
 
                 # Auto-generate & upload 3 post-sync audit reports to GCS report/ folder
                 try:

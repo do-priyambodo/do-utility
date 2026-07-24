@@ -132,6 +132,30 @@ gcloud run jobs execute $(python3 -c "import json; print(json.load(open('paramet
 > **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
 > `gcloud run jobs execute` dispatches the execution directly to Cloud Run's serverless infrastructure and exits your terminal in `~2 seconds`. **You can safely close your terminal or shut down your laptop right after running this command!**
 
+Run the ad-hoc monitor command to check how many files and pages have landed in your destination GCS bucket:
+
+```bash
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
+echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
+echo "Timestamp    : $(date)" && \
+echo "Target Bucket: gs://${GCS_BUCKET}" && \
+echo "------------------------------------------------------------" && \
+echo -n "Total Synced Files (gs://${GCS_BUCKET}/files/) : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/files/**" 2>/dev/null | wc -l && \
+echo -n "Total Synced Pages (gs://${GCS_BUCKET}/pages/) : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/pages/**" 2>/dev/null | wc -l && \
+echo "------------------------------------------------------------"
+```
+
+To stream the live execution logs (replace `[YOUR_EXECUTION_NAME]` with the execution ID printed by the command above):
+
+```bash
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', ''))")"'" AND labels."run.googleapis.com/execution_name"="[YOUR_EXECUTION_NAME]"' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+  --limit=50 \
+  --format="table(timestamp, textPayload)"
+```
+
 ### Option B: Cloud Scheduler Trigger (Recommended for Automated Production Testing)
 Use this option to trigger the sharded synchronization run using Google Cloud Scheduler. This guarantees all parameters are passed cleanly in the HTTP payload:
 
@@ -144,6 +168,30 @@ gcloud scheduler jobs run $(python3 -c "import json; print(json.load(open('param
 > [!TIP]
 > **💻 Laptop / Terminal Closure Safety: SAFE TO CLOSE IMMEDIATELY**  
 > Triggering the scheduler sends an asynchronous trigger to GCP and exits in `~2 seconds`. The sequential traversal runs unattended inside Google Cloud's infrastructure. **You can safely close your terminal or shut down your laptop right after running this command!**
+
+Run the ad-hoc monitor command to check how many files and pages have landed in your destination GCS bucket:
+
+```bash
+export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
+echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
+echo "Timestamp    : $(date)" && \
+echo "Target Bucket: gs://${GCS_BUCKET}" && \
+echo "------------------------------------------------------------" && \
+echo -n "Total Synced Files (gs://${GCS_BUCKET}/files/) : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/files/**" 2>/dev/null | wc -l && \
+echo -n "Total Synced Pages (gs://${GCS_BUCKET}/pages/) : " && \
+gcloud storage ls --recursive "gs://${GCS_BUCKET}/pages/**" 2>/dev/null | wc -l && \
+echo "------------------------------------------------------------"
+```
+
+To stream the live execution logs (you can omit the `labels...` filter to see all logs for the job, or get the execution ID from the Google Cloud Console):
+
+```bash
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="'"$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_CloudFunction_Name', ''))")"'" AND labels."run.googleapis.com/execution_name"="[YOUR_EXECUTION_NAME]"' \
+  --project="$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_ProjectId', ''))")" \
+  --limit=50 \
+  --format="table(timestamp, textPayload)"
+```
 
 ---
 
@@ -166,7 +214,7 @@ Monitor live pipeline chunking, Graph API traversal, and Playwright rendering in
 Check how many files and pages have landed in your destination GCS bucket:
 ```bash
 export GCS_BUCKET=$(python3 -c "import json; print(json.load(open('parameters.json')).get('CONFIG_GCS_Bucket', ''))") && \
-echo "=== 📊 AD-HOC GCS SYNC MONITOR ===" && \
+echo "=== 📊 AD-HOC SHAREPOINT -> GCS SYNC MONITOR ===" && \
 echo "Timestamp    : $(date)" && \
 echo "Target Bucket: gs://${GCS_BUCKET}" && \
 echo "------------------------------------------------------------" && \

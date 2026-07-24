@@ -41,6 +41,13 @@
       "sharepoint_library": "all"
     },
     {
+      "category_id": "ai-sektor-awam",
+      "display_name": "ai-sektor-awam",
+      "sharepoint_site": "sites/aisektorawam",
+      "include_subsites": true,
+      "sharepoint_library": "all"
+    },
+    {
       "category_id": "subsite1-priyambodo",
       "display_name": "Subsite 1 - Priyambodo",
       "sharepoint_site": "sites/doddi-sharepoint-to-gcs/subsite1-priyambodo",

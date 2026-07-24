@@ -189,7 +189,9 @@ def list_drive_items_recursive(token, drive_id, item_id="root", parent_path="", 
                                 "IsPage": False,
                                 "LibraryName": library_name,
                                 "_folder_path": p_path.rstrip("/"),
-                                "_site_key": site_key or p_path.rstrip("/") or "root"
+                                "_site_key": site_key or p_path.rstrip("/") or "root",
+                                "_item_id": item.get("id"),
+                                "_drive_id": drive_id
                             }
                             needs_sync = True
                             gcs_check_path = f"files/{relative_path}"
