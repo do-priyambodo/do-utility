@@ -30,7 +30,8 @@
     "archive",
     "draft",
     "checkout",
-    "obsolete"
+    "obsolete",
+    "Garis-Panduan-Pengadaptasian-AI-Sektor-Awam"
   ],
   "CONFIG_Categories": [
     {
@@ -43,7 +44,7 @@
     {
       "category_id": "ai-sektor-awam",
       "display_name": "ai-sektor-awam",
-      "sharepoint_site": "sites/aisektorawam",
+      "sharepoint_site": "sites/aisetorawam",
       "include_subsites": true,
       "sharepoint_library": "all"
     },
