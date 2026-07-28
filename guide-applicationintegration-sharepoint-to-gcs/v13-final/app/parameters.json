@@ -18,7 +18,7 @@
   "CONFIG_File_Batch_Size": 10,
   "CONFIG_Sync_SharePoint_Files": true,
   "CONFIG_Sync_SharePoint_Pages": true,
-  "CONFIG_Scheduler_Cron_Schedule": "0 */12 * * *",
+  "CONFIG_Scheduler_Cron_Schedule": "0 6 * * *",
   "CONFIG_Developer_Group_Or_User": "user:admin@priyambodo.altostrat.com",
   "CONFIG_PDF_Conversion_Engine": "playwright",
   "CONFIG_Filter_Active_Files_Only": true,
@@ -37,6 +37,13 @@
       "category_id": "ai-sektor-awam",
       "display_name": "ai-sektor-awam",
       "sharepoint_site": "sites/aisetorawam",
+      "include_subsites": true,
+      "sharepoint_library": "all"
+    },
+    {
+      "category_id": "cymbal-telco",
+      "display_name": "cymbal-telco",
+      "sharepoint_site": "sites/cymbaltelco",
       "include_subsites": true,
       "sharepoint_library": "all"
     }
