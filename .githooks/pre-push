@@ -1,0 +1,446 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# pre-push — DO-HARNESS push gate
+# ==============================================================================
+# Opt-in via `make hooks-install` (`git config core.hooksPath ...`).
+# Blocks:
+#   1. Deleting or force-pushing a protected branch (main/master)
+#   2. Pushing to a protected branch in strict mode, or pushing commits that
+#      touch governance_paths directly to a protected branch in any mode
+#   3. Pushing when .harness/verify-state.json is missing, failed, degraded
+#      (when required_gates is non-empty), or does not match `git write-tree`
+#      (plus clean_checkout.tree when clean_checkout is in required_gates)
+# ==============================================================================
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "${ROOT_DIR}"
+
+STDIN_LINES=""
+if [[ ! -t 0 ]]; then
+  STDIN_LINES="$(cat || true)"
+fi
+
+python3 - "${ROOT_DIR}" "${HOOK_DIR}" "${STDIN_LINES}" "$@" <<'PY'
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1])
+hook_dir = pathlib.Path(sys.argv[2])
+stdin_text = sys.argv[3]
+extra_args = sys.argv[4:]
+
+ZERO_SHA = "0" * 40
+
+
+def load_default_governance() -> list[str]:
+    for cand in (
+        root / "templates" / "sdlc" / "agent_guard.py",
+        root / "scripts" / "agent_guard.py",
+        hook_dir.parent / "agent_guard.py",
+    ):
+        if cand.is_file():
+            proc = subprocess.run(
+                [sys.executable, str(cand), "--dump-governance-paths", str(root)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    return [
+        ".harness-policy.json",
+        "Makefile",
+        "ruff.toml",
+        "pyproject.toml",
+        "pytest.ini",
+        ".flake8",
+        "setup.cfg",
+        ".gitleaks.toml",
+        ".gitleaksignore",
+        "bands.yaml",
+        "templates/sdlc/ruff.fallback.toml",
+        ".github/workflows/",
+        "cloudbuild.yaml",
+        "templates/sdlc/cloudbuild.yaml",
+        "scripts/verify.sh",
+        "templates/sdlc/verify.sh",
+        "scripts/verify-clean.sh",
+        "templates/sdlc/verify-clean.sh",
+        "scripts/guard-hook.sh",
+        "templates/sdlc/guard-hook.sh",
+        "scripts/agent_guard.py",
+        "templates/sdlc/agent_guard.py",
+        "scripts/scan-secrets.sh",
+        "templates/sdlc/scan-secrets.sh",
+        "scripts/audit-adk.py",
+        "templates/sdlc/audit-adk.py",
+        "scripts/audit-real-data.py",
+        "templates/sdlc/audit-real-data.py",
+        "scripts/audit-docs.py",
+        "templates/sdlc/audit-docs.py",
+        "scripts/audit-ui.py",
+        "templates/sdlc/audit-ui.py",
+        "scripts/audit-deps.sh",
+        "templates/sdlc/audit-deps.sh",
+        "scripts/check_control_bands.py",
+        "templates/sdlc/check_control_bands.py",
+        "scripts/git-sync.sh",
+        "scripts/sync-templates.sh",
+        "scripts/harness-upgrade.sh",
+        "scripts/githooks/",
+        ".githooks/",
+        "rules/",
+        ".agents/rules/",
+        ".agents/agents/",
+        ".agents/hooks.json",
+        "AGENTS.md",
+        "templates/sdlc/hooks.plugin.json",
+        "templates/sdlc/githooks/",
+        "templates/sdlc/secret-patterns.json",
+        "templates/sdlc/MANIFEST.sha256",
+    ]
+
+
+policy_path = root / ".harness-policy.json"
+policy: dict = {}
+if policy_path.is_file():
+    try:
+        raw = json.loads(policy_path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            policy = raw
+        else:
+            sys.stderr.write("❌ [pre-push] POLICY_INVALID: .harness-policy.json must be a JSON object.\n")
+            raise SystemExit(1)
+    except SystemExit:
+        raise
+    except Exception as exc:
+        sys.stderr.write(f"❌ [pre-push] POLICY_INVALID: could not parse .harness-policy.json: {exc}\n")
+        raise SystemExit(1)
+
+protected_branches = policy.get("protected_branches", ["main", "master"])
+if not isinstance(protected_branches, list):
+    protected_branches = ["main", "master"]
+protected_mode = str(policy.get("protected_branch_mode", "strict"))
+if protected_mode not in ("strict", "warn", "off"):
+    protected_mode = "strict"
+required_gates = policy.get("required_gates", [])
+if not isinstance(required_gates, list):
+    sys.stderr.write("❌ [pre-push] POLICY_INVALID: required_gates must be a list.\n")
+    raise SystemExit(1)
+
+gov_patterns = list(dict.fromkeys(load_default_governance() + [
+    str(p) for p in (policy.get("governance_paths") or []) if isinstance(p, str)
+]))
+
+
+def strip_dot_slash(p: str) -> str:
+    s = p.strip()
+    while s.startswith("./"):
+        s = s[2:]
+    return s
+
+
+GUARD_BASENAMES = frozenset(
+    {"agent_guard.py", "guard-hook.sh", ".harness-policy.json", "hooks.json", "hooks.plugin.json"}
+)
+
+
+def matches_governance(path: str) -> bool:
+    norm = strip_dot_slash(path)
+    base = norm.rsplit("/", 1)[-1]
+    for raw in gov_patterns:
+        pat = strip_dot_slash(raw)
+        if not pat:
+            continue
+        if pat.endswith("/"):
+            if norm == pat.rstrip("/") or norm.startswith(pat):
+                return True
+            continue
+        if norm == pat or norm.endswith("/" + pat):
+            return True
+        if ("/" not in pat or base in GUARD_BASENAMES) and base and base == pat.rsplit("/", 1)[-1]:
+            return True
+    return False
+
+
+def ref_to_branch(ref: str) -> str:
+    if ref.startswith("refs/heads/"):
+        return ref[len("refs/heads/"):]
+    return ref
+
+
+# Check any explicit CLI refspec flags passed to pre-push (e.g. +HEAD:main, :main, --delete main)
+want_delete = False
+for idx, arg in enumerate(extra_args):
+    if arg in ("--delete", "-d"):
+        want_delete = True
+        continue
+    if arg in ("--force", "-f"):
+        sys.stderr.write("❌ [pre-push] PROTECTED_BRANCH_FORCE_PUSH_DENIED: force-push is forbidden.\n")
+        raise SystemExit(1)
+    if want_delete:
+        b = ref_to_branch(arg)
+        if b in protected_branches:
+            sys.stderr.write(f"❌ [pre-push] PROTECTED_BRANCH_DELETE_DENIED: cannot delete protected branch '{b}'.\n")
+            raise SystemExit(1)
+    if ":" in arg and not arg.startswith(("http://", "https://", "ssh://", "git@", "/")):
+        forced_spec = arg.startswith("+")
+        spec = arg.lstrip("+")
+        src, dst = spec.split(":", 1)
+        dst_branch = ref_to_branch(dst)
+        if dst_branch in protected_branches:
+            if src == "":
+                sys.stderr.write(
+                    f"❌ [pre-push] PROTECTED_BRANCH_DELETE_DENIED: refspec '{arg}' deletes protected branch '{dst_branch}'.\n"
+                )
+                raise SystemExit(1)
+            if forced_spec:
+                sys.stderr.write(
+                    f"❌ [pre-push] PROTECTED_BRANCH_FORCE_PUSH_DENIED: force refspec '{arg}' to protected branch '{dst_branch}' is forbidden.\n"
+                )
+                raise SystemExit(1)
+
+remote_name = "origin"
+if extra_args:
+    first_arg = extra_args[0].strip()
+    if (
+        first_arg
+        and not first_arg.startswith("-")
+        and not first_arg.startswith(("http://", "https://", "ssh://", "git@", "/"))
+        and ":" not in first_arg
+    ):
+        remote_name = first_arg
+
+
+def is_published_on_review_branch(sha: str, rem: str, pushed_remote_branches: set[str]) -> bool:
+    if not sha or set(sha) == {"0"}:
+        return False
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "for-each-ref",
+            "--format=%(refname)",
+            "--contains",
+            sha,
+            f"refs/remotes/{rem}/",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return False
+    prefix = f"refs/remotes/{rem}/"
+    for line in proc.stdout.splitlines():
+        ref = line.strip()
+        if not ref.startswith(prefix):
+            continue
+        rbranch = ref[len(prefix) :]
+        if not rbranch or rbranch == "HEAD":
+            continue
+        if rbranch in protected_branches or rbranch in pushed_remote_branches:
+            continue
+        return True
+    return False
+
+
+updates: list[tuple[str, str, str, str]] = []
+for raw_line in stdin_text.splitlines():
+    parts = raw_line.strip().split()
+    if len(parts) == 4:
+        updates.append((parts[0], parts[1], parts[2], parts[3]))
+
+if not updates:
+    cur_branch = subprocess.run(
+        ["git", "-C", str(root), "symbolic-ref", "--short", "HEAD"],
+        capture_output=True, text=True, check=False,
+    ).stdout.strip() or "HEAD"
+    cur_sha = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=False,
+    ).stdout.strip()
+    if cur_sha:
+        updates.append((f"refs/heads/{cur_branch}", cur_sha, f"refs/heads/{cur_branch}", ZERO_SHA))
+
+pushed_remote_branches = {ref_to_branch(rref) for _, _, rref, _ in updates if rref}
+
+for local_ref, local_sha, remote_ref, remote_sha in updates:
+    target_branch = ref_to_branch(remote_ref)
+    is_delete = (local_ref == "(delete)") or (set(local_sha) == {"0"})
+    if is_delete:
+        if target_branch in protected_branches:
+            sys.stderr.write(
+                f"❌ [pre-push] PROTECTED_BRANCH_DELETE_DENIED: refusing to delete protected branch '{target_branch}'.\n"
+            )
+            raise SystemExit(1)
+        continue
+
+    if target_branch in protected_branches:
+        # Non-fast-forward check when remote_sha exists
+        if remote_sha and set(remote_sha) != {"0"}:
+            anc = subprocess.run(
+                ["git", "-C", str(root), "merge-base", "--is-ancestor", remote_sha, local_sha],
+                capture_output=True, check=False,
+            )
+            if anc.returncode != 0:
+                sys.stderr.write(
+                    f"❌ [pre-push] PROTECTED_BRANCH_FORCE_PUSH_DENIED: non-fast-forward push to '{target_branch}' is forbidden.\n"
+                )
+                raise SystemExit(1)
+
+        if protected_mode == "strict" and os.environ.get("HARNESS_GUARD_BYPASS") != "1":
+            sys.stderr.write(
+                f"❌ [pre-push] PROTECTED_BRANCH_PUSH_DENIED: direct push to '{target_branch}' is blocked (protected_branch_mode=strict).\n"
+                "   Push a feature branch instead or use: make ship MSG=\"...\"\n"
+            )
+            raise SystemExit(1)
+
+        # Governance check on commits being pushed to protected branch.
+        # Fast-forwarding an existing protected branch to a commit already published
+        # on a non-protected remote review branch (`origin/<branch>`) is allowed,
+        # matching the `git checkout main && git merge --ff-only <branch> && git push origin main`
+        # promotion workflow emitted by git-sync.sh.
+        published_review_ff = (
+            bool(remote_sha and set(remote_sha) != {"0"})
+            and is_published_on_review_branch(local_sha, remote_name, pushed_remote_branches)
+        )
+        if not published_review_ff:
+            if remote_sha and set(remote_sha) != {"0"}:
+                changed = subprocess.run(
+                    ["git", "-C", str(root), "diff", "--name-only", f"{remote_sha}..{local_sha}"],
+                    capture_output=True, text=True, check=False,
+                ).stdout.splitlines()
+            else:
+                changed = subprocess.run(
+                    ["git", "-C", str(root), "log", "--pretty=", "--name-only", local_sha, "--not", "--remotes"],
+                    capture_output=True, text=True, check=False,
+                ).stdout.splitlines()
+                if not any(f.strip() for f in changed):
+                    roots = subprocess.run(
+                        ["git", "-C", str(root), "rev-list", "--max-parents=0", local_sha],
+                        capture_output=True, text=True, check=False,
+                    ).stdout.splitlines()
+                    root_sha = roots[0].strip() if roots else ""
+                    if root_sha and root_sha != local_sha:
+                        changed = subprocess.run(
+                            ["git", "-C", str(root), "diff", "--name-only", f"{root_sha}..{local_sha}"],
+                            capture_output=True, text=True, check=False,
+                        ).stdout.splitlines()
+                    else:
+                        changed = subprocess.run(
+                            ["git", "-C", str(root), "show", "--pretty=", "--name-only", local_sha],
+                            capture_output=True, text=True, check=False,
+                        ).stdout.splitlines()
+            gov_hits = [f for f in changed if f.strip() and matches_governance(f)]
+            if gov_hits:
+                sys.stderr.write(
+                    f"❌ [pre-push] GOVERNANCE_DIRECT_PUSH_DENIED: commits pushed to '{target_branch}' touch governance_paths:\n"
+                )
+                for h in gov_hits:
+                    sys.stderr.write(f"     • {h}\n")
+                sys.stderr.write("   Push a review branch via: make ship MSG=\"...\"\n")
+                raise SystemExit(1)
+
+# 3: Fresh .harness/verify-state.json check matching git write-tree and HEAD
+state_dir = pathlib.Path(os.environ.get("HARNESS_VERIFY_STATE_DIR") or (root / ".harness"))
+state_file = state_dir / "verify-state.json"
+if not state_file.is_file():
+    sys.stderr.write(
+        "❌ [pre-push] UNVERIFIED_PUSH_DENIED: .harness/verify-state.json is missing.\n"
+        "   Run `make verify` before pushing.\n"
+    )
+    raise SystemExit(1)
+
+try:
+    vstate = json.loads(state_file.read_text(encoding="utf-8"))
+except Exception as exc:
+    sys.stderr.write(f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: invalid verify-state.json: {exc}\n")
+    raise SystemExit(1)
+
+overall = vstate.get("overall") or vstate.get("status")
+if overall != "pass":
+    sys.stderr.write(
+        f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: last verification overall={overall!r} (must be 'pass').\n"
+        "   Run `make verify` before pushing.\n"
+    )
+    raise SystemExit(1)
+
+cur_tree = subprocess.run(
+    ["git", "-C", str(root), "write-tree"],
+    capture_output=True, text=True, check=False,
+).stdout.strip()
+cur_head = subprocess.run(
+    ["git", "-C", str(root), "rev-parse", "HEAD"],
+    capture_output=True, text=True, check=False,
+).stdout.strip()
+
+recorded_tree = str(vstate.get("tree") or "").strip()
+recorded_head = str(vstate.get("head") or "").strip()
+cc_obj = vstate.get("clean_checkout")
+cc_tree = str(cc_obj.get("tree") or "").strip() if isinstance(cc_obj, dict) and cc_obj.get("result") == "pass" else ""
+if not (recorded_tree or recorded_head or cc_tree):
+    sys.stderr.write(
+        "❌ [pre-push] UNVERIFIED_PUSH_DENIED: verify-state.json has no recorded tree or head SHA.\n"
+        "   Re-run `make verify` on the current commit.\n"
+    )
+    raise SystemExit(1)
+if recorded_tree and recorded_tree != cur_tree:
+    sys.stderr.write(
+        f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: verify-state.json tree ({recorded_tree[:12]}) != current index tree ({cur_tree[:12]}).\n"
+        "   Re-run `make verify` after staging/committing.\n"
+    )
+    raise SystemExit(1)
+if not recorded_tree and recorded_head and recorded_head != cur_head:
+    sys.stderr.write(
+        f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: verify-state.json head ({recorded_head[:12]}) != HEAD ({cur_head[:12]}).\n"
+        "   Re-run `make verify` on the current commit.\n"
+    )
+    raise SystemExit(1)
+if not recorded_tree and not recorded_head and cc_tree != cur_tree:
+    sys.stderr.write(
+        f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: clean_checkout tree ({cc_tree[:12]}) != current index tree ({cur_tree[:12]}).\n"
+        "   Re-run `make verify` after staging/committing.\n"
+    )
+    raise SystemExit(1)
+
+# Dirty working tree check (excluding .harness/ state files)
+dirty_lines = [
+    ln for ln in subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
+        capture_output=True, text=True, check=False,
+    ).stdout.splitlines()
+    if ln.strip() and not ln[3:].strip().startswith(".harness/")
+]
+if dirty_lines:
+    sys.stderr.write(
+        "❌ [pre-push] UNVERIFIED_PUSH_DENIED: working tree has uncommitted changes; verify-state cannot certify a dirty tree.\n"
+    )
+    raise SystemExit(1)
+
+if required_gates:
+    strength = vstate.get("strength")
+    if strength != "full":
+        sys.stderr.write(
+            f"❌ [pre-push] UNVERIFIED_PUSH_DENIED: verify-state strength is {strength!r}, but required_gates requires 'full'.\n"
+        )
+        raise SystemExit(1)
+
+if "clean_checkout" in required_gates:
+    cc = vstate.get("clean_checkout")
+    if not isinstance(cc, dict) or cc.get("result") != "pass" or cc.get("tree") != cur_tree:
+        sys.stderr.write(
+            "❌ [pre-push] CLEAN_CHECKOUT_MISMATCH: required_gates lists 'clean_checkout', "
+            f"but clean_checkout record does not match tree {cur_tree[:12]}.\n"
+            "   Run `make verify-clean` before pushing.\n"
+        )
+        raise SystemExit(1)
+PY
+
+exit 0

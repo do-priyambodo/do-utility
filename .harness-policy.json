@@ -1,0 +1,16 @@
+{
+  "protected_branches": ["main", "master"],
+  "protected_branch_mode": "warn",
+  "governance_paths": [
+    ".harness-policy.json",
+    ".gemini/hooks.json",
+    "scripts/agent_guard.py",
+    "scripts/verify.sh",
+    "rules/"
+  ],
+  "block_blanket_staging": true,
+  "block_blanket_commit": true,
+  "block_force_push": true,
+  "block_secret_staging": true,
+  "require_verification_before_stop": true
+}

@@ -1,0 +1,307 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# pre-commit — DO-HARNESS fast staged-only git hook (< 2 s)
+# ==============================================================================
+# Opt-in via `make hooks-install` (`git config core.hooksPath ...`).
+# Inspects ONLY the staged index (`git diff --cached` / `git show :path`):
+#   1. Shared secret patterns & forbidden filenames (secret-patterns.json)
+#   2. Merge conflict markers (<<<<<<< / ======= / >>>>>>>)
+#   3. Protected-branch & governance_paths carve-out (.harness-policy.json)
+#   4. Direct `ruff check` on staged .py files
+# ==============================================================================
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "${ROOT_DIR}"
+
+# Locate secret-patterns.json (canonical templates/sdlc, sibling, or repo scripts/).
+PATTERNS_FILE="${HARNESS_SECRET_PATTERNS_FILE:-}"
+if [[ -z "${PATTERNS_FILE}" ]]; then
+  for cand in \
+    "${HOOK_DIR}/../secret-patterns.json" \
+    "${HOOK_DIR}/secret-patterns.json" \
+    "${ROOT_DIR}/templates/sdlc/secret-patterns.json" \
+    "${ROOT_DIR}/scripts/secret-patterns.json"; do
+    if [[ -f "${cand}" ]]; then
+      PATTERNS_FILE="${cand}"
+      break
+    fi
+  done
+fi
+
+if [[ -z "${PATTERNS_FILE}" || ! -f "${PATTERNS_FILE}" ]]; then
+  echo "❌ [pre-commit] SCANNER_ERROR: secret-patterns.json not found." >&2
+  exit 1
+fi
+
+# Collect staged paths (ACMR for content/filename checks; ACMRD for governance).
+declare -a STAGED_ACMR=()
+while IFS= read -r -d '' f; do
+  [[ -n "${f}" ]] && STAGED_ACMR+=("${f}")
+done < <(git diff --cached --name-only -z --diff-filter=ACMR 2>/dev/null || true)
+
+declare -a STAGED_ALL=()
+while IFS= read -r -d '' f; do
+  [[ -n "${f}" ]] && STAGED_ALL+=("${f}")
+done < <(git diff --cached --name-only -z --diff-filter=ACMRD 2>/dev/null || true)
+
+if [[ ${#STAGED_ALL[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "HEAD")"
+
+# 1–3: Run secret scan, conflict marker scan, and governance/protected-branch check
+# in a single fast Python invocation over the staged index blobs.
+python3 - "${ROOT_DIR}" "${PATTERNS_FILE}" "${BRANCH}" "${STAGED_ALL[@]}" <<'PY'
+import json
+import pathlib
+import re
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1])
+patterns_file = pathlib.Path(sys.argv[2])
+branch = sys.argv[3]
+staged_all = sys.argv[4:]
+
+try:
+    spec = json.loads(patterns_file.read_text(encoding="utf-8"))
+    forbidden_re = re.compile(spec["forbidden_tracked_ere"].replace("[[:space:]]", r"\s"))
+    allowed_re = re.compile(spec["allowed_template_ere"].replace("[[:space:]]", r"\s"))
+    patterns = [
+        (
+            p["id"],
+            p["ere"],
+            p.get("tier", "always_fail"),
+            re.compile(p["ere"].replace("[[:space:]]", r"\s")),
+        )
+        for p in spec["patterns"]
+    ]
+except Exception as exc:
+    sys.stderr.write(f"❌ [pre-commit] SCANNER_ERROR: invalid {patterns_file}: {exc}\n")
+    raise SystemExit(1)
+
+
+def load_default_governance() -> list[str]:
+    for cand in (
+        root / "templates" / "sdlc" / "agent_guard.py",
+        root / "scripts" / "agent_guard.py",
+        patterns_file.parent / "agent_guard.py",
+    ):
+        if cand.is_file():
+            proc = subprocess.run(
+                [sys.executable, str(cand), "--dump-governance-paths", str(root)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    return [
+        ".harness-policy.json",
+        "Makefile",
+        "ruff.toml",
+        "pyproject.toml",
+        "pytest.ini",
+        ".flake8",
+        "setup.cfg",
+        ".gitleaks.toml",
+        ".gitleaksignore",
+        "bands.yaml",
+        "templates/sdlc/ruff.fallback.toml",
+        ".github/workflows/",
+        "cloudbuild.yaml",
+        "templates/sdlc/cloudbuild.yaml",
+        "scripts/verify.sh",
+        "templates/sdlc/verify.sh",
+        "scripts/verify-clean.sh",
+        "templates/sdlc/verify-clean.sh",
+        "scripts/guard-hook.sh",
+        "templates/sdlc/guard-hook.sh",
+        "scripts/agent_guard.py",
+        "templates/sdlc/agent_guard.py",
+        "scripts/scan-secrets.sh",
+        "templates/sdlc/scan-secrets.sh",
+        "scripts/audit-adk.py",
+        "templates/sdlc/audit-adk.py",
+        "scripts/audit-real-data.py",
+        "templates/sdlc/audit-real-data.py",
+        "scripts/audit-docs.py",
+        "templates/sdlc/audit-docs.py",
+        "scripts/audit-ui.py",
+        "templates/sdlc/audit-ui.py",
+        "scripts/audit-deps.sh",
+        "templates/sdlc/audit-deps.sh",
+        "scripts/check_control_bands.py",
+        "templates/sdlc/check_control_bands.py",
+        "scripts/git-sync.sh",
+        "scripts/sync-templates.sh",
+        "scripts/harness-upgrade.sh",
+        "scripts/githooks/",
+        ".githooks/",
+        "rules/",
+        ".agents/rules/",
+        ".agents/agents/",
+        ".agents/hooks.json",
+        "AGENTS.md",
+        "templates/sdlc/hooks.plugin.json",
+        "templates/sdlc/githooks/",
+        "templates/sdlc/secret-patterns.json",
+        "templates/sdlc/MANIFEST.sha256",
+    ]
+
+
+policy_path = root / ".harness-policy.json"
+policy: dict = {}
+if policy_path.is_file():
+    try:
+        raw = json.loads(policy_path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            policy = raw
+        else:
+            sys.stderr.write("❌ [pre-commit] POLICY_INVALID: .harness-policy.json must be a JSON object.\n")
+            raise SystemExit(1)
+    except SystemExit:
+        raise
+    except Exception as exc:
+        sys.stderr.write(f"❌ [pre-commit] POLICY_INVALID: could not parse .harness-policy.json: {exc}\n")
+        raise SystemExit(1)
+
+protected_branches = policy.get("protected_branches", ["main", "master"])
+if not isinstance(protected_branches, list):
+    protected_branches = ["main", "master"]
+protected_mode = str(policy.get("protected_branch_mode", "strict"))
+if protected_mode not in ("strict", "warn", "off"):
+    protected_mode = "strict"
+
+gov_patterns = list(dict.fromkeys(load_default_governance() + [
+    str(p) for p in (policy.get("governance_paths") or []) if isinstance(p, str)
+]))
+
+
+def strip_dot_slash(p: str) -> str:
+    s = p.strip()
+    while s.startswith("./"):
+        s = s[2:]
+    return s
+
+
+GUARD_BASENAMES = frozenset(
+    {"agent_guard.py", "guard-hook.sh", ".harness-policy.json", "hooks.json", "hooks.plugin.json"}
+)
+
+
+def matches_governance(path: str) -> bool:
+    norm = strip_dot_slash(path)
+    base = norm.rsplit("/", 1)[-1]
+    for raw in gov_patterns:
+        pat = strip_dot_slash(raw)
+        if not pat:
+            continue
+        if pat.endswith("/"):
+            if norm == pat.rstrip("/") or norm.startswith(pat):
+                return True
+            continue
+        if norm == pat or norm.endswith("/" + pat):
+            return True
+        if ("/" not in pat or base in GUARD_BASENAMES) and base and base == pat.rsplit("/", 1)[-1]:
+            return True
+    return False
+
+
+failed = False
+
+# Check 3: Protected branch & governance carve-out
+if branch in protected_branches:
+    gov_hits = [f for f in staged_all if matches_governance(f)]
+    if gov_hits:
+        sys.stderr.write(
+            f"❌ [pre-commit] GOVERNANCE_DIRECT_COMMIT_DENIED: cannot commit governance_paths directly on '{branch}':\n"
+        )
+        for h in gov_hits:
+            sys.stderr.write(f"     • {h}\n")
+        sys.stderr.write("   Commit on a feature branch or use: make ship MSG=\"...\"\n")
+        failed = True
+    elif protected_mode == "strict":
+        import os
+        if os.environ.get("HARNESS_GUARD_BYPASS") != "1":
+            sys.stderr.write(
+                f"❌ [pre-commit] PROTECTED_BRANCH_COMMIT_DENIED: '{branch}' is protected (mode=strict).\n"
+                "   Commit on a branch or use: make ship MSG=\"...\"\n"
+            )
+            failed = True
+
+conflict_re = re.compile(r"^(<<<<<<< |=======$|>>>>>>> )", re.M)
+
+# Checks 1 & 2 on staged blobs (ACMR; staged deletions D are allowed so git rm --cached works)
+for rel in staged_all:
+    norm = strip_dot_slash(rel)
+    proc = subprocess.run(
+        ["git", "-C", str(root), "show", f":{rel}"],
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        # Deleted in index (D) — allow untrack/removal and skip blob scan.
+        continue
+    if forbidden_re.search(norm) and not allowed_re.search(norm):
+        sys.stderr.write(f"❌ [pre-commit] FORBIDDEN_FILENAME: refusing to commit credential file '{norm}'.\n")
+        failed = True
+        continue
+    if b"\x00" in proc.stdout[:8192]:
+        continue
+    text = proc.stdout.decode("utf-8", errors="replace")
+    if conflict_re.search(text):
+        sys.stderr.write(f"❌ [pre-commit] CONFLICT_MARKERS: unresolved merge conflict markers in '{norm}'.\n")
+        failed = True
+    req_gates = policy.get("required_gates", ["secrets"])
+    secrets_required = not isinstance(req_gates, list) or "secrets" in req_gates
+    for line in text.splitlines():
+        if "scan-secrets:ignore" in line or "pragma: allowlist secret" in line or "gitleaks:allow" in line:
+            continue
+        for pid, pat_str, tier, cre in patterns:
+            if cre.search(line):
+                if tier == "always_fail" or secrets_required:
+                    sys.stderr.write(
+                        f"❌ [pre-commit] SECRET_DETECTED: possible credential in '{norm}' (pattern: {pid} / {pat_str}).\n"
+                    )
+                    failed = True
+                else:
+                    sys.stderr.write(
+                        f"⚠️  [pre-commit] SECRET_WARN: possible credential in '{norm}' (pattern: {pid}); "
+                        "add 'secrets' to required_gates to enforce.\n"
+                    )
+                break
+
+if failed:
+    raise SystemExit(1)
+PY
+
+# 4: Direct ruff check on staged .py files
+declare -a STAGED_PY=()
+for f in "${STAGED_ACMR[@]+"${STAGED_ACMR[@]}"}"; do
+  [[ "${f}" == *.py ]] && STAGED_PY+=("${f}")
+done
+
+if [[ ${#STAGED_PY[@]} -gt 0 ]] && command -v ruff >/dev/null 2>&1; then
+  RUFF_ARGS=(check --no-cache --output-format concise)
+  if [[ ! -f "${ROOT_DIR}/ruff.toml" && ! -f "${ROOT_DIR}/.ruff.toml" ]] \
+     && ! grep -q '^\[tool\.ruff' "${ROOT_DIR}/pyproject.toml" 2>/dev/null; then
+    for fb in "${HOOK_DIR}/../ruff.fallback.toml" "${ROOT_DIR}/templates/sdlc/ruff.fallback.toml"; do
+      if [[ -f "${fb}" ]]; then
+        RUFF_ARGS+=(--config "${fb}")
+        break
+      fi
+    done
+  fi
+  for pyf in "${STAGED_PY[@]}"; do
+    if ! git show ":${pyf}" | ruff "${RUFF_ARGS[@]}" --stdin-filename "${pyf}" -; then
+      echo "❌ [pre-commit] RUFF_FAILED: ruff check failed on staged '${pyf}'." >&2
+      exit 1
+    fi
+  done
+fi
+
+exit 0
